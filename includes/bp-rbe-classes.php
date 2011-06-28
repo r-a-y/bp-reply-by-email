@@ -251,9 +251,13 @@ class BP_Reply_By_Email_IMAP {
 		if ( is_resource( $this->imap ) )
 			return;
 
+		// This needs some testing...
+		$is_ssl = apply_filters( 'bp_rbe_ssl', bp_rbe_is_imap_ssl() );
+		$ssl = ( $is_ssl ) ? '/ssl' : '';
+		
 		// Need to readjust this before public release
 		// In the meantime, let's add a filter!
-		$hostname = '{' . $bp_rbe->settings['servername'] . ':' . $bp_rbe->settings['port'] . '/imap/ssl}INBOX';
+		$hostname = '{' . $bp_rbe->settings['servername'] . ':' . $bp_rbe->settings['port'] . '/imap' . $ssl . '}INBOX';
 		$hostname = apply_filters( 'bp_rbe_hostname', $hostname );
 
 		// Let's open the IMAP stream!
