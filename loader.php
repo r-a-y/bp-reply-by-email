@@ -39,6 +39,9 @@ add_action( 'bp_include', 'bp_rbe_init' );
  * Adds default settings when plugin is activated
  */
 function bp_rbe_activate() {
+	// Load the bp-rbe functions file
+	require_once( dirname( __FILE__ ) . '/includes/bp-rbe-functions.php' );
+	
 	if ( !$settings = get_option( 'bp-rbe' ) )
 		$settings = array();
 
