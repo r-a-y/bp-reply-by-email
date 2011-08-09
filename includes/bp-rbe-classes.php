@@ -642,8 +642,14 @@ class BP_Reply_By_Email_Admin {
 		$username = wp_filter_nohtml_kses( $input['username'] );
 		$password = wp_filter_nohtml_kses( $input['password'] );
 
+		// When Gmail is selected, no explicit 'email' value is passed from the form, so
+		// we have to construct it manually
+		if ( $input['gmail'] == 1 ) {
+			$input['email'] = $input['username'] . '@gmail.com';
+		}
+
 		if ( $email = is_email( $input['email'] ) ) {
-			$output['email'] = $email;
+			$output['email'] = $input['email'];
 
 			if ( $input['gmail'] == 1 )
 				$output['username'] = $email;
