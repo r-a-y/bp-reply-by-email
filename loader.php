@@ -14,24 +14,27 @@ Version: 1.0-beta
  * @subpackage Loader
  */
 
+// pertinent constants
+define( 'BP_RBE_DIR', dirname( __FILE__ ) );
+define( 'BP_RBE_URL', plugin_dir_url( __FILE__ ) );
+
 /**
  * Loads BP Reply By Email only if BuddyPress is activated
  */
 function bp_rbe_init() {
 	global $bp_rbe;
 
-	if ( !function_exists( 'bp_is_active' ) )
-		return;
-
-	require_once( dirname( __FILE__ ) . '/bp-rbe-core.php' );
+	require( BP_RBE_DIR . '/bp-rbe-core.php' );
 
 	// initialize!
-	$bp_rbe = new BP_Reply_By_Email();
+	$bp_rbe = new BP_Reply_By_Email;
 	$bp_rbe->init();
 
 	// admin area
-	if ( is_admin() )
-		$bp_rbe->admin = new BP_Reply_By_Email_Admin();
+	if ( is_admin() ) {
+		require( BP_RBE_DIR . '/includes/bp-rbe-admin.php' );
+		new BP_Reply_By_Email_Admin;
+	}
 }
 add_action( 'bp_include', 'bp_rbe_init' );
 
@@ -40,8 +43,8 @@ add_action( 'bp_include', 'bp_rbe_init' );
  */
 function bp_rbe_activate() {
 	// Load the bp-rbe functions file
-	require_once( dirname( __FILE__ ) . '/includes/bp-rbe-functions.php' );
-	
+	require( BP_RBE_DIR . '/includes/bp-rbe-functions.php' );
+
 	if ( !$settings = get_option( 'bp-rbe' ) )
 		$settings = array();
 
@@ -52,7 +55,7 @@ function bp_rbe_activate() {
 	// set a default value for the keepalive value
 	if ( !$settings['keepalive'] )
 		$settings['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
-	
+
 	update_option( 'bp-rbe', $settings );
 }
 register_activation_hook( __FILE__, 'bp_rbe_activate' );

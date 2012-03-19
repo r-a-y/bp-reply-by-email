@@ -19,10 +19,6 @@ class BP_Reply_By_Email {
 	 */
 	function init() {
 
-		/** Constants / variables *********************************************************/
-		define( 'BP_RBE_DIR', plugin_dir_path( __FILE__ ) );
-		define( 'BP_RBE_URL', plugin_dir_url( __FILE__ ) );
-
 		// settings
 		$this->settings = get_option( 'bp-rbe' );
 
@@ -85,7 +81,7 @@ class BP_Reply_By_Email {
 	 */
 	function admin_notice() {
 	?>
-		<div id="message" class="error"><?php _e( 'BuddyPress Reply By Email cannot initialize.  Please navigate to "BuddyPress > Reply By Email" to fill in the required fields and address the webhost warnings.', 'bp-rbe' ) ?></div>
+		<div id="message" class="error"><p><?php _e( 'BuddyPress Reply By Email cannot initialize.  Please navigate to "BuddyPress > Reply By Email" to fill in the required fields and address the webhost warnings.', 'bp-rbe' ) ?></p></div>
 	<?php
 	}
 
