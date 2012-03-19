@@ -5,7 +5,7 @@
  * @package BP_Reply_By_Email
  * @subpackage Admin
  */
- 
+
 /**
  * Class: BP_Reply_By_Email_Admin
  *
@@ -101,11 +101,14 @@ class BP_Reply_By_Email_Admin {
 			// hide fields if gmail setting is checked
 			var gmail = $( '#bp-rbe-gmail:checked' ).val();
 
+			$( '.bp-rbe-username span' ).hide();
+
 			if ( gmail == 1 ) {
 				$( 'tr.bp-rbe-servername' ).hide();
 				$( 'tr.bp-rbe-port' ).hide();
 				$( 'tr.bp-rbe-tag' ).hide();
 				$( 'tr.bp-rbe-email' ).hide();
+				$( '.bp-rbe-username span' ).show();
 			}
 
 			// toggle fields based on gmail setting
@@ -114,6 +117,7 @@ class BP_Reply_By_Email_Admin {
 				$( 'tr.bp-rbe-port' ).toggle();
 				$( 'tr.bp-rbe-tag' ).toggle();
 				$( 'tr.bp-rbe-email' ).toggle();
+				$( '.bp-rbe-username span' ).toggle();
 			});
 		});
 		</script>
@@ -148,22 +152,22 @@ class BP_Reply_By_Email_Admin {
 		}
 
 		if ( !empty( $password ) )
-			$output['password']	= $password;
+			$output['password'] = $password;
 
 		// check if port is numeric
 		if ( is_numeric( $input['port'] ) )
-			$output['port']		= $input['port'];
+			$output['port']     = $input['port'];
 
 		// check if address tag is one character
 		if ( strlen( $input['tag'] ) == 1 )
-			$output['tag']		= $input['tag'];
+			$output['tag']      = $input['tag'];
 
 		// override certain settings if "gmail" setting is true
 		if ( $input['gmail'] == 1 ) {
-			$output['servername']	= 'imap.gmail.com';
-			$output['port']		= 993;
-			$output['tag']		= '+';
-			$output['gmail']	= 1;
+			$output['servername'] = 'imap.gmail.com';
+			$output['port']	      = 993;
+			$output['tag']	      = '+';
+			$output['gmail']      = 1;
 		}
 		// if unchecked, reset these settings
 		elseif ( $output['port'] || $output['servername'] || $output['tag'] ) {
@@ -174,28 +178,28 @@ class BP_Reply_By_Email_Admin {
 
 		// check if key is alphanumeric
 		if ( ctype_alnum( $input['key'] ) )
-			$output['key']		= $input['key'];
+			$output['key']       = $input['key'];
 
 		if ( is_numeric( $input['keepalive'] ) && $input['keepalive'] < 30 )
-			$output['keepalive']	= $input['keepalive'];
+			$output['keepalive'] = $input['keepalive'];
 
 		// keepalive for safe mode will never exceed the execution time
 		if ( ini_get( 'safe_mode' ) )
-			$output['keepalive']	= $input['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
+			$output['keepalive'] = $input['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
 
 		/* error time! */
 
 		if ( strlen( $input['tag'] ) > 1 && !$output['tag'] )
-			$messages['tag_error']	= __( 'Error: <strong>Address tag</strong> must only be one character.', 'bp-rbe' );
+			$messages['tag_error']       = __( 'Error: <strong>Address tag</strong> must only be one character.', 'bp-rbe' );
 
 		if ( !empty( $input['port'] ) && !is_numeric( $input['port'] ) && !$output['port'] )
-			$messages['port_error'] = __( 'Error: <strong>Port</strong> must be numeric.', 'bp-rbe' );
+			$messages['port_error']      = __( 'Error: <strong>Port</strong> must be numeric.', 'bp-rbe' );
 
 		if ( !empty( $input['key'] ) && !$output['key'] )
-			$messages['key_error']	= __( 'Error: <strong>Key</strong> must only contain letters and / or numbers.', 'bp-rbe' );
+			$messages['key_error']       = __( 'Error: <strong>Key</strong> must only contain letters and / or numbers.', 'bp-rbe' );
 
 		if ( !empty( $input['keepalive'] ) && !is_numeric( $input['keepalive'] ) && !$output['keepalive'] )
-			$messages['keepalive_error']	= __( 'Error: <strong>Keep Alive Connection</strong> value must be less than 30.', 'bp-rbe' );
+			$messages['keepalive_error'] = __( 'Error: <strong>Keep Alive Connection</strong> value must be less than 30.', 'bp-rbe' );
 
 		if ( is_array( $messages ) )
 			 $output['messages'] = $messages;
@@ -229,51 +233,52 @@ class BP_Reply_By_Email_Admin {
 				<table class="form-table">
 					<?php $this->render_field(
 						array(
-							'type'		=> 'checkbox',
-							'name'		=> 'gmail',
-							'labelname'	=> __( 'GMail / Google Apps Mail', 'bp-rbe' ),
-							'desc'		=> sprintf( __( 'Using GMail? (This will override the Server Name, Port and Address Tag fields on save.) Also make sure to <a href="%s" target="_blank">enable IMAP in GMail</a>.', 'bp-rbe' ), 'http://mail.google.com/support/bin/answer.py?answer=77695' )
+							'type'      => 'checkbox',
+							'name'      => 'gmail',
+							'labelname' => __( 'GMail / Google Apps Mail', 'bp-rbe' ),
+							'desc'      => sprintf( __( 'Using GMail? (This will override the Server Name, Port and Address Tag fields on save.) Also make sure to <a href="%s" target="_blank">enable IMAP in GMail</a>.', 'bp-rbe' ), 'http://mail.google.com/support/bin/answer.py?answer=77695' )
 						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'name'		=> 'servername',
-							'labelname'	=> __( 'Server Name *', 'bp-rbe' )
+							'name'      => 'servername',
+							'labelname' => __( 'Server Name *', 'bp-rbe' )
 						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'name'		=> 'port',
-							'labelname'	=> __( 'Port *', 'bp-rbe' ),
-							'size'		=> 'small'
+							'name'      => 'port',
+							'labelname' => __( 'Port *', 'bp-rbe' ),
+							'size'      => 'small'
 						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'name'		=> 'tag',
-							'labelname'	=> __( 'Address Tag Separator *', 'bp-rbe' ),
-							'desc'		=> sprintf( __( 'Example: test@gmail.com is my email address, I can also receive email that is sent to test+anything@gmail.com.  The address tag separator for GMail is "+".  For other email providers, <a href="%s" target="_blank">view this page</a>.', 'bp-rbe' ), 'http://en.wikipedia.org/wiki/Email_address#Address_tags' ),
-							'size'		=> 'small'
+							'name'      => 'tag',
+							'labelname' => __( 'Address Tag Separator *', 'bp-rbe' ),
+							'desc'      => sprintf( __( 'Example: test@gmail.com is my email address, I can also receive email that is sent to test+anything@gmail.com.  The address tag separator for GMail is "+".  For other email providers, <a href="%s" target="_blank">view this page</a>.', 'bp-rbe' ), 'http://en.wikipedia.org/wiki/Email_address#Address_tags' ),
+							'size'      => 'small'
 						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'name'		=> 'username',
-							'labelname'	=> __( 'Username *', 'bp-rbe' )
+							'name'      => 'username',
+							'labelname' => __( 'Username *', 'bp-rbe' ),
+							'desc'      => __( 'For GMail users, enter your <strong>full email address</strong> as your username.', 'bp-rbe' )
 						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'type'		=> 'password',
-							'name'		=> 'password',
-							'labelname'	=> __( 'Password *', 'bp-rbe' )
+							'type'	    => 'password',
+							'name'	    => 'password',
+							'labelname' => __( 'Password *', 'bp-rbe' )
 						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'name'		=> 'email',
-							'labelname'	=> __( 'Email Address', 'bp-rbe' ),
-							'desc'		=> __( 'If your username is <strong>not</strong> the same as your email address, please fill in this field as well.', 'bp-rbe' )
+							'name'	    => 'email',
+							'labelname' => __( 'Email Address', 'bp-rbe' ),
+							'desc'      => __( 'If your username is <strong>not</strong> the same as your email address, please fill in this field as well.', 'bp-rbe' )
 						) ) ?>
 
 				</table>
@@ -283,17 +288,17 @@ class BP_Reply_By_Email_Admin {
 				<table class="form-table">
 					<?php $this->render_field(
 						array(
-							'name'		=> 'key',
-							'labelname'	=> __( 'Key *', 'bp-rbe' ),
-							'desc'		=> __( 'This key is used to verify incoming emails before anything is posted to BuddyPress.  By default, a key is randomly generated for you.  You should rarely have to change your key.  However, if you want to change it, please type in an alphanumeric key of your choosing.', 'bp-rbe' )
+							'name'      => 'key',
+							'labelname' => __( 'Key *', 'bp-rbe' ),
+							'desc'      => __( 'This key is used to verify incoming emails before anything is posted to BuddyPress.  By default, a key is randomly generated for you.  You should rarely have to change your key.  However, if you want to change it, please type in an alphanumeric key of your choosing.', 'bp-rbe' )
 						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'name'		=> 'keepalive',
-							'labelname'	=> __( 'Keep Alive Connection *', 'bp-rbe' ),
-							'desc'		=> sprintf( __( 'The length in minutes to stay connected to your inbox. Due to <a href="%s" target="_blank">RFC 2177 protocol</a>, this value cannot be larger than 29. If this value is changed, this will take effect on the next scheduled update.', 'bp-rbe' ), 'http://tools.ietf.org/html/rfc2177#page-2' ),
-							'size'		=> 'small'
+							'name'      => 'keepalive',
+							'labelname' => __( 'Keep Alive Connection *', 'bp-rbe' ),
+							'desc'      => sprintf( __( 'The length in minutes to stay connected to your inbox. Due to <a href="%s" target="_blank">RFC 2177 protocol</a>, this value cannot be larger than 29. If this value is changed, this will take effect on the next scheduled update.', 'bp-rbe' ), 'http://tools.ietf.org/html/rfc2177#page-2' ),
+							'size'      => 'small'
 						) ) ?>
 				</table>
 
@@ -355,10 +360,10 @@ class BP_Reply_By_Email_Admin {
 		$warnings = array();
 
 		if ( !function_exists( 'imap_open' ) )
-			$warnings[]	= __( 'IMAP extension for PHP is <strong>disabled</strong>.  This plugin will not run without it.  Please contact your webhost to enable this.', 'bp-rbe' );
+			$warnings[] = __( 'IMAP extension for PHP is <strong>disabled</strong>.  This plugin will not run without it.  Please contact your webhost to enable this.', 'bp-rbe' );
 
 		if ( ini_get('safe_mode') )
-			$warnings[]	= sprintf( __( 'PHP Safe Mode is <strong>on</strong>.  This is not a dealbreaker, but this means you cannot set the Keep Alive Connection value larger than %d minutes.', 'bp-rbe' ), bp_rbe_get_execution_time( 'minutes' ) );
+			$warnings[] = sprintf( __( 'PHP Safe Mode is <strong>on</strong>.  This is not a dealbreaker, but this means you cannot set the Keep Alive Connection value larger than %d minutes.', 'bp-rbe' ), bp_rbe_get_execution_time( 'minutes' ) );
 
 		if ( !empty( $warnings ) )
 			echo '<h3>' . __( 'Webhost Warnings', 'bp-rbe' ) . '</h3>';
@@ -377,7 +382,7 @@ class BP_Reply_By_Email_Admin {
 		// the correct IMAP server info...
 		if ( bp_rbe_is_required_completed() ) :
 			$next = wp_next_scheduled( 'bp_rbe_schedule' );
-			
+
 			if ( $next ) :
 	?>
 		<h3><?php _e( 'Schedule Info', 'bp-rbe' ); ?></h3>
@@ -407,13 +412,13 @@ class BP_Reply_By_Email_Admin {
 	 */
 	function render_field( $args = '' ) {
 		$defaults = array(
-			'type'		=> 'text',	// text, password, checkbox, radio, dropdown
-			'labelname'	=> '',		// the label for the field
-			'labelfor'	=> true,	// should <label> be used?
-			'name'		=> '',		// the input name of the field
-			'desc'		=> '',		// used to describe a checkbox, radio or option value
-			'size'		=> 'regular',	// text field size - small
-			'options'	=> array()	// options for checkbox, radio, select - not used currently
+			'type'      => 'text',	// text, password, checkbox, radio, dropdown
+			'labelname' => '',		// the label for the field
+			'labelfor'  => true,	// should <label> be used?
+			'name'      => '',		// the input name of the field
+			'desc'      => '',		// used to describe a checkbox, radio or option value
+			'size'      => 'regular',	// text field size - small
+			'options'   => array()	// options for checkbox, radio, select - not used currently
 		);
 
 		$r = wp_parse_args( $args, $defaults );
