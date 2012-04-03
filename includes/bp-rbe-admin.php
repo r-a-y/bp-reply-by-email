@@ -440,7 +440,7 @@ class BP_Reply_By_Email_Admin {
 					<legend class="screen-reader-text"><span><?php echo $labelname; ?></span></legend>
 
 					<label for="<?php $this->field( $name, true ) ?>">
-						<input type="checkbox" name="<?php $this->field( $name ) ?>" id="<?php $this->field( $name, true ) ?>" value="1" <?php checked( $this->settings[$name], 1 ); ?> />
+						<input type="checkbox" name="<?php $this->field( $name ) ?>" id="<?php $this->field( $name, true ) ?>" value="1" <?php if ( !empty( $this->settings[$name] ) ) checked( $this->settings[$name], 1 ); ?> />
 
 						<?php echo $desc; ?>
 				</label>
