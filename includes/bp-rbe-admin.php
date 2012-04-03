@@ -48,7 +48,7 @@ class BP_Reply_By_Email_Admin {
 		register_setting( $this->name, $this->name, array( &$this, 'validate' ) );
 
 		// add extra action links for our plugin
-		add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 2 );
+		add_filter( 'plugin_action_links',  array( &$this, 'add_plugin_action_links' ), 10, 2 );
 	}
 
 	/**
@@ -57,8 +57,8 @@ class BP_Reply_By_Email_Admin {
 	function setup_admin() {
 		$page = add_submenu_page( 'bp-general-settings', __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( &$this, 'load' ) );
 
-		//add_action( "admin_head-{$page}",	array( &$this, 'head' ) );
-		add_action( "admin_footer-{$page}",	array( &$this, 'footer' ) );
+		//add_action( "admin_head-{$page}", array( &$this, 'head' ) );
+		add_action( "admin_footer-{$page}", array( &$this, 'footer' ) );
 	}
 
 	/**
@@ -68,8 +68,8 @@ class BP_Reply_By_Email_Admin {
 	 * @param string $file A plugin's loader base filename
 	 */
 	function add_plugin_action_links( $links, $file ) {
-		$plugin_basename	= plugin_basename(__FILE__);
-		$plugin_basedir		= substr( $plugin_basename, 0, strpos( $plugin_basename, '/' ) );
+		$plugin_basename = plugin_basename(__FILE__);
+		$plugin_basedir	 = substr( $plugin_basename, 0, strpos( $plugin_basename, '/' ) );
 
 		// Do not do anything for other plugins
 		if ( $plugin_basedir . '/loader.php' != $file )
@@ -242,7 +242,7 @@ class BP_Reply_By_Email_Admin {
 					<?php $this->render_field(
 						array(
 							'name'      => 'servername',
-							'labelname' => __( 'Server Name *', 'bp-rbe' )
+							'labelname' => __( 'Mail Server *', 'bp-rbe' )
 						) ) ?>
 
 					<?php $this->render_field(
@@ -412,13 +412,13 @@ class BP_Reply_By_Email_Admin {
 	 */
 	function render_field( $args = '' ) {
 		$defaults = array(
-			'type'      => 'text',	// text, password, checkbox, radio, dropdown
-			'labelname' => '',		// the label for the field
-			'labelfor'  => true,	// should <label> be used?
-			'name'      => '',		// the input name of the field
-			'desc'      => '',		// used to describe a checkbox, radio or option value
-			'size'      => 'regular',	// text field size - small
-			'options'   => array()	// options for checkbox, radio, select - not used currently
+			'type'      => 'text',    // text, password, checkbox, radio, dropdown
+			'labelname' => '',        // the label for the field
+			'labelfor'  => true,      // should <label> be used?
+			'name'      => '',        // the input name of the field
+			'desc'      => '',        // used to describe a checkbox, radio or option value
+			'size'      => 'regular', // text field size - small
+			'options'   => array()    // options for checkbox, radio, select - not used currently
 		);
 
 		$r = wp_parse_args( $args, $defaults );
@@ -455,7 +455,7 @@ class BP_Reply_By_Email_Admin {
 				<input class="<?php echo $size; ?>-text" value="<?php $this->get_option( $name ) ?>" name="<?php $this->field( $name ) ?>" id="<?php $this->field( $name, true ) ?>" type="<?php echo $type; ?>" />
 			<?php
 				if ( $desc )
-					echo '<span class="setting-description">' . $desc . '</span>';
+					echo '<span class="description">' . $desc . '</span>';
 			break;
 		}
 
