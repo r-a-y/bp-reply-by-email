@@ -187,6 +187,52 @@ class BP_Reply_By_Email_Admin {
 		if ( ini_get( 'safe_mode' ) )
 			$output['keepalive'] = $input['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
 
+		// if username, password or server settings have changed, let's test the new credentials
+		$username_changed = ( empty( $this->settings['username'] ) && !empty( $output['username'] ) ) 
+					|| ( !empty( $this->settings['username'] ) && !empty( $output['username'] ) && $output['username'] != $this->settings['username'] );
+
+		$password_changed = ( empty( $this->settings['password'] ) && !empty( $output['password'] ) ) 
+					|| ( !empty( $this->settings['password'] ) && !empty( $output['password'] ) && $output['password'] != $this->settings['password'] );
+
+		$server_changed   = ( empty( $this->settings['servername'] ) && !empty( $output['servername'] ) ) 
+					|| ( !empty( $this->settings['servername'] ) && !empty( $output['servername'] ) && $output['servername'] != $this->settings['servername'] );
+
+		$messages = false;
+
+		if ( $username_changed || $password_changed || $server_changed ) {
+			if ( function_exists( 'imap_open' ) ) {
+				// This needs some testing...
+				$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
+				
+				// Need to readjust this before public release
+				// In the meantime, let's add a filter!
+				$hostname = '{' . $output['servername'] . ':' . $output['port'] . '/imap' . $ssl . '}INBOX';
+				$hostname = apply_filters( 'bp_rbe_hostname', $hostname );
+
+				// if PHP is 5.2+, use extra parameter to only try connecting once
+				if ( version_compare( PHP_VERSION, '5.2.0') >= 0 ) {
+					$imap = @imap_open( $hostname, $output['username'], $output['password'], 0, 1 );
+				}
+				// PHP is older, so use the default retry value of 3
+				else {
+					$imap = @imap_open( $hostname, $output['username'], $output['password'] );
+				}
+				
+				// if connection failed, add an error
+				if ( $imap === false ) {
+					bp_rbe_stop_imap();
+					$errors = imap_errors();
+					$messages['connect_error'] = sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), $errors[0] );
+					$output['connect'] = 0;
+				}
+				// connection was successful, now close the connection
+				else {
+					$output['connect'] = 1;
+					imap_close( $imap );
+				}
+			}
+		}
+
 		/* error time! */
 
 		if ( strlen( $input['tag'] ) > 1 && !$output['tag'] )
@@ -211,6 +257,7 @@ class BP_Reply_By_Email_Admin {
 	 * Output the admin page.
 	 */
 	function load() {
+		global $bp_rbe;
 	?>
 		<div class="wrap">
 			<?php screen_icon('edit-comments'); ?>
@@ -220,6 +267,8 @@ class BP_Reply_By_Email_Admin {
 			<?php $this->display_errors() ?>
 
 			<?php $this->webhost_warnings() ?>
+			
+			<?php //var_dump( $bp_rbe->imap ); ?>
 
 			<form action="options.php" method="post">
 				<?php settings_fields( $this->name ); ?>
@@ -339,7 +388,7 @@ class BP_Reply_By_Email_Admin {
 		// output error message(s)
 		if ( !empty( $option['messages'] ) && is_array( $option['messages'] ) ) :
 			foreach ( (array) $option['messages'] as $id => $message ) :
-				echo "<div id='message' class='error fade $slug'><p>$message</p></div>";
+				echo "<div id='message' class='error fade $id'><p>$message</p></div>";
 				unset( $option['messages'][$id] );
 			endforeach;
 
