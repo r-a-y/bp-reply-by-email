@@ -28,6 +28,9 @@ if ( bp_rbe_is_required_completed() ) :
 	 */
 	add_action( 'bp_rbe_imap_no_match',           'imap_delete',            10, 2 );
 	add_action( 'bp_rbe_imap_loop',               'bp_rbe_parsed_to_trash', 10, 2 );
+
+	// log error messages
+	add_action( 'bp_rbe_imap_no_match',           'bp_rbe_imap_log_no_matches', 10, 4 );
 	
 	/**
 	 * Outright delete the emails that are marked for deletion once we're done.

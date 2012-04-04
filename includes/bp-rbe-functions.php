@@ -25,10 +25,10 @@ function bp_rbe_is_required_completed( $settings = false ) {
 	if ( !is_array( $settings ) || !function_exists( 'imap_open' ) )
 		return false;
 
-	$required_key = array( 'servername', 'port', 'tag', 'username', 'password', 'key', 'keepalive' );
+	$required_key = array( 'servername', 'port', 'tag', 'username', 'password', 'key', 'keepalive', 'connect' );
 
 	foreach ( $required_key as $required ) :
-		if ( !isset( $settings[$required] ) )
+		if ( empty( $settings[$required] ) )
 			return false;
 	endforeach;
 
@@ -271,17 +271,39 @@ function bp_rbe_is_imap_ssl( $openssl_check = true ) {
 
 	if ( $imap['imap']['SSL Support'] == 'enabled' ) {
 		if ( $openssl_check ) {
-			if ( $imap['openssl']['OpenSSL support'] == 'enabled' )
-				return true;
-
-			return false;
+			if ( $imap['openssl']['OpenSSL support'] == 'enabled' ) {
+				$retval = true;
+			}
+			else {
+				$retval = false;
+			}
 		}
 		else {
-			return true;
+			$retval = true;
 		}
 	}
+	else {
+		$retval = false;
+	}
+	
+	return apply_filters( 'bp_rbe_is_imap_ssl', $retval );
+}
 
-	return false;
+/**
+ * Logs BP Reply To Email actions to a debug log.
+ *
+ * @uses error_log()
+ * @since 1.0-beta
+ */
+function bp_rbe_log( $message ) {
+	// if debugging is off, stop now.
+	if ( ! constant( 'BP_RBE_DEBUG' ) )
+		return;
+
+	if ( empty( $message ) )
+		return;
+
+	error_log( '[' . gmdate( 'd-M-Y H:i:s' ) . '] ' . $message . "\n", 3, BP_RBE_DEBUG_LOG_PATH );
 }
 
 /** Hook-related ********************************************************/
@@ -325,8 +347,13 @@ function bp_rbe_activity_comment_action_filter( $user_id ) {
  * @since 1.0-beta
  */
 function bp_rbe_activity_comment_view_link( $link, $activity ) {
-	if ( $activity->type == 'activity_comment' )
-		return ' &middot; <a href="' . bp_activity_get_permalink( $activity->id, $activity->activity ) . '#acomment-' . $activity->id . '" class="view" title="' . __( 'View Thread / Permalink', 'buddypress' ) . '">' . __( 'View', 'buddypress' ) . '</a>';
+	if ( $activity->type == 'activity_comment' ) {
+		$action = apply_filters_ref_array( 'bp_get_activity_action_pre_meta', array( $activity->action, &$activity ) );
+
+		$time_since = apply_filters_ref_array( 'bp_activity_time_since', array( '<span class="time-since">' . bp_core_time_since( $activity->date_recorded ) . '</span>', &$activity ) );
+
+		return $action . ' <a href="' . bp_activity_get_permalink( $activity->id ) . '#acomment-' . $activity->id . '" class="view activity-time-since" title="' . __( 'View Discussion', 'buddypress' ) . '">' . $time_since . '</a>';
+	}
 
 	return $link;
 }
@@ -366,6 +393,55 @@ function bp_rbe_parsed_to_trash( $imap, $i ) {
 		imap_mail_move( $imap, $i, '[Gmail]/Trash' );
 	else
 		imap_delete( $imap, $i );
+}
+
+/**
+ * After successfully posting an email message to BuddyPress,
+ * we mark the email for deletion for user privacy issues.
+ *
+ * In GMail, we have to move the message to the Trash folder,
+ * since deleting an email simply moves it to "All Mail".
+ *
+ * @param resource $imap The current IMAP connection
+ * @param int $i The current message number
+ * @since 1.0-beta
+ */
+function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
+	$message = false;
+
+	switch ( $type ) {
+		case 'no_user_id' :
+			$message = 'error - no user ID could be found';
+			break;
+
+		case 'no_params' :
+			$message = 'error - no parameters were found';
+			break;
+
+		case 'no_reply_body' :
+		case 'new_forum_topic_empty' :
+			$message = 'error - body message was empty';
+			break;
+
+		case 'root_activity_deleted' :
+			$message = 'error - the root activity update was deleted before this could be posted';
+			break;
+
+		case 'root_or_parent_activity_deleted' :
+			$message = 'error - the root or parent activity update was deleted before this could be posted';
+			break;
+
+		case 'forum_reply_fail' :
+			$message = 'error - forum reply failed to post';
+			break;
+
+		case 'forum_topic_fail' :
+			$message = 'error - forum topic failed to be created';
+			break;
+	}
+
+	if ( $message )
+		bp_rbe_log( 'Message #' . $i . ': ' . $message );
 }
 
 /**
@@ -437,8 +513,8 @@ function bp_rbe_new_topic_info() {
 function bp_rbe_custom_cron_schedule( $schedules ) {
 
 	$schedules['bp_rbe_custom'] = array(
-		'interval'	=> bp_rbe_get_execution_time() + 15,	// interval in seconds; add 15 seconds leeway
-		'display'	=> sprintf( __( 'Every %s minutes', 'bp-rbe' ), bp_rbe_get_execution_time( 'minutes' ) )
+		'interval' => bp_rbe_get_execution_time() + 15,	// interval in seconds; add 15 seconds leeway
+		'display'  => sprintf( __( 'Every %s minutes', 'bp-rbe' ), bp_rbe_get_execution_time( 'minutes' ) )
 	);
 
 	return $schedules;
@@ -466,7 +542,7 @@ function bp_rbe_check_imap_inbox() {
 	// check to see if the imap resource is still connected
 	// if so, stop parsing the IMAP inbox
 	// @todo need to test this some more
-	if ( is_resource( $bp_rbe->imap->imap ) ) {
+	if ( !empty( $bp_rbe->imap ) && is_resource( $bp_rbe->imap->imap ) ) {
 		bp_rbe_stop_imap();
 
 		// give the IMAP loop a chance to terminate
@@ -490,7 +566,7 @@ function bp_rbe_check_imap_inbox() {
  * @since 1.0-beta
  */
 function bp_rbe_stop_imap() {
-	touch( BP_AVATAR_UPLOAD_PATH . '/bp-rbe-stop.txt' );
+	touch( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' );
 }
 
 /** Modified BP functions ***********************************************/
@@ -517,36 +593,36 @@ function bp_rbe_groups_new_group_forum_post( $post_text, $topic_id, $user_id, $g
 	if ( empty( $post_text ) )
 		return false;
 
-	$post_text	= apply_filters( 'group_forum_post_text_before_save', $post_text );
-	$topic_id	= apply_filters( 'group_forum_post_topic_id_before_save', $topic_id );
+	$post_text = apply_filters( 'group_forum_post_text_before_save', $post_text );
+	$topic_id  = apply_filters( 'group_forum_post_topic_id_before_save', $topic_id );
 
 	if ( $post_id = bp_forums_insert_post( array( 'post_text' => $post_text, 'topic_id' => $topic_id, 'poster_id' => $user_id ) ) ) {
 
-		$topic 			= bp_forums_get_topic_details( $topic_id );
-		$group 			= new BP_Groups_Group( $group_id );
+		$topic = bp_forums_get_topic_details( $topic_id );
+		$group = new BP_Groups_Group( $group_id );
 
 		// If no page passed, calculate the page where the new post will reside.
 		// I should backport this to BP.
 		if ( !$page ) {
-			$pag_num	= apply_filters( 'bp_rbe_topic_pag_num', 15 );
-			$page		= ceil( $topic->topic_posts / $pag_num );
+			$pag_num = apply_filters( 'bp_rbe_topic_pag_num', 15 );
+			$page    = ceil( $topic->topic_posts / $pag_num );
 		}
 
-		$activity_action	= sprintf( __( '%s posted on the forum topic %s in the group %s via email:', 'bp-rbe'), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
-		$activity_content	= bp_create_excerpt( $post_text );
-		$primary_link		= bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug . '/?topic_page=' . $page;
+		$activity_action  = sprintf( __( '%s posted on the forum topic %s in the group %s via email:', 'bp-rbe'), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
+		$activity_content = bp_create_excerpt( $post_text );
+		$primary_link     = bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug . '/?topic_page=' . $page;
 
 		/* Record this in activity streams */
 		bp_activity_add( array(
-			'user_id'		=> $user_id,
-			'action'		=> apply_filters( 'groups_activity_new_forum_post_action', $activity_action, $post_id, $post_text, &$topic ),
-			'content'		=> apply_filters( 'groups_activity_new_forum_post_content', $activity_content, $post_id, $post_text, &$topic ),
-			'primary_link'		=> apply_filters( 'groups_activity_new_forum_post_primary_link', "{$primary_link}#post-{$post_id}" ),
-			'component'		=> $bp->groups->id,
-			'type'			=> 'new_forum_post',
-			'item_id'		=> $group_id,
-			'secondary_item_id'	=> $topic_id,
-			'hide_sitewide'		=> ( $group->status == 'public' ) ? false : true
+			'user_id'           => $user_id,
+			'action'            => apply_filters( 'groups_activity_new_forum_post_action', $activity_action, $post_id, $post_text, &$topic ),
+			'content'           => apply_filters( 'groups_activity_new_forum_post_content', $activity_content, $post_id, $post_text, &$topic ),
+			'primary_link'      => apply_filters( 'groups_activity_new_forum_post_primary_link', "{$primary_link}#post-{$post_id}" ),
+			'component'         => $bp->groups->id,
+			'type'              => 'new_forum_post',
+			'item_id'           => $group_id,
+			'secondary_item_id' => $topic_id,
+			'hide_sitewide'     => ( $group->status == 'public' ) ? false : true
 		) );
 
 		do_action( 'groups_new_forum_topic_post', $group_id, $post_id );
@@ -583,30 +659,39 @@ function bp_rbe_groups_new_group_forum_topic( $topic_title, $topic_text, $topic_
 	if ( empty( $forum_id ) )
 		$forum_id = groups_get_groupmeta( $group_id, 'forum_id' );
 
-	$topic_title	= apply_filters( 'group_forum_topic_title_before_save', $topic_title );
-	$topic_text	= apply_filters( 'group_forum_topic_text_before_save', $topic_text );
-	$topic_tags	= apply_filters( 'group_forum_topic_tags_before_save', $topic_tags );
-	$forum_id	= apply_filters( 'group_forum_topic_forum_id_before_save', $forum_id );
+	$topic_title = apply_filters( 'group_forum_topic_title_before_save', $topic_title );
+	$topic_text  = apply_filters( 'group_forum_topic_text_before_save', $topic_text );
+	$topic_tags  = apply_filters( 'group_forum_topic_tags_before_save', $topic_tags );
+	$forum_id    = apply_filters( 'group_forum_topic_forum_id_before_save', $forum_id );
 
-	if ( $topic_id = bp_forums_new_topic( array( 'topic_title' => $topic_title, 'topic_text' => $topic_text, 'topic_tags' => $topic_tags, 'forum_id' => $forum_id, 'topic_poster' => $user_id, 'topic_last_poster' => $user_id, 'topic_poster_name' => bp_core_get_user_displayname( $user_id ), 'topic_last_poster_name' => bp_core_get_user_displayname( $user_id ) ) ) ) {
+	if ( $topic_id = bp_forums_new_topic( array( 
+		'topic_title'            => $topic_title, 
+		'topic_text'             => $topic_text, 
+		'topic_tags'             => $topic_tags, 
+		'forum_id'               => $forum_id, 
+		'topic_poster'           => $user_id, 
+		'topic_last_poster'      => $user_id, 
+		'topic_poster_name'      => bp_core_get_user_displayname( $user_id ), 
+		'topic_last_poster_name' => bp_core_get_user_displayname( $user_id )
+	) ) ) {
 
-		$topic 			= bp_forums_get_topic_details( $topic_id );
-		$group 			= new BP_Groups_Group( $group_id );
+		$topic = bp_forums_get_topic_details( $topic_id );
+		$group = new BP_Groups_Group( $group_id );
 
-		$activity_action	= sprintf( __( '%s started the forum topic %s in the group %s via email:', 'bp-rbe' ), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
-		$activity_content	= bp_create_excerpt( $topic_text );
+		$activity_action  = sprintf( __( '%s started the forum topic %s in the group %s via email:', 'bp-rbe' ), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
+		$activity_content = bp_create_excerpt( $topic_text );
 
 		/* Record this in activity streams */
 		bp_activity_add( array(
-			'user_id'		=> $user_id,
-			'action'		=> apply_filters( 'groups_activity_new_forum_topic_action', $activity_action, $topic_text, &$topic ),
-			'content'		=> apply_filters( 'groups_activity_new_forum_topic_content', $activity_content, $topic_text, &$topic ),
-			'primary_link'		=> apply_filters( 'groups_activity_new_forum_topic_primary_link', bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug . '/' ),
-			'component'		=> $bp->groups->id,
-			'type'			=> 'new_forum_topic',
-			'item_id'		=> $group_id,
-			'secondary_item_id'	=> $topic_id,
-			'hide_sitewide'		=> ( $group->status == 'public' ) ? false : true
+			'user_id'            => $user_id,
+			'action'             => apply_filters( 'groups_activity_new_forum_topic_action', $activity_action, $topic_text, &$topic ),
+			'content'            => apply_filters( 'groups_activity_new_forum_topic_content', $activity_content, $topic_text, &$topic ),
+			'primary_link'       => apply_filters( 'groups_activity_new_forum_topic_primary_link', bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug . '/' ),
+			'component'          => $bp->groups->id,
+			'type'               => 'new_forum_topic',
+			'item_id'            => $group_id,
+			'secondary_item_id'  => $topic_id,
+			'hide_sitewide'      => ( $group->status == 'public' ) ? false : true
 		) );
 
 		do_action( 'groups_new_forum_topic', $group_id, &$topic );
@@ -641,13 +726,13 @@ function bp_rbe_groups_encoded_email_address( $user_id = false, $group_id = fals
 	function bp_rbe_groups_get_encoded_email_address( $user_id = false, $group_id = false ) {
 		global $bp;
 
-		$user_id	= !$user_id ? $bp->loggedin_user->id : $user_id;
-		$group_id	= !$group_id ? $bp->groups->current_group->id : $group_id;
+		$user_id  = !$user_id ? $bp->loggedin_user->id : $user_id;
+		$group_id = !$group_id ? $bp->groups->current_group->id : $group_id;
 
 		if ( !$user_id || !$group_id )
 			return false;
 
-		$gstring = 'g=' . $group_id;
+		$gstring     = 'g=' . $group_id;
 
 		$querystring = apply_filters( 'bp_rbe_encode_group_querystring', bp_rbe_encode( $gstring, $user_id ), $user_id, $group_id );
 

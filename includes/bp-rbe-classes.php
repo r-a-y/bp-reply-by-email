@@ -22,16 +22,19 @@ class BP_Reply_By_Email_IMAP {
 	 * The main function we use to parse an IMAP inbox.
 	 */
 	function init() {
-		global $bp, $bp_rbe;
+		global $bp, $bp_rbe, $wpdb;
 
 		// If safe mode isn't on, then let's set the execution time to unlimited
 		if ( !ini_get( 'safe_mode' ) )
 			set_time_limit(0);
 
 		// Try to connect
-		$this->connect();
-		//error_log( 'Start connection to IMAP inbox' );
+		$connect = $this->connect();
 
+		if ( ! $connect ) {
+			return false;
+		}
+		
 		// Total duration we should keep the IMAP stream alive for in seconds
 		$duration = bp_rbe_get_execution_time();
 
@@ -50,23 +53,19 @@ class BP_Reply_By_Email_IMAP {
 				// This speeds up rendering the email headers... could be wrong
 				imap_headers( $this->imap );
 
+				bp_rbe_log( '- Checking inbox -' );
+				
 				// Loop through each email message
 				for ( $i = 1; $i <= $msg_num; ++$i ) :
 
 					$headers = $this->header_parser( $this->imap, $i );
-
-					//error_log( 'Message #' . $i . ': headers - start parsing' );
 
 					if ( !$headers ) {
 						do_action( 'bp_rbe_imap_no_match', $this->imap, $i, false, 'no_headers' );
 						continue;
 					}
 
-					//error_log( 'Message #' . $i . ': get user id' );
-
-					// Grab user ID via "From" email address
-					if ( !function_exists( 'email_exists' ) )
-						require_once( ABSPATH . WPINC . '/registration.php' );
+					bp_rbe_log( 'Message #' . $i . ' of ' . $msg_num . ': email headers successfully parsed' );
 
 					$user_id = email_exists( $this->address_parser( $headers, 'From' ) );
 
@@ -75,7 +74,7 @@ class BP_Reply_By_Email_IMAP {
 						continue;
 					}
 
-					//error_log( 'Message #' . $i . ': get address tag' );
+					bp_rbe_log( 'Message #' . $i . ': user id successfully parsed - user id is - ' . $user_id );
 
 					// Grab address tag from "To" email address
 					$qs = $this->get_address_tag( $this->address_parser( $headers, 'To' ) );
@@ -85,6 +84,8 @@ class BP_Reply_By_Email_IMAP {
 						continue;
 					}
 
+					bp_rbe_log( 'Message #' . $i . ': address tag successfully parsed' );
+
 					// Parse our encoded querystring into variables
 					// Check if we're posting a new item or not
 					if ( $this->is_new_item( $qs ) )
@@ -92,14 +93,12 @@ class BP_Reply_By_Email_IMAP {
 					else
 						$params = $this->querystring_parser( $qs );
 
-					//error_log( 'Message #' . $i . ': params = ' . print_r($params, true) );
-
 					if ( !$params ) {
 						do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'no_params' );
 						continue;
 					}
 
-					//error_log( 'Message #' . $i . ': attempting to parse body' );
+					bp_rbe_log( 'Message #' . $i . ': params = ' . print_r( $params, true ) );
 
 					// Parse email body
 					$body = $this->body_parser( $this->imap, $i );
@@ -111,20 +110,26 @@ class BP_Reply_By_Email_IMAP {
 					}
 
 					// Extract each param into its own variable
-					extract( $params, EXTR_SKIP );
+					extract( $params );
 
 					// Activity reply
 					if ( !empty( $a ) ) :
+						bp_rbe_log( 'Message #' . $i . ': this is an activity reply, checking if parent activities still exist' );
 
 						// Check to see if the root activity ID and the parent activity ID exist before posting
-						// "show_hidden" is used for BP 1.3 compatibility
-						$activities_exist = bp_activity_get_specific( 'show_hidden=true&activity_ids=' . $a . ',' . $p );
+						$activity_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$bp->activity->table_name} WHERE id IN ( {$a}, {$p} );" ) );
 
-						// If count != 2, this means either the super admin or activity author deleted the update(s)
-						// If so, do not post the reply!
-						if ( $activities_exist['total'] != 2 ) {
-							do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'root_or_parent_activity_deleted' );
+						// If $a = $p, this means that we're replying to a top-level activity update
+						// So check if activity count is 1
+						if ( $a == $p && $activity_count != 1 ) {
+							do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'root_activity_deleted' );
 							continue;
+						}
+						// If we're here, this means we're replying to an activity comment
+						// If count != 2, this means either the super admin or activity author has deleted one of the update(s)
+						elseif ( $a != $p && $activity_count != 2 ) {
+							do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'root_or_parent_activity_deleted' );
+							continue;						
 						}
 
 						/* Let's start posting! */
@@ -135,22 +140,29 @@ class BP_Reply_By_Email_IMAP {
 							 array(
 								'content'	=> $body,
 								'user_id'	=> $user_id,
-								'activity_id'	=> $a,	// ID of the root activity item
-								'parent_id'	=> $p	// ID of the parent comment
+								'activity_id'	=> $a, // ID of the root activity item
+								'parent_id'	=> $p  // ID of the parent comment
 							)
 						);
 
+						bp_rbe_log( 'Message #' . $i . ': activity comment successfully posted!' );
+
 						// remove the filter after posting
 						remove_filter( 'bp_activity_comment_action', 'bp_rbe_activity_comment_action' );
-						unset( $activities_exist );
+						unset( $activities_count );
+						unset( $a );
+						unset( $p );
 
 					// Forum reply
 					elseif ( !empty( $t ) ) :
 
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
+							bp_rbe_log( 'Message #' . $i . ': this is a forum reply' );
+
+							$can_post = apply_filters( 'bp_rbe_group_can_post', user_can( $user_id, 'edit_users' ), $user_id );
 
 							// If user is a member of the group and not banned, then let's post the forum reply!
-							if ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) {
+							if ( $can_post || ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) ) {
 								$forum_post_id = bp_rbe_groups_new_group_forum_post( $body, $t, $user_id, $g );
 
 								if ( !$forum_post_id ) {
@@ -158,37 +170,51 @@ class BP_Reply_By_Email_IMAP {
 									continue;
 								}
 
+								bp_rbe_log( 'Message #' . $i . ': forum reply successfully posted!' );
+
 								// could potentially add attachments
 								do_action( 'bp_rbe_email_new_forum_post', $this->imap, $i, $forum_post_id, $g, $user_id );
 							}
+							
+							unset( $t );
 						endif;
 
 					// Private message reply
 					elseif ( !empty( $m ) ) :
 						if ( bp_is_active( $bp->messages->id ) ) :
+							bp_rbe_log( 'Message #' . $i . ': this is a private message reply' );
+
 							messages_new_message (
 								array(
-									'thread_id'	=> $m,
-									'sender_id'	=> $user_id,
-									'content'	=> $body
+									'thread_id' => $m,
+									'sender_id' => $user_id,
+									'content'   => $body
 								)
 							);
+							
+							bp_rbe_log( 'Message #' . $i . ': PM reply successfully posted!' );
+
+							unset( $m );
 						endif;
 
 					// New forum topic
 					elseif ( !empty( $g ) ) :
 
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
-							$body		= $this->body_parser( $this->imap, $i, false );
-							$subject	= $this->address_parser( $headers, 'Subject' );
+							bp_rbe_log( 'Message #' . $i . ': this is a new forum topic' );
+
+							$body    = $this->body_parser( $this->imap, $i, false );
+							$subject = $this->address_parser( $headers, 'Subject' );
 
 							if ( empty( $body ) || empty( $subject ) ) {
 								do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'new_forum_topic_empty' );
 								continue;
 							}
 
+							$can_post = apply_filters( 'bp_rbe_group_can_post', user_can( $user_id, 'edit_users' ), $user_id );
+
 							// If user is a member of the group and not banned, then let's post the forum topic!
-							if ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) {
+							if ( $can_post || ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) ) {
 								$topic = bp_rbe_groups_new_group_forum_topic( $subject, $body, false, false, $user_id, $g );
 
 								if ( !$topic ) {
@@ -196,9 +222,14 @@ class BP_Reply_By_Email_IMAP {
 									continue;
 								}
 
+								bp_rbe_log( 'Message #' . $i . ': forum topic successfully posted!' );
+
 								// could potentially add attachments
 								do_action_ref_array( 'bp_rbe_email_new_forum_topic', array( $this->imap, $i, &$topic, $g, $user_id ) );
 							}
+							
+							unset( $g );
+							unset( $subject );
 						endif;
 					endif;
 
@@ -220,7 +251,7 @@ class BP_Reply_By_Email_IMAP {
 			// stop the loop if necessary
 			if ( $this->should_stop() ) {
 				$this->close();
-				//error_log( 'bp-rbe: Manual deactivate confirmed! Kaching!' );
+				bp_rbe_log( '--- Manual termination of connection confirmed! Kaching! ---' );
 				return;
 			}
 
@@ -231,14 +262,12 @@ class BP_Reply_By_Email_IMAP {
 			if( !imap_ping( $this->imap ) )
 				$this->connect();
 
-
 			// Unset some variables to clear some memory
 			unset( $msg_num );
 		endfor;
 
-		//error_log( 'Close connection to IMAP inbox' );
-
 		$this->close();
+		bp_rbe_log( '--- Closing current connection automatically ---' );
 	}
 
 	/**
@@ -252,16 +281,26 @@ class BP_Reply_By_Email_IMAP {
 			return;
 
 		// This needs some testing...
-		$is_ssl = apply_filters( 'bp_rbe_ssl', bp_rbe_is_imap_ssl() );
-		$ssl = ( $is_ssl ) ? '/ssl' : '';
+		$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
 		
 		// Need to readjust this before public release
 		// In the meantime, let's add a filter!
 		$hostname = '{' . $bp_rbe->settings['servername'] . ':' . $bp_rbe->settings['port'] . '/imap' . $ssl . '}INBOX';
 		$hostname = apply_filters( 'bp_rbe_hostname', $hostname );
 
+		bp_rbe_log( '--- Attempting to start new connection... ---' );
+
 		// Let's open the IMAP stream!
-		$this->imap = imap_open( $hostname, $bp_rbe->settings['username'], $bp_rbe->settings['password'] ) or die( 'Cannot connect: ' . imap_last_error() );
+		$this->imap = imap_open( $hostname, $bp_rbe->settings['username'], $bp_rbe->settings['password'] );
+		
+		if ( $this->imap === false ) {
+			bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
+			return false;
+		}
+		
+		bp_rbe_log( '--- Connection successful! ---' );
+		
+		return true;
 	}
 
 	/**
@@ -288,8 +327,8 @@ class BP_Reply_By_Email_IMAP {
 	function should_stop() {
 		clearstatcache();
 
-		if ( file_exists( BP_AVATAR_UPLOAD_PATH . '/bp-rbe-stop.txt' ) ) {
-			unlink( BP_AVATAR_UPLOAD_PATH . '/bp-rbe-stop.txt' ); // delete the file for next time
+		if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ) ) {
+			unlink( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ); // delete the file for next time
 			return true;
 		}
 
@@ -316,13 +355,17 @@ class BP_Reply_By_Email_IMAP {
 		$headers = array_combine( $matches[1], $matches[2] );
 
 		// No headers? Return false
-		if ( empty( $headers ) )
+		if ( empty( $headers ) ) {
+			bp_rbe_log( 'Message #' . $i . ': error - no headers found' );
 			return false;
+		}
 
 		// Test to see if our email is an auto-reply message
 		// If so, return false
-		if ( !empty( $headers['X-Autoreply'] ) && $headers['X-Autoreply'] == 'yes' )
+		if ( !empty( $headers['X-Autoreply'] ) && $headers['X-Autoreply'] == 'yes' ) {
+			bp_rbe_log( 'Message #' . $i . ': error - this is an autoreply message, so stop now!' );
 			return false;
+		}
 
 		// Test to see if our email is an out of office automated reply or mailing list email
 		// If so, return false
@@ -332,6 +375,7 @@ class BP_Reply_By_Email_IMAP {
 				case 'bulk' :
 				case 'junk' :
 				case 'list' :
+					bp_rbe_log( 'Message #' . $i . ': error - this is some type of bulk / junk / mailing list email, so stop now!' );
 					return false;
 				break;
 			}
@@ -369,9 +413,12 @@ class BP_Reply_By_Email_IMAP {
 			$body = apply_filters( 'bp_rbe_parse_email_body_reply', trim( substr( $body, 0, $pointer ) ), $body );
 		}
 
-		if ( empty( $body ) )
+		if ( empty( $body ) ) {
+			bp_rbe_log( 'Message #' . $i . ': empty body' );
 			return false;
+		}
 
+		bp_rbe_log( 'Message #' . $i . ': body contents - ' . $body );
 		return apply_filters( 'bp_rbe_parse_email_body', trim( $body ) );
 	}
 
@@ -385,13 +432,22 @@ class BP_Reply_By_Email_IMAP {
 	 * @return mixed Either the email address on success or false on failure
 	 */
 	function address_parser( $headers, $key ) {
-		if ( empty( $headers[$key] ) || strpos( $headers[$key], '@' ) === false )
+		if ( empty( $headers[$key] ) ) {
+			bp_rbe_log( $key . ' parser - empty key' );
 			return false;
+		}
+
+		if ( $key == 'To' && strpos( $headers[$key], '@' ) === false ) {
+			bp_rbe_log( $key . ' parser - missing email address' );
+			return false;			
+		}
 
 		// Sender is attempting to send to multiple recipients in the "To" header
 		// A legit BP reply will not add multiple recipients, so let's return false
-		if ( $key == 'To' && strpos( $headers['To'], ',' ) !== false )
+		if ( $key == 'To' && strpos( $headers['To'], ',' ) !== false ) {
+			bp_rbe_log( $key . ' parser - multiple recipients - so stop!' );
 			return false;
+		}
 
 		// grab email address in between triangular brackets if they exist
 		// strip the rest
@@ -402,6 +458,8 @@ class BP_Reply_By_Email_IMAP {
 
 			$headers[$key] = substr( $headers[$key], ++$lbracket, $rbracket - $lbracket );
 		}
+
+		//bp_rbe_log( $key . ' parser - ' . $headers[$key] );
 
 		return $headers[$key];
 	}
@@ -422,8 +480,8 @@ class BP_Reply_By_Email_IMAP {
 		if ( !$address )
 			return false;
 
-		$at	= strpos( $address, '@' );
-		$tag	= strpos( $address, $bp_rbe->settings['tag'] );
+		$at  = strpos( $address, '@' );
+		$tag = strpos( $address, $bp_rbe->settings['tag'] );
 
 		if ( $at === false || $tag === false )
 			return false;
@@ -471,11 +529,11 @@ class BP_Reply_By_Email_IMAP {
 
 		// These are the default params we want to check for
 		$defaults = array(
-			'a' => false,	// root activity id
-			'p' => false,	// direct parent activity id
-			't' => false,	// topic id
-			'm' => false,	// message thread id
-			'g' => false	// group id
+			'a' => false, // root activity id
+			'p' => false, // direct parent activity id
+			't' => false, // topic id
+			'm' => false, // message thread id
+			'g' => false  // group id
 		);
 
 		// Let 3rd-party plugins whitelist additional params
