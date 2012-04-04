@@ -2,8 +2,8 @@
 Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
-Requires at least: WordPress 3.0, BuddyPress 1.2.6
-Tested up to: WordPress 3.2+, BuddyPress 1.3+
+Requires at least: WordPress 3.2, BuddyPress 1.5
+Tested up to: WordPress 3.3.1, BuddyPress 1.5.5
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -89,6 +89,13 @@ If you know of any others, let me know and I'll list them here!
 
 
 == Changelog ==
+
+= 1.0-beta-20120404 =
+* Requires at least BP 1.5.
+* When email settings are saved, check to see if the connection is valid.
+* Add a debug log. By default, debug log is created at /wp-content/bp-rbe-debug.txt
+* Fix posting new forum topics.
+* Fix various bugs and notices.
 
 = 1.0-beta =
 * Initial private release

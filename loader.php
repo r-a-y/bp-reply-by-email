@@ -4,7 +4,7 @@ Plugin Name: BuddyPress Reply By Email
 Description: Reply to BuddyPress items from the comfort of your email inbox.
 Author: r-a-y
 Author URI: http://buddypress.org/community/members/r-a-y/
-Version: 1.0-beta
+Version: 1.0-beta-20120404
 */
 
 /**
@@ -17,6 +17,12 @@ Version: 1.0-beta
 // pertinent constants
 define( 'BP_RBE_DIR', dirname( __FILE__ ) );
 define( 'BP_RBE_URL', plugin_dir_url( __FILE__ ) );
+
+if ( ! defined( 'BP_RBE_DEBUG_LOG' ) )
+	define( 'BP_RBE_DEBUG_LOG',      false );
+
+if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) )
+	define( 'BP_RBE_DEBUG_LOG_PATH', WP_CONTENT_DIR . '/bp-rbe-debug.log' );
 
 /**
  * Loads BP Reply By Email only if BuddyPress is activated
