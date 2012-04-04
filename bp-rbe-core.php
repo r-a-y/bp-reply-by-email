@@ -146,7 +146,7 @@ class BP_Reply_By_Email {
 			}
 
 			// Filter the headers; 3rd-party components could potentially hook into this
-			$args['headers'] = apply_filters( 'bp_rbe_wp_mail_headers', $args['headers'], $listener->component, $listener->item_id, $listener->secondary_item_id );
+			$args['headers'] = apply_filters( 'bp_rbe_wp_mail_headers', $args['headers'], $listener->component, $listener->item_id, !empty( $listener->secondary_item_id ) ? $listener->secondary_item_id : false );
 
 		endif;
 
@@ -164,18 +164,29 @@ class BP_Reply_By_Email {
 	function activity_listener( $item ) {
 		global $bp;
 
-		$this->listener->component		= $bp->activity->id;
-		$this->listener->item_id		= $item->item_id;		// id of root activity update
-		$this->listener->secondary_item_id	= $item->id;			// id of direct parent comment / update
-		$this->listener->user_id		= $item->user_id;
+		// activity component
+		$this->listener->component = $bp->activity->id;
+
+		// the user id
+		$this->listener->user_id   = $item->user_id;
+
+		// activity update
+		if ( $item->type == 'activity_update' ) {
+			$this->listener->item_id = $this->listener->secondary_item_id = $item->id;
+		}
+		// activity comment
+		else {
+			$this->listener->item_id           = $item->item_id; // id of root activity update
+			$this->listener->secondary_item_id = $item->id;      // id of direct parent comment / update
+		}
 
 		// BP Group Email Subscription (GES) plugin compatibility
 		// GES already hooks into this action to send emails in groups, so let's not reinvent the wheel.
 		// Here, we test to see if a forum topic / post is being made and we'll let GES handle the rest!
 		if ( function_exists( 'activitysub_load_buddypress' ) && strpos( $item->type, 'new_forum_' ) !== false ) {
-			$this->listener->component		= $bp->forums->id;
-			$this->listener->item_id		= $item->secondary_item_id;	// topic id
-			$this->listener->secondary_item_id	= $item->item_id;		// group id
+			$this->listener->component         = $bp->forums->id;
+			$this->listener->item_id           = $item->secondary_item_id; // topic id
+			$this->listener->secondary_item_id = $item->item_id;           // group id
 
 			// If a forum post is being made, we still need to grab the topic id
 			if ( $item->type == 'new_forum_post' ) {
@@ -191,9 +202,9 @@ class BP_Reply_By_Email {
 
 		/* future support for blog comments - maybe so, maybe no?
 		if ( $item->type == 'new_blog_comment' ) {
-			$this->listener->component		= $bp->blogs->id;
-			$this->listener->item_id		= $item->item_id; 		// post id
-			$this->listener->secondary_item_id	= $item->secondary_item_id;	// blog id
+			$this->listener->component         = $bp->blogs->id;
+			$this->listener->item_id           = $item->item_id;           // post id
+			$this->listener->secondary_item_id = $item->secondary_item_id; // blog id
 		}
 		*/
 	}
@@ -208,9 +219,9 @@ class BP_Reply_By_Email {
 	function message_listener( $item ) {
 		global $bp;
 
-		$this->listener->component	= $bp->messages->id;
-		$this->listener->item_id	= $item->thread_id;
-		$this->listener->user_id	= $item->sender_id;
+		$this->listener->component = $bp->messages->id;
+		$this->listener->item_id   = $item->thread_id;
+		$this->listener->user_id   = $item->sender_id;
 	}
 }
 
