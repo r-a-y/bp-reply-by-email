@@ -278,7 +278,7 @@ class BP_Reply_By_Email_IMAP {
 
 		// Imap connection is already established!
 		if ( is_resource( $this->imap ) )
-			return;
+			return true;
 
 		// This needs some testing...
 		$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
