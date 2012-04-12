@@ -34,7 +34,7 @@ class BP_Reply_By_Email_Admin {
 		$this->name = 'bp-rbe';
 
 		add_action( 'admin_init', array( &$this, 'init' ) );
-		add_action( bp_core_admin_hook(), array( &$this, 'setup_admin' ) );
+		add_action( 'admin_menu', array( &$this, 'setup_admin' ) );
 	}
 
 	/**
@@ -55,7 +55,18 @@ class BP_Reply_By_Email_Admin {
 	 * Setup our admin settings page and hooks
 	 */
 	function setup_admin() {
-		$page = add_submenu_page( 'bp-general-settings', __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( &$this, 'load' ) );
+
+		// Temporary workaround for the fact that WP's settings API doesn't work with MS
+		if ( bp_core_do_network_admin() ) {
+			if ( !bp_is_root_blog() ) {
+				return;
+			}
+			$parent = 'options-general.php';
+		} else {
+			$parent = 'bp-general-settings';
+		}
+
+		$page = add_submenu_page( $parent, __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( &$this, 'load' ) );
 
 		//add_action( "admin_head-{$page}", array( &$this, 'head' ) );
 		add_action( "admin_footer-{$page}", array( &$this, 'footer' ) );
