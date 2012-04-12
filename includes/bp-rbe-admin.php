@@ -34,7 +34,7 @@ class BP_Reply_By_Email_Admin {
 		$this->name = 'bp-rbe';
 
 		add_action( 'admin_init', array( &$this, 'init' ) );
-		add_action( is_multisite() && function_exists( 'network_admin_menu' ) ? 'network_admin_menu' : 'admin_menu', array( &$this, 'setup_admin' ) );
+		add_action( bp_core_admin_hook(), array( &$this, 'setup_admin' ) );
 	}
 
 	/**
@@ -188,13 +188,13 @@ class BP_Reply_By_Email_Admin {
 			$output['keepalive'] = $input['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
 
 		// if username, password or server settings have changed, let's test the new credentials
-		$username_changed = ( empty( $this->settings['username'] ) && !empty( $output['username'] ) ) 
+		$username_changed = ( empty( $this->settings['username'] ) && !empty( $output['username'] ) )
 					|| ( !empty( $this->settings['username'] ) && !empty( $output['username'] ) && $output['username'] != $this->settings['username'] );
 
-		$password_changed = ( empty( $this->settings['password'] ) && !empty( $output['password'] ) ) 
+		$password_changed = ( empty( $this->settings['password'] ) && !empty( $output['password'] ) )
 					|| ( !empty( $this->settings['password'] ) && !empty( $output['password'] ) && $output['password'] != $this->settings['password'] );
 
-		$server_changed   = ( empty( $this->settings['servername'] ) && !empty( $output['servername'] ) ) 
+		$server_changed   = ( empty( $this->settings['servername'] ) && !empty( $output['servername'] ) )
 					|| ( !empty( $this->settings['servername'] ) && !empty( $output['servername'] ) && $output['servername'] != $this->settings['servername'] );
 
 		$messages = false;
@@ -203,7 +203,7 @@ class BP_Reply_By_Email_Admin {
 			if ( function_exists( 'imap_open' ) ) {
 				// This needs some testing...
 				$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
-				
+
 				// Need to readjust this before public release
 				// In the meantime, let's add a filter!
 				$hostname = '{' . $output['servername'] . ':' . $output['port'] . '/imap' . $ssl . '}INBOX';
@@ -217,7 +217,7 @@ class BP_Reply_By_Email_Admin {
 				else {
 					$imap = @imap_open( $hostname, $output['username'], $output['password'] );
 				}
-				
+
 				// if connection failed, add an error
 				if ( $imap === false ) {
 					bp_rbe_stop_imap();
@@ -267,7 +267,7 @@ class BP_Reply_By_Email_Admin {
 			<?php $this->display_errors() ?>
 
 			<?php $this->webhost_warnings() ?>
-			
+
 			<?php //var_dump( $bp_rbe->imap ); ?>
 
 			<form action="options.php" method="post">
