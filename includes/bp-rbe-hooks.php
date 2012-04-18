@@ -5,16 +5,19 @@
  * @package BP_Reply_By_Email
  * @subpackage Hooks
  */
+ 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 // only run the following hooks if requirements are fulfilled
 if ( bp_rbe_is_required_completed() ) :
 
 	// cron
 	add_filter( 'cron_schedules',                 'bp_rbe_custom_cron_schedule' );
+	add_action( 'bp_rbe_schedule',                'bp_rbe_check_imap_inbox' );
 	///*
 	add_action( 'init',                           'bp_rbe_cron' );
 	add_action( 'admin_init',                     'bp_rbe_cron' );
-	add_action( 'bp_rbe_schedule',                'bp_rbe_check_imap_inbox' );
 	//*/
 
 	// email body parsing

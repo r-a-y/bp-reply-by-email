@@ -6,6 +6,9 @@
  * @subpackage Functions
  */
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /** RBE All-purpose *****************************************************/
 
 /**
@@ -14,7 +17,6 @@
  * @param mixed $settings If you already have a settings array available, pass it.  Otherwise, default is false.
  * @return bool
  * @since 1.0-beta
- * @todo Function currently assumes that the user has correctly entered in their IMAP information...
  */
 function bp_rbe_is_required_completed( $settings = false ) {
 	global $bp_rbe;
@@ -33,6 +35,25 @@ function bp_rbe_is_required_completed( $settings = false ) {
 	endforeach;
 
 	return true;
+}
+
+/**
+ * Check to see if we're connected to the IMAP inbox.
+ *
+ * To check if we're connected a DB entry is updated in {@link BP_Reply_By_Email_IMAP::connect()}
+ * and in {@link BP_Reply_By_Email_IMAP::close()}.
+ *
+ * @return bool
+ * @since 1.0-beta
+ */
+function bp_rbe_is_connected() {
+	$is_connected = bp_get_option( 'bp_rbe_is_connected' );
+
+	if ( ! empty( $is_connected ) ) {
+		return true;
+	}
+
+	return false;
 }
 
 /**
@@ -285,7 +306,7 @@ function bp_rbe_is_imap_ssl( $openssl_check = true ) {
 	else {
 		$retval = false;
 	}
-	
+
 	return apply_filters( 'bp_rbe_is_imap_ssl', $retval );
 }
 
@@ -396,14 +417,13 @@ function bp_rbe_parsed_to_trash( $imap, $i ) {
 }
 
 /**
- * After successfully posting an email message to BuddyPress,
- * we mark the email for deletion for user privacy issues.
+ * Logs no match errors during IMAP inbox checks.
  *
- * In GMail, we have to move the message to the Trash folder,
- * since deleting an email simply moves it to "All Mail".
- *
+ * @uses bp_rbe_log() Logs error messages in a custom log
  * @param resource $imap The current IMAP connection
  * @param int $i The current message number
+ * @param array $headers The email headers
+ * @param sring $type The type of error
  * @since 1.0-beta
  */
 function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
@@ -411,37 +431,37 @@ function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
 
 	switch ( $type ) {
 		case 'no_user_id' :
-			$message = 'error - no user ID could be found';
+			$message = __( 'error - no user ID could be found', 'bp-rbe' );
 			break;
 
 		case 'no_params' :
-			$message = 'error - no parameters were found';
+			$message = __( 'error - no parameters were found', 'bp-rbe' );
 			break;
 
 		case 'no_reply_body' :
 		case 'new_forum_topic_empty' :
-			$message = 'error - body message was empty';
+			$message = __( 'error - body message was empty', 'bp-rbe' );
 			break;
 
 		case 'root_activity_deleted' :
-			$message = 'error - the root activity update was deleted before this could be posted';
+			$message = __( 'error - the root activity update was deleted before this could be posted', 'bp-rbe' );
 			break;
 
 		case 'root_or_parent_activity_deleted' :
-			$message = 'error - the root or parent activity update was deleted before this could be posted';
+			$message = __( 'error - the root or parent activity update was deleted before this could be posted', 'bp-rbe' );
 			break;
 
 		case 'forum_reply_fail' :
-			$message = 'error - forum reply failed to post';
+			$message = __( 'error - forum reply failed to post', 'bp-rbe' );
 			break;
 
 		case 'forum_topic_fail' :
-			$message = 'error - forum topic failed to be created';
+			$message = __( 'error - forum topic failed to be created', 'bp-rbe' );
 			break;
 	}
 
 	if ( $message )
-		bp_rbe_log( 'Message #' . $i . ': ' . $message );
+		bp_rbe_log( sprintf( __( 'Message #%d: %s', 'bp-rbe' ), $i, $message ) );
 }
 
 /**
@@ -533,27 +553,36 @@ function bp_rbe_cron() {
 /**
  * Run scheduled task action set in {@link bp_rbe_cron()}
  *
- * @uses bp_rbe_stop_imap()
+ * @uses BP_Reply_By_Email_IMAP::init()
+ * @uses bp_rbe_is_connected()
  * @since 1.0-beta
  */
 function bp_rbe_check_imap_inbox() {
-	global $bp_rbe;
+
+	$imap = BP_Reply_By_Email_IMAP::init();
 
 	// check to see if the imap resource is still connected
 	// if so, stop parsing the IMAP inbox
-	// @todo need to test this some more
-	if ( !empty( $bp_rbe->imap ) && is_resource( $bp_rbe->imap->imap ) ) {
+	// this method doesn't work... multiple instances can still take place
+	// even though I tried setting $imap->connection to static
+	/*
+	if ( $imap->is_connected() ) {
 		bp_rbe_stop_imap();
 
 		// give the IMAP loop a chance to terminate
 		// needs additional testing
 		sleep( 10 );
 	}
-	else {
-		$bp_rbe->imap = new BP_Reply_By_Email_IMAP();
+	*/
+
+	// check to see if we're connected via our reliable DB marker
+	if ( bp_rbe_is_connected() ) {
+		bp_rbe_log( '--- Cronjob wants to connect - however according to our DB indicator, we already have an active IMAP connection! ---' );
+		return;
 	}
 
-	$bp_rbe->imap->init();
+	// run our inbox check
+	$imap->run();
 }
 
 /**
@@ -562,7 +591,7 @@ function bp_rbe_check_imap_inbox() {
  * Adds a text file that gets checked by {@link BP_Reply_By_Email_IMAP::should_stop()}
  * in order to stop an existing IMAP inbox loop.
  *
- * @see BP_Reply_By_Email_IMAP::init()
+ * @see BP_Reply_By_Email_IMAP::run()
  * @since 1.0-beta
  */
 function bp_rbe_stop_imap() {
@@ -664,14 +693,14 @@ function bp_rbe_groups_new_group_forum_topic( $topic_title, $topic_text, $topic_
 	$topic_tags  = apply_filters( 'group_forum_topic_tags_before_save', $topic_tags );
 	$forum_id    = apply_filters( 'group_forum_topic_forum_id_before_save', $forum_id );
 
-	if ( $topic_id = bp_forums_new_topic( array( 
-		'topic_title'            => $topic_title, 
-		'topic_text'             => $topic_text, 
-		'topic_tags'             => $topic_tags, 
-		'forum_id'               => $forum_id, 
-		'topic_poster'           => $user_id, 
-		'topic_last_poster'      => $user_id, 
-		'topic_poster_name'      => bp_core_get_user_displayname( $user_id ), 
+	if ( $topic_id = bp_forums_new_topic( array(
+		'topic_title'            => $topic_title,
+		'topic_text'             => $topic_text,
+		'topic_tags'             => $topic_tags,
+		'forum_id'               => $forum_id,
+		'topic_poster'           => $user_id,
+		'topic_last_poster'      => $user_id,
+		'topic_poster_name'      => bp_core_get_user_displayname( $user_id ),
 		'topic_last_poster_name' => bp_core_get_user_displayname( $user_id )
 	) ) ) {
 

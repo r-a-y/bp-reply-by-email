@@ -6,10 +6,11 @@
  * @subpackage Admin
  */
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
- * Class: BP_Reply_By_Email_Admin
- *
- * Handles creation of the admin page.
+ * Handles all admin aspects of BP Reply By Email.
  *
  * @package BP_Reply_By_Email
  * @subpackage Classes
@@ -21,14 +22,7 @@ class BP_Reply_By_Email_Admin {
 	var $settings;
 
 	/**
-	 * PHP4 constructor.
-	 */
-	function BP_Reply_By_Email_Admin() {
-		$this->__construct();
-	}
-
-	/**
-	 * PHP5 constructor.
+	 * Constructor.
 	 */
 	function __construct() {
 		$this->name = 'bp-rbe';
@@ -42,7 +36,7 @@ class BP_Reply_By_Email_Admin {
 	 */
 	function init() {
 		// grab our settings when we're in the admin area only
-		$this->settings = get_option( $this->name );
+		$this->settings = bp_get_option( $this->name );
 
 		// handles niceties like nonces and form submission
 		register_setting( $this->name, $this->name, array( &$this, 'validate' ) );
@@ -68,7 +62,7 @@ class BP_Reply_By_Email_Admin {
 
 		$page = add_submenu_page( $parent, __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( &$this, 'load' ) );
 
-		//add_action( "admin_head-{$page}", array( &$this, 'head' ) );
+		add_action( "admin_head-{$page}",   array( &$this, 'head' ) );
 		add_action( "admin_footer-{$page}", array( &$this, 'footer' ) );
 	}
 
@@ -99,6 +93,19 @@ class BP_Reply_By_Email_Admin {
 		$links[] = '<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=V9AUZCMECZEQJ" target="_blank">Donate!</a>';
 
 		return $links;
+	}
+
+	/**
+	 * Inline CSS hooked to head of our settings page
+	 */
+	function head() {
+	?>
+		<style type="text/css">
+			p.connected span, p.not-connected span {font-weight:bold;}
+			p.connected span     {color:green;}
+			p.not-connected span {color:red;}
+		</script>
+	<?php
 	}
 
 	/**
@@ -198,21 +205,12 @@ class BP_Reply_By_Email_Admin {
 		if ( ini_get( 'safe_mode' ) )
 			$output['keepalive'] = $input['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
 
-		// if username, password or server settings have changed, let's test the new credentials
-		$username_changed = ( empty( $this->settings['username'] ) && !empty( $output['username'] ) )
-					|| ( !empty( $this->settings['username'] ) && !empty( $output['username'] ) && $output['username'] != $this->settings['username'] );
-
-		$password_changed = ( empty( $this->settings['password'] ) && !empty( $output['password'] ) )
-					|| ( !empty( $this->settings['password'] ) && !empty( $output['password'] ) && $output['password'] != $this->settings['password'] );
-
-		$server_changed   = ( empty( $this->settings['servername'] ) && !empty( $output['servername'] ) )
-					|| ( !empty( $this->settings['servername'] ) && !empty( $output['servername'] ) && $output['servername'] != $this->settings['servername'] );
-
 		$messages = false;
 
-		if ( $username_changed || $password_changed || $server_changed ) {
+		// do a quick imap check if we have valid credentials to check
+		if ( ! empty( $output['servername'] ) && ! empty( $output['port'] ) && ! empty( $output['username'] ) && !empty( $output['password'] ) ) {
 			if ( function_exists( 'imap_open' ) ) {
-				// This needs some testing...
+				// @todo extrapolate BP_Reply_By_Email::connect()/close() into a separate class to prevent duplicating code
 				$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
 
 				// Need to readjust this before public release
@@ -231,13 +229,13 @@ class BP_Reply_By_Email_Admin {
 
 				// if connection failed, add an error
 				if ( $imap === false ) {
-					bp_rbe_stop_imap();
 					$errors = imap_errors();
 					$messages['connect_error'] = sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), $errors[0] );
 					$output['connect'] = 0;
 				}
-				// connection was successful, now close the connection
+				// connection was successful, now close our temporary connection
 				else {
+					// this tells bp_rbe_is_required_completed() that we're good to go!
 					$output['connect'] = 1;
 					imap_close( $imap );
 				}
@@ -268,7 +266,6 @@ class BP_Reply_By_Email_Admin {
 	 * Output the admin page.
 	 */
 	function load() {
-		global $bp_rbe;
 	?>
 		<div class="wrap">
 			<?php screen_icon('edit-comments'); ?>
@@ -278,8 +275,6 @@ class BP_Reply_By_Email_Admin {
 			<?php $this->display_errors() ?>
 
 			<?php $this->webhost_warnings() ?>
-
-			<?php //var_dump( $bp_rbe->imap ); ?>
 
 			<form action="options.php" method="post">
 				<?php settings_fields( $this->name ); ?>
@@ -441,14 +436,19 @@ class BP_Reply_By_Email_Admin {
 		// bp_rbe_is_required_completed() currently assumes that you've entered in
 		// the correct IMAP server info...
 		if ( bp_rbe_is_required_completed() ) :
-			$next = wp_next_scheduled( 'bp_rbe_schedule' );
+			$next         = wp_next_scheduled( 'bp_rbe_schedule' );
+			$is_connected = bp_rbe_is_connected();
 
 			if ( $next ) :
 	?>
 		<h3><?php _e( 'Schedule Info', 'bp-rbe' ); ?></h3>
 
-		<p>
-			<?php printf( __( '<strong>Reply By Email</strong> is currently checking your inbox continuously. The next scheduled stop and restart is <strong>%s</strong>.', 'bp-rbe' ), date("l, F j, Y, g:i a (e)", $next ) ) ?>
+		<p class="<?php echo $is_connected ? 'connected' : 'not-connected'; ?>">
+			<?php if ( $is_connected ) : ?>
+				<?php printf( __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously. The next scheduled stop and restart is <strong>%s</strong>.', 'bp-rbe' ), date("l, F j, Y, g:i a (e)", $next ) ) ?>
+			<?php else : ?>
+				<?php printf( __( '<strong>Reply By Email</strong> is currently <span>NOT CONNECTED</span>. The next scheduled inbox check is <strong>%s</strong>.', 'bp-rbe' ), date("l, F j, Y, g:i a (e)", $next ) ) ?>
+			<?php endif; ?>
 		</p>
 
 		<p>
@@ -456,7 +456,7 @@ class BP_Reply_By_Email_Admin {
 		</p>
 
 		<p>
-			<?php printf( __( 'View the <em>"WordPress\' pseudo-cron and workaround"</em> section in the <a href="%s">readme</a> for a potential solution.', 'bp-rbe' ), BP_RBE_DIR . 'readme.txt' ) ?>
+			<?php printf( __( 'View the <em>"WordPress\' pseudo-cron and workaround"</em> section in the <a href="%s">readme</a> for a potential solution.', 'bp-rbe' ), BP_RBE_URL . 'readme.txt' ) ?>
 		</p>
 
 	<?php

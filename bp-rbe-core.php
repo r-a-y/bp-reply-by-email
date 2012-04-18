@@ -5,9 +5,12 @@
  * @package BP_Reply_By_Email
  * @subpackage Core
  */
+ 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Class: BP_Reply_By_Email
+ * Core class for BP Reply By Email.
  *
  * @package BP_Reply_By_Email
  * @subpackage Classes
@@ -20,7 +23,7 @@ class BP_Reply_By_Email {
 	function init() {
 
 		// settings
-		$this->settings = get_option( 'bp-rbe' );
+		$this->settings = bp_get_option( 'bp-rbe' );
 
 		/** Includes *********************************************************************/
 		$files = array( 'classes', 'functions', 'hooks' );
