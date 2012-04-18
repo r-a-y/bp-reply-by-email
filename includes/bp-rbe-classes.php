@@ -6,9 +6,10 @@
  * @subpackage Classes
  */
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
- * Class: BP_Reply_By_Email_IMAP
- *
  * Handles checking an IMAP inbox and posting items to BuddyPress.
  *
  * @package BP_Reply_By_Email
@@ -16,13 +17,29 @@
  */
 class BP_Reply_By_Email_IMAP {
 
-	var $imap;
+	protected $connection = false;
+
+	/**
+	 * Creates a singleton instance of the BP_Reply_By_Email_IMAP class
+	 *
+	 * @return BP_Reply_By_Email_IMAP object
+	 * @static
+	 */
+	public static function &init() {
+		static $instance = false;
+
+		if ( !$instance ) {
+			$instance = new BP_Reply_By_Email_IMAP;
+		}
+
+		return $instance;
+	}
 
 	/**
 	 * The main function we use to parse an IMAP inbox.
 	 */
-	function init() {
-		global $bp, $bp_rbe, $wpdb;
+	function run() {
+		global $bp, $wpdb;
 
 		// If safe mode isn't on, then let's set the execution time to unlimited
 		if ( !ini_get( 'safe_mode' ) )
@@ -34,7 +51,7 @@ class BP_Reply_By_Email_IMAP {
 		if ( ! $connect ) {
 			return false;
 		}
-		
+
 		// Total duration we should keep the IMAP stream alive for in seconds
 		$duration = bp_rbe_get_execution_time();
 
@@ -43,7 +60,7 @@ class BP_Reply_By_Email_IMAP {
 		for ( $now = time(), $future = time() + $duration; $future > $now; $now = time() ) :
 
 			// Get number of messages
-			$msg_num = imap_num_msg( $this->imap );
+			$msg_num = imap_num_msg( $this->connection );
 
 			// If there are messages in the inbox, let's start parsing!
 			if( $msg_num != 0 ) :
@@ -51,17 +68,17 @@ class BP_Reply_By_Email_IMAP {
 				// According to this:
 				// http://www.php.net/manual/pl/function.imap-headerinfo.php#95012
 				// This speeds up rendering the email headers... could be wrong
-				imap_headers( $this->imap );
+				imap_headers( $this->connection );
 
 				bp_rbe_log( '- Checking inbox -' );
-				
+
 				// Loop through each email message
 				for ( $i = 1; $i <= $msg_num; ++$i ) :
 
-					$headers = $this->header_parser( $this->imap, $i );
+					$headers = $this->header_parser( $this->connection, $i );
 
 					if ( !$headers ) {
-						do_action( 'bp_rbe_imap_no_match', $this->imap, $i, false, 'no_headers' );
+						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, false, 'no_headers' );
 						continue;
 					}
 
@@ -70,7 +87,7 @@ class BP_Reply_By_Email_IMAP {
 					$user_id = email_exists( $this->address_parser( $headers, 'From' ) );
 
 					if ( !$user_id ) {
-						do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'no_user_id' );
+						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_user_id' );
 						continue;
 					}
 
@@ -80,7 +97,7 @@ class BP_Reply_By_Email_IMAP {
 					$qs = $this->get_address_tag( $this->address_parser( $headers, 'To' ) );
 
 					if ( !$qs ) {
-						do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'no_address_tag' );
+						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_address_tag' );
 						continue;
 					}
 
@@ -94,18 +111,18 @@ class BP_Reply_By_Email_IMAP {
 						$params = $this->querystring_parser( $qs );
 
 					if ( !$params ) {
-						do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'no_params' );
+						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_params' );
 						continue;
 					}
 
 					bp_rbe_log( 'Message #' . $i . ': params = ' . print_r( $params, true ) );
 
 					// Parse email body
-					$body = $this->body_parser( $this->imap, $i );
+					$body = $this->body_parser( $this->connection, $i );
 
 					// If there's no email body and this is a reply, stop!
 					if ( !$body && !$this->is_new_item( $qs ) ) {
-						do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'no_reply_body' );
+						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_reply_body' );
 						continue;
 					}
 
@@ -122,14 +139,14 @@ class BP_Reply_By_Email_IMAP {
 						// If $a = $p, this means that we're replying to a top-level activity update
 						// So check if activity count is 1
 						if ( $a == $p && $activity_count != 1 ) {
-							do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'root_activity_deleted' );
+							do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'root_activity_deleted' );
 							continue;
 						}
 						// If we're here, this means we're replying to an activity comment
 						// If count != 2, this means either the super admin or activity author has deleted one of the update(s)
 						elseif ( $a != $p && $activity_count != 2 ) {
-							do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'root_or_parent_activity_deleted' );
-							continue;						
+							do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'root_or_parent_activity_deleted' );
+							continue;
 						}
 
 						/* Let's start posting! */
@@ -166,16 +183,16 @@ class BP_Reply_By_Email_IMAP {
 								$forum_post_id = bp_rbe_groups_new_group_forum_post( $body, $t, $user_id, $g );
 
 								if ( !$forum_post_id ) {
-									do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'forum_reply_fail' );
+									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'forum_reply_fail' );
 									continue;
 								}
 
 								bp_rbe_log( 'Message #' . $i . ': forum reply successfully posted!' );
 
 								// could potentially add attachments
-								do_action( 'bp_rbe_email_new_forum_post', $this->imap, $i, $forum_post_id, $g, $user_id );
+								do_action( 'bp_rbe_email_new_forum_post', $this->connection, $i, $forum_post_id, $g, $user_id );
 							}
-							
+
 							unset( $t );
 						endif;
 
@@ -191,7 +208,7 @@ class BP_Reply_By_Email_IMAP {
 									'content'   => $body
 								)
 							);
-							
+
 							bp_rbe_log( 'Message #' . $i . ': PM reply successfully posted!' );
 
 							unset( $m );
@@ -203,11 +220,11 @@ class BP_Reply_By_Email_IMAP {
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
 							bp_rbe_log( 'Message #' . $i . ': this is a new forum topic' );
 
-							$body    = $this->body_parser( $this->imap, $i, false );
+							$body    = $this->body_parser( $this->connection, $i, false );
 							$subject = $this->address_parser( $headers, 'Subject' );
 
 							if ( empty( $body ) || empty( $subject ) ) {
-								do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'new_forum_topic_empty' );
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'new_forum_topic_empty' );
 								continue;
 							}
 
@@ -218,23 +235,23 @@ class BP_Reply_By_Email_IMAP {
 								$topic = bp_rbe_groups_new_group_forum_topic( $subject, $body, false, false, $user_id, $g );
 
 								if ( !$topic ) {
-									do_action( 'bp_rbe_imap_no_match', $this->imap, $i, $headers, 'new_topic_fail' );
+									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'new_topic_fail' );
 									continue;
 								}
 
 								bp_rbe_log( 'Message #' . $i . ': forum topic successfully posted!' );
 
 								// could potentially add attachments
-								do_action_ref_array( 'bp_rbe_email_new_forum_topic', array( $this->imap, $i, &$topic, $g, $user_id ) );
+								do_action_ref_array( 'bp_rbe_email_new_forum_topic', array( $this->connection, $i, &$topic, $g, $user_id ) );
 							}
-							
+
 							unset( $g );
 							unset( $subject );
 						endif;
 					endif;
 
 					// Do something at the end of the loop; useful for 3rd-party plugins
-					do_action( 'bp_rbe_imap_loop', $this->imap, $i, $params, $body, $user_id );
+					do_action( 'bp_rbe_imap_loop', $this->connection, $i, $params, $body, $user_id );
 
 					// Unset some variables to clear some memory
 					unset( $headers );
@@ -246,12 +263,16 @@ class BP_Reply_By_Email_IMAP {
 			endif;
 
 			// do something after the loop
-			do_action( 'bp_rbe_imap_after_loop', $this->imap );
+			do_action( 'bp_rbe_imap_after_loop', $this->connection );
 
 			// stop the loop if necessary
 			if ( $this->should_stop() ) {
-				$this->close();
-				bp_rbe_log( '--- Manual termination of connection confirmed! Kaching! ---' );
+				if ( $this->close() ) {
+					bp_rbe_log( '--- Manual termination of connection confirmed! Kaching! ---' );
+				}
+				else {
+					bp_rbe_log( '--- Error - invalid connection during manual termination ---' );
+				}
 				return;
 			}
 
@@ -259,15 +280,21 @@ class BP_Reply_By_Email_IMAP {
 			sleep( 10 );
 
 			// If the IMAP connection is down, reconnect
-			if( !imap_ping( $this->imap ) )
+			if( ! imap_ping( $this->connection ) ) {
+				bp_rbe_log( '-- IMAP connection is down, reconnecting... --' );
 				$this->connect();
+			}
 
 			// Unset some variables to clear some memory
 			unset( $msg_num );
 		endfor;
 
-		$this->close();
-		bp_rbe_log( '--- Closing current connection automatically ---' );
+		if ( $this->close() ) {
+			bp_rbe_log( '--- Closing current connection automatically ---' );
+		}
+		else {
+			bp_rbe_log( '--- Invalid connection during close time ---' );
+		}
 	}
 
 	/**
@@ -277,12 +304,14 @@ class BP_Reply_By_Email_IMAP {
 		global $bp_rbe;
 
 		// Imap connection is already established!
-		if ( is_resource( $this->imap ) )
+		if ( is_resource( $this->connection ) ) {
+			bp_rbe_log( '--- Already connected! ---' );
 			return true;
+		}
 
 		// This needs some testing...
 		$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
-		
+
 		// Need to readjust this before public release
 		// In the meantime, let's add a filter!
 		$hostname = '{' . $bp_rbe->settings['servername'] . ':' . $bp_rbe->settings['port'] . '/imap' . $ssl . '}INBOX';
@@ -291,15 +320,18 @@ class BP_Reply_By_Email_IMAP {
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
 
 		// Let's open the IMAP stream!
-		$this->imap = imap_open( $hostname, $bp_rbe->settings['username'], $bp_rbe->settings['password'] );
-		
-		if ( $this->imap === false ) {
+		$this->connection = @imap_open( $hostname, $bp_rbe->settings['username'], $bp_rbe->settings['password'] );
+
+		if ( $this->connection === false ) {
 			bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
 			return false;
 		}
-		
+
+		// add an entry in the DB to say that we're connected so we can access this info on other pages
+		bp_update_option( 'bp_rbe_is_connected', true );
+
 		bp_rbe_log( '--- Connection successful! ---' );
-		
+
 		return true;
 	}
 
@@ -308,9 +340,29 @@ class BP_Reply_By_Email_IMAP {
 	 */
 	function close() {
 		// Do something before closing
-		do_action( 'bp_rbe_imap_before_close', $this->imap );
+		do_action( 'bp_rbe_imap_before_close', $this->connection );
 
-		imap_close( $this->imap );
+		if ( $this->is_connected()  ) {
+			@imap_close( $this->connection );
+			bp_update_option( 'bp_rbe_is_connected', 0 );
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check to see if the IMAP connection is connected.
+	 *
+	 * @return bool
+	 */
+	private function is_connected() {
+		if ( ! is_resource( $this->connection ) ) {
+			bp_rbe_log( '-- There is no active IMAP connection --' );
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -439,7 +491,7 @@ class BP_Reply_By_Email_IMAP {
 
 		if ( $key == 'To' && strpos( $headers[$key], '@' ) === false ) {
 			bp_rbe_log( $key . ' parser - missing email address' );
-			return false;			
+			return false;
 		}
 
 		// Sender is attempting to send to multiple recipients in the "To" header
