@@ -18,14 +18,18 @@ If you feel adventurous, view **readme.txt** for full details about the plugin a
 
 ## Todo ##
 
-* Find a better way to detect if we're still pinging the inbox so we can display this info on the RBE settings page.
 * Look into why the Group Email Subscription plugin sends group forum replies to the same poster.  It should omit posts from the author.
 
 ---
 
 ## Dev changelog ##
 
-### 1.0-beta-20120404 ###
+### 20120418 ###
+
+* Make sure we're only connected to the inbox once per session.
+* Code cleanup.
+
+### 20120404 ###
 
 * Requires at least BP 1.5.
 * When email settings are saved, check to see if the credentials are valid.

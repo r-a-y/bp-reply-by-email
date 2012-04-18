@@ -90,6 +90,10 @@ If you know of any others, let me know and I'll list them here!
 
 == Changelog ==
 
+= 1.0-beta-20120418 =
+* Make sure we're only connected to the inbox once per session.
+* Code cleanup.
+
 = 1.0-beta-20120404 =
 * Requires at least BP 1.5.
 * When email settings are saved, check to see if the connection is valid.
