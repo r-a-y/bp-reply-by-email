@@ -291,6 +291,14 @@ class BP_Reply_By_Email_IMAP {
 
 		if ( $this->close() ) {
 			bp_rbe_log( '--- Closing current connection automatically ---' );
+
+			// clear our scheduled hook to prevent wryly cron irregularity
+			wp_clear_scheduled_hook( 'bp_rbe_schedule' );
+
+			// since we clear our scheduled hook, it would take two page hits to run our task instead of one
+			// let's create a marker so we can spawn cron manually on the first page hit
+			// @see bp_rbe_cron()
+			bp_update_option( 'bp_rbe_spawn_cron', 1 );
 		}
 		else {
 			bp_rbe_log( '--- Invalid connection during close time ---' );

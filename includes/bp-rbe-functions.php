@@ -63,7 +63,7 @@ function bp_rbe_is_connected() {
  * If safe mode is enabled, we use the max_execution_time as set in PHP.
  * Otherwise, this value is configurable from the admin page.
  *
- * @see BP_Reply_By_Email_IMAP::init()
+ * @see BP_Reply_By_Email_IMAP:::run()
  * @param string $value Either 'seconds' or 'minutes'.  Default is 'seconds'.
  * @return int The execution time in either seconds or minutes
  * @since 1.0-beta
@@ -548,6 +548,15 @@ function bp_rbe_custom_cron_schedule( $schedules ) {
 function bp_rbe_cron() {
 	if ( !wp_next_scheduled( 'bp_rbe_schedule' ) )
 		wp_schedule_event( time(), 'bp_rbe_custom', 'bp_rbe_schedule' );
+
+	// if we need to spawn cron, do it here
+	if ( bp_get_option( 'bp_rbe_spawn_cron' ) ) {
+		// this emulates a visitor hitting our site, which will trigger wp_cron() and our scheduled hook above
+		wp_remote_post( bp_core_get_root_domain(), array( 'timeout' => 0.01, 'blocking' => false, 'sslverify' => apply_filters( 'https_local_ssl_verify', true ) ) );
+
+		// remove our DB marker
+		bp_delete_option( 'bp_rbe_spawn_cron' );
+	}
 }
 
 /**
