@@ -92,6 +92,7 @@ If you know of any others, let me know and I'll list them here!
 
 = 1.0-beta-20120418 =
 * Make sure we're only connected to the inbox once per session.
+* Fix cron scheduling issues.
 * Code cleanup.
 
 = 1.0-beta-20120404 =

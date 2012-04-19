@@ -433,8 +433,7 @@ class BP_Reply_By_Email_Admin {
 	 */
 	function schedule() {
 
-		// bp_rbe_is_required_completed() currently assumes that you've entered in
-		// the correct IMAP server info...
+		// only show the following if required fields are filled in correctly
 		if ( bp_rbe_is_required_completed() ) :
 			$next         = wp_next_scheduled( 'bp_rbe_schedule' );
 			$is_connected = bp_rbe_is_connected();
