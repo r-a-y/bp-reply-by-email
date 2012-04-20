@@ -659,7 +659,7 @@ function bp_rbe_groups_new_group_forum_post( $post_text, $topic_id, $user_id, $g
 			'component'         => $bp->groups->id,
 			'type'              => 'new_forum_post',
 			'item_id'           => $group_id,
-			'secondary_item_id' => $topic_id,
+			'secondary_item_id' => $post_id,
 			'hide_sitewide'     => ( $group->status == 'public' ) ? false : true
 		) );
 
