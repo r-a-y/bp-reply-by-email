@@ -327,6 +327,17 @@ function bp_rbe_log( $message ) {
 	error_log( '[' . gmdate( 'd-M-Y H:i:s' ) . '] ' . $message . "\n", 3, BP_RBE_DEBUG_LOG_PATH );
 }
 
+/**
+ * Gets the last line of a given string.
+ *
+ * @param string $text The text we want to grab the last line for
+ * @return string
+ * @since 1.0-beta
+ */
+function bp_rbe_get_last_line( $text ) {
+	return substr( strrchr( $text, 10 ), 1 );
+} 
+
 /** Hook-related ********************************************************/
 
 /**
@@ -392,6 +403,38 @@ function bp_rbe_remove_eol_char( $content ) {
 
 	if ( substr( $content, -strlen( $char ) ) == $char )
 		return substr( $content, 0, strrpos( $content, PHP_EOL . $char ) );
+
+	return $content;
+}
+
+/**
+ * Tries to remove the email signature of most common email clients from email replies.
+ *
+ * @uses bp_rbe_get_last_line() Gets the last line of a given string
+ * @param string $content The content we want to modify
+ * @return string
+ * @since 1.0-beta
+ */
+function bp_rbe_remove_email_client_signature( $content ) {
+	$last_line = bp_rbe_get_last_line( $content );
+
+	switch( $last_line ) {
+		// remove common mobile device sigs
+		// is this string localized in other countries? better safe than sorry!
+		case strpos( $last_line, __( 'Sent from my ', 'bp-rbe' ) ) === 0 :
+			$content = rtrim( $content, PHP_EOL . $last_line );
+
+			break;
+
+		// remove common desktop email client reply lines
+		// if last character of last line is a colon (':'), remove the last line entirely
+		// eg. 'On DATE, USER wrote:'
+		//     'USER wrote:'
+		case substr( $last_line, -1 ) === ':' :
+			$content = rtrim( $content, PHP_EOL . $last_line );
+
+			break;
+	}
 
 	return $content;
 }

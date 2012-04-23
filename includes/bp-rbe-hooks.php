@@ -20,7 +20,8 @@ if ( bp_rbe_is_required_completed() ) :
 	add_action( 'admin_init',                     'bp_rbe_cron' );
 
 	// email body parsing
-	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_eol_char' );
+	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_eol_char', 1 );
+	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_email_client_signature' );
 
 	// email inbox parsing
 	/**
