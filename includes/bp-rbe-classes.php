@@ -519,7 +519,7 @@ class BP_Reply_By_Email_IMAP {
 			$headers[$key] = substr( $headers[$key], ++$lbracket, $rbracket - $lbracket );
 		}
 
-		//bp_rbe_log( $key . ' parser - ' . $headers[$key] );
+		bp_rbe_log( $key . ' parser - ' . $headers[$key] );
 
 		return $headers[$key];
 	}

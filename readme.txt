@@ -36,6 +36,10 @@ You can also create new forum topics from your email inbox as well.
 1. Navigate to "BuddyPress > Reply By Email" in the WP admin dashboard and fill in the settings.  If you see a section called "Webhost Warnings", please resolve any issues that appear.
 1. Make sure at least the Activity component is enabled in BuddyPress.
 
+**Upgrading manually**
+
+If you already have the plugin activated, but you choose to upgrade the plugin manually via FTP, you must deactivate the plugin and reactivate it again.
+
 == Frequently Asked Questions ==
 
 #### I've filled in my GMail account info in the plugin's settings, but the plugin isn't working! ####

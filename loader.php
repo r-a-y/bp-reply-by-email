@@ -70,6 +70,9 @@ function bp_rbe_activate() {
 
 	// remove remnants from any previous failed attempts to stop the inbox
 	BP_Reply_By_Email_IMAP::should_stop();
+
+	bp_delete_option( 'bp_rbe_is_connected' );
+	bp_delete_option( 'bp_rbe_spawn_cron' );
 }
 register_activation_hook( __FILE__, 'bp_rbe_activate' );
 
@@ -91,6 +94,7 @@ function bp_rbe_deactivate() {
 	}
 
 	bp_delete_option( 'bp_rbe_is_connected' );
+	bp_delete_option( 'bp_rbe_spawn_cron' );
 
 	bp_rbe_log( 'Plugin deactivated!' );
 }
