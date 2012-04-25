@@ -336,7 +336,7 @@ function bp_rbe_log( $message ) {
  */
 function bp_rbe_get_last_line( $text ) {
 	return substr( strrchr( $text, 10 ), 1 );
-} 
+}
 
 /** Hook-related ********************************************************/
 
@@ -678,8 +678,15 @@ function bp_rbe_groups_new_group_forum_post( $post_text, $topic_id, $user_id, $g
 	$topic_id  = apply_filters( 'group_forum_post_topic_id_before_save', $topic_id );
 
 	if ( $post_id = bp_forums_insert_post( array( 'post_text' => $post_text, 'topic_id' => $topic_id, 'poster_id' => $user_id ) ) ) {
+		global $bbdb;
 
-		$topic = bp_forums_get_topic_details( $topic_id );
+		do_action( 'bbpress_init' );
+
+		// do a direct bbPress DB call
+		if ( isset( $bbdb ) ) {
+			$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = {$topic_id}" ) );
+		}
+
 		$group = new BP_Groups_Group( $group_id );
 
 		// If no page passed, calculate the page where the new post will reside.
@@ -755,8 +762,15 @@ function bp_rbe_groups_new_group_forum_topic( $topic_title, $topic_text, $topic_
 		'topic_poster_name'      => bp_core_get_user_displayname( $user_id ),
 		'topic_last_poster_name' => bp_core_get_user_displayname( $user_id )
 	) ) ) {
+		global $bbdb;
 
-		$topic = bp_forums_get_topic_details( $topic_id );
+		do_action( 'bbpress_init' );
+
+		// do a direct bbPress DB call
+		if ( isset( $bbdb ) ) {
+			$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = {$topic_id}" ) );
+		}
+
 		$group = new BP_Groups_Group( $group_id );
 
 		$activity_action  = sprintf( __( '%s started the forum topic %s in the group %s via email:', 'bp-rbe' ), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
