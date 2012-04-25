@@ -335,7 +335,7 @@ function bp_rbe_log( $message ) {
  * @since 1.0-beta
  */
 function bp_rbe_get_last_line( $text ) {
-	return substr( strrchr( $text, 10 ), 1 );
+	return trim( substr( strrchr( $text, 10 ), 1 ) );
 }
 
 /** Hook-related ********************************************************/
@@ -422,7 +422,7 @@ function bp_rbe_remove_email_client_signature( $content ) {
 		// remove common mobile device sigs
 		// is this string localized in other countries? better safe than sorry!
 		case strpos( $last_line, __( 'Sent from my ', 'bp-rbe' ) ) === 0 :
-			$content = rtrim( $content, PHP_EOL . $last_line );
+			$content = substr( $content, 0, strrpos( $content, 10 ) );
 
 			break;
 
@@ -431,7 +431,7 @@ function bp_rbe_remove_email_client_signature( $content ) {
 		// eg. 'On DATE, USER wrote:'
 		//     'USER wrote:'
 		case substr( $last_line, -1 ) === ':' :
-			$content = rtrim( $content, PHP_EOL . $last_line );
+			$content = substr( $content, 0, strrpos( $content, 10 ) );
 
 			break;
 	}
