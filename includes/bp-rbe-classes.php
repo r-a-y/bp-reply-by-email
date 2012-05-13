@@ -118,7 +118,7 @@ class BP_Reply_By_Email_IMAP {
 					bp_rbe_log( 'Message #' . $i . ': params = ' . print_r( $params, true ) );
 
 					// Parse email body
-					$body = $this->body_parser( $this->connection, $i, $headers );
+					$body = $this->body_parser( $this->connection, $i );
 
 					// If there's no email body and this is a reply, stop!
 					if ( !$body && !$this->is_new_item( $qs ) ) {
@@ -220,7 +220,7 @@ class BP_Reply_By_Email_IMAP {
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
 							bp_rbe_log( 'Message #' . $i . ': this is a new forum topic' );
 
-							$body    = $this->body_parser( $this->connection, $i, $headers, false );
+							$body    = $this->body_parser( $this->connection, $i, false );
 							$subject = $this->address_parser( $headers, 'Subject' );
 
 							if ( empty( $body ) || empty( $subject ) ) {
@@ -450,41 +450,50 @@ class BP_Reply_By_Email_IMAP {
 	 *
 	 * Tries to fetch the plain-text version when available first. Otherwise, will fallback to the HTML version.
 	 *
-	 * @uses imap_qprint() Convert email body from quoted-printable string to an 8 bit string
+	 * @uses imap_fetchstructure() Get the structure of an email
 	 * @uses imap_fetchbody() Using the third parameter will return a portion of the email depending on the email structure.
 	 * @param resource $imap The current IMAP connection
 	 * @param int $i The current email message number
-	 * @param array $headers The array of email headers
 	 * @param bool $reply If we're parsing a reply or not. Default set to true.
 	 * @return mixed Either the email body on success or false on failure
 	 */
-	function body_parser( $imap, $i, $headers, $reply = true ) {
-		// check email type
-		switch ( $headers['Content-Type'] ) {
+	function body_parser( $imap, $i, $reply = true ) {
+		// get the email structure
+		$structure = imap_fetchstructure( $imap, $i );
 
-			// this is a multipart email
-			case strpos( $headers['Content-Type'], 'multipart' ) !== false :
-				// Grab only plain-text body of email message with '1.1' parameter
-				$body = imap_qprint( imap_fetchbody( $imap, $i, 1.1 ) );
-			
+		// this is a multipart email
+		if ( ! empty( $structure->parts ) ) {
+			// check each sub-part of a multipart email
+			for ( $j = 0, $k = count( $structure->parts ); $j < $k; ++$j ) {
+				// get the plain-text message only
+				if ( strtolower( $structure->parts[$j]->subtype ) == 'plain' ) {
+					$body = imap_fetchbody( $imap, $i, $j+1 );
+					continue;
+				}
+			}
+		}
+
+		// either a plain-text email or a HTML email
+		else {
+			$body = imap_body( $imap, $i );
+		}
+
+		// decode emails with the following encoding
+		switch ( $structure->encoding ) {
+			// quoted-printable
+			case 4 :
+				$body = quoted_printable_decode( $body );
 				break;
 
-			// this is either a standalone html or plain text email
-			default :
-				// Grab body of email message
-				$body = imap_qprint( imap_fetchbody( $imap, $i, 1 ) );				
-			
-				// do something special for HTML emails
-				if ( strpos( $headers['Content-Type'], 'text/html' ) !== false ) {
-					$body = apply_filters( 'bp_rbe_parse_html_email', $body, $headers );
-				}
-
+			// base64
+			case 3 :
+				$body = base64_decode( $body );
 				break;
 		}
 
-		// if email is base64 encoded, decode it!
-		if ( strpos( $headers['Content-Transfer-Encoding'], 'base64' ) !== false ) {
-			$body = base64_decode( $body );
+		// do something special for HTML emails
+		if ( strtolower( $structure->subtype ) == 'html' ) {
+			$body = apply_filters( 'bp_rbe_parse_html_email', $body, $structure );
 		}
 
 		// Check to see if we're parsing a reply
@@ -498,7 +507,7 @@ class BP_Reply_By_Email_IMAP {
 				return false;
 
 			// Return email body up to our pointer only
-			$body = apply_filters( 'bp_rbe_parse_email_body_reply', trim( substr( $body, 0, $pointer ) ), $body, $headers );
+			$body = apply_filters( 'bp_rbe_parse_email_body_reply', trim( substr( $body, 0, $pointer ) ), $body, $structure );
 		}
 
 		if ( empty( $body ) ) {
@@ -507,7 +516,7 @@ class BP_Reply_By_Email_IMAP {
 		}
 
 		bp_rbe_log( 'Message #' . $i . ': body contents - ' . $body );
-		return apply_filters( 'bp_rbe_parse_email_body', trim( $body ), $headers );
+		return apply_filters( 'bp_rbe_parse_email_body', trim( $body ), $structure );
 	}
 
 	/**
