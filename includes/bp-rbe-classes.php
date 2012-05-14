@@ -166,7 +166,7 @@ class BP_Reply_By_Email_IMAP {
 
 						// remove the filter after posting
 						remove_filter( 'bp_activity_comment_action', 'bp_rbe_activity_comment_action' );
-						unset( $activities_count );
+						unset( $activity_count );
 						unset( $a );
 						unset( $p );
 
