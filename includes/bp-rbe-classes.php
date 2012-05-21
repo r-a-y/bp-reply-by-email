@@ -180,7 +180,12 @@ class BP_Reply_By_Email_IMAP {
 
 							// If user is a member of the group and not banned, then let's post the forum reply!
 							if ( $can_post || ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) ) {
-								$forum_post_id = bp_rbe_groups_new_group_forum_post( $body, $t, $user_id, $g );
+								$forum_post_id = bp_rbe_groups_new_group_forum_post( array( 
+									'post_text' => $body, 
+									'topic_id'  => $t, 
+									'user_id'   => $user_id,
+									'group_id'  => $g
+								) );
 
 								if ( !$forum_post_id ) {
 									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'forum_reply_fail' );
@@ -232,7 +237,12 @@ class BP_Reply_By_Email_IMAP {
 
 							// If user is a member of the group and not banned, then let's post the forum topic!
 							if ( $can_post || ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) ) {
-								$topic = bp_rbe_groups_new_group_forum_topic( $subject, $body, false, false, $user_id, $g );
+								$topic = bp_rbe_groups_new_group_forum_topic( array(
+									'topic_title' => $subject,
+									'topic_text'  => $body,
+									'user_id'     => $user_id,
+									'group_id'    => $g
+								) );
 
 								if ( !$topic ) {
 									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'new_topic_fail' );

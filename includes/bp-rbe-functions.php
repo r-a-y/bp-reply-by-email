@@ -613,21 +613,7 @@ function bp_rbe_check_imap_inbox() {
 
 	$imap = BP_Reply_By_Email_IMAP::init();
 
-	// check to see if the imap resource is still connected
-	// if so, stop parsing the IMAP inbox
-	// this method doesn't work... multiple instances can still take place
-	// even though I tried setting $imap->connection to static
-	/*
-	if ( $imap->is_connected() ) {
-		bp_rbe_stop_imap();
-
-		// give the IMAP loop a chance to terminate
-		// needs additional testing
-		sleep( 10 );
-	}
-	*/
-
-	// check to see if we're connected via our reliable DB marker
+	// check to see if we're connected via our DB marker
 	if ( bp_rbe_is_connected() ) {
 		bp_rbe_log( '--- Cronjob wants to connect - however according to our DB indicator, we already have an active IMAP connection! ---' );
 		return;
@@ -660,21 +646,29 @@ function bp_rbe_stop_imap() {
  * 	- $bp->groups->current_group doesn't exist outside the BP groups component.
  * 	- {@link groups_record_activity()} restricts a bunch of parameters - use full {@link bp_activity_add()} instead.
  *
- * @param string $post_text The body of the post
- * @param int $topic_id The topic ID we're replying to
- * @param int $user_id The user ID replying to the forum topic
- * @param int $group_id The group ID where this topic resides
- * @param mixed $page False by default. Or an integer of the page where the next forum post resides
+ * @param mixed $args Arguments can be passed as an associative array or as a URL argument string
  * @return mixed If forum reply is successful, returns the forum post ID; false on failure
  * @since 1.0-beta
  */
-function bp_rbe_groups_new_group_forum_post( $post_text, $topic_id, $user_id, $group_id, $page = false ) {
+function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 	global $bp;
+
+	$defaults = array(
+		'post_text' => false,
+		'topic_id'  => false,
+		'user_id'   => false,
+		'group_id'  => false,
+		'page'      => false // Integer of the page where the next forum post resides
+	);
+
+	$r = apply_filters( 'bp_rbe_groups_new_group_forum_post_args', wp_parse_args( $args, $defaults ) );
+	extract( $r );
 
 	if ( empty( $post_text ) )
 		return false;
 
-	$post_text = apply_filters( 'group_forum_post_text_before_save', $post_text );
+	// apply BP's filters
+	$post_text = apply_filters( 'group_forum_post_text_before_save',     $post_text );
 	$topic_id  = apply_filters( 'group_forum_post_topic_id_before_save', $topic_id );
 
 	if ( $post_id = bp_forums_insert_post( array( 'post_text' => $post_text, 'topic_id' => $topic_id, 'poster_id' => $user_id ) ) ) {
@@ -687,7 +681,7 @@ function bp_rbe_groups_new_group_forum_post( $post_text, $topic_id, $user_id, $g
 			$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = {$topic_id}" ) );
 		}
 
-		$group = new BP_Groups_Group( $group_id );
+		$group = groups_get_group( 'group_id=' . $group_id );
 
 		// If no page passed, calculate the page where the new post will reside.
 		// I should backport this to BP.
@@ -729,17 +723,24 @@ function bp_rbe_groups_new_group_forum_post( $post_text, $topic_id, $user_id, $g
  * 	- $bp->groups->current_group doesn't exist outside the BP groups component.
  * 	- {@link groups_record_activity()} restricts a bunch of parameters - use full {@link bp_activity_add()} instead.
  *
- * @param string $topic_title The topic title
- * @param string $topic_text The topic body
- * @param int $topic_tags The topic tags
- * @param int $forum_id The forum ID
- * @param int $user_id The user ID replying to the forum topic
- * @param int $group_id The group ID where this topic resides
+ * @param mixed $args Arguments can be passed as an associative array or as a URL argument string
  * @return mixed If forum topic is successful, returns the forum topic ID; false on failure
  * @since 1.0-beta
  */
-function bp_rbe_groups_new_group_forum_topic( $topic_title, $topic_text, $topic_tags, $forum_id, $user_id, $group_id ) {
+function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 	global $bp;
+
+	$defaults = array(
+		'topic_title' => false,
+		'topic_text'  => false,
+		'topic_tags'  => false,
+		'forum_id'    => false,
+		'user_id'     => false,
+		'group_id'    => false
+	);
+
+	$r = apply_filters( 'bp_rbe_groups_new_group_forum_topic_args', wp_parse_args( $args, $defaults ) );
+	extract( $r );
 
 	if ( empty( $topic_title ) || empty( $topic_text ) )
 		return false;
@@ -747,9 +748,10 @@ function bp_rbe_groups_new_group_forum_topic( $topic_title, $topic_text, $topic_
 	if ( empty( $forum_id ) )
 		$forum_id = groups_get_groupmeta( $group_id, 'forum_id' );
 
-	$topic_title = apply_filters( 'group_forum_topic_title_before_save', $topic_title );
-	$topic_text  = apply_filters( 'group_forum_topic_text_before_save', $topic_text );
-	$topic_tags  = apply_filters( 'group_forum_topic_tags_before_save', $topic_tags );
+	// apply BP's filters
+	$topic_title = apply_filters( 'group_forum_topic_title_before_save',    $topic_title );
+	$topic_text  = apply_filters( 'group_forum_topic_text_before_save',     $topic_text );
+	$topic_tags  = apply_filters( 'group_forum_topic_tags_before_save',     $topic_tags );
 	$forum_id    = apply_filters( 'group_forum_topic_forum_id_before_save', $forum_id );
 
 	if ( $topic_id = bp_forums_new_topic( array(
@@ -771,7 +773,7 @@ function bp_rbe_groups_new_group_forum_topic( $topic_title, $topic_text, $topic_
 			$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = {$topic_id}" ) );
 		}
 
-		$group = new BP_Groups_Group( $group_id );
+		$group = groups_get_group( 'group_id=' . $group_id );
 
 		$activity_action  = sprintf( __( '%s started the forum topic %s in the group %s via email:', 'bp-rbe' ), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
 		$activity_content = bp_create_excerpt( $topic_text );
@@ -833,59 +835,5 @@ function bp_rbe_groups_encoded_email_address( $user_id = false, $group_id = fals
 
 		return bp_rbe_inject_qs_in_email( $querystring . '-new' );
 	}
-
-/** PHP4 ****************************************************************/
-
-if ( !function_exists( 'array_combine' ) ) :
-/**
- * A PHP4-compatible version of array_combine().
- *
- * @link http://www.php.net/manual/en/function.array-combine.php#78244
- */
-function array_combine( $arr1, $arr2 ) {
-	$out = array();
-
-	foreach( $arr1 as $key1 => $value1 )
-		$out[$value1] = $arr2[$key1];
-
-	return $out;
-}
-endif;
-
-if ( !function_exists( 'array_intersect_key' ) ) :
-/**
- * A PHP4-compatible version of array_intersect_key().
- *
- * @author Rod Byrnes
- * @link http://www.php.net/manual/en/function.array-intersect-key.php#74956
- */
-function array_intersect_key( $isec, $arr2 ) {
-	$argc = func_num_args();
-
-	if ($argc > 2) {
-		for ( $i = 1; !empty( $isec ) && $i < $argc; ++$i )	{
-			$arr = func_get_arg( $i );
-
-			foreach ( $isec as $k => $v ) {
-				if ( !isset( $arr[$k] ) )
-					unset( $isec[$k] );
-			}
-		}
-
-		return $isec;
-	}
-	else {
-		$res = array();
-
-		foreach ( array_keys( $isec ) as $key ) {
-			if ( isset( $keys[$key] ) ) {
-				$res[$key] = $isec[$key];
-			}
-		}
-
-		return $res;
-	}
-}
-endif;
 
 ?>

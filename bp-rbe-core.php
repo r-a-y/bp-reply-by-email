@@ -5,7 +5,7 @@
  * @package BP_Reply_By_Email
  * @subpackage Core
  */
- 
+
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -32,12 +32,12 @@ class BP_Reply_By_Email {
 			require_once( BP_RBE_DIR . "/includes/bp-rbe-{$file}.php" );
 
 		/** Localization *****************************************************************/
-		add_action( 'plugins_loaded',			array( &$this, 'localization' ) );
+		add_action( 'plugins_loaded',        array( &$this, 'localization' ) );
 
 		/** Settings check ***************************************************************/
 		// If requirements are not fulfilled, then throw an admin notice and stop now!
 		if ( !bp_rbe_is_required_completed( $this->settings ) ) {
-			add_action( 'admin_notices',		array( &$this, 'admin_notice' ) );
+			add_action( 'admin_notices', array( &$this, 'admin_notice' ) );
 			return;
 		}
 
@@ -47,12 +47,17 @@ class BP_Reply_By_Email {
 		// and allow us to filter that param. Until then, we do some elegant workarounds ;)
 
 		// Setup our "listener" object for the following BP components
-		// activity_listener() set at priority 9 for compatibility with Group Email Subscription plugin
-		add_action( 'bp_activity_after_save',		array( &$this, 'activity_listener' ), 9 );
-		add_action( 'messages_message_after_save',	array( &$this, 'message_listener' ) );
+		add_action( 'bp_activity_after_save',                   array( &$this, 'activity_listener' ), 9 );
+		add_action( 'messages_message_after_save',              array( &$this, 'message_listener' ) );
+		add_action( 'bb_new_post',                              array( &$this, 'group_forum_listener' ), 9 );
+
+		// These hooks are helpers for $this->group_forum_listener()
+		add_filter( 'bp_rbe_groups_new_group_forum_post_args',  array( &$this, 'get_temporary_variables' ) );
+		add_filter( 'bp_rbe_groups_new_group_forum_topic_args', array( &$this, 'get_temporary_variables' ) );
+		add_filter( 'bp_get_current_group_id',                  array( &$this, 'set_group_id' ) );
 
 		// Filter wp_mail(); use our listener object for component checks
-		add_filter( 'wp_mail',				array( &$this, 'wp_mail_filter' ) );
+		add_filter( 'wp_mail',                                  array( &$this, 'wp_mail_filter' ) );
 	}
 
 	/**
@@ -68,7 +73,7 @@ class BP_Reply_By_Email {
 		$mofile		= sprintf( 'bp-rbe-%s.mo', get_locale() );
 		$mofile_global	= WP_LANG_DIR . '/' . $mofile;
 		$mofile_local	= BP_RBE_DIR . '/languages/' . $mofile;
-	
+
 		if ( is_readable( $mofile_global ) )
 			return load_textdomain( 'bp-rbe', $mofile_global );
 		elseif ( is_readable( $mofile_local ) )
@@ -108,7 +113,6 @@ class BP_Reply_By_Email {
 			if ( empty( $args['headers'] ) )
 				$args['headers'] = '';
 
-			
 			// Setup our querystring which we'll add to the Reply-To header
 			$querystring = '';
 
@@ -126,7 +130,7 @@ class BP_Reply_By_Email {
 				case $bp->messages->id :
 					$querystring = "m={$listener->item_id}";
 				break;
-			
+
 				// 3rd party plugins can hook into this
 				default :
 					$querystring = apply_filters( 'bp_rbe_querystring', $querystring );
@@ -135,11 +139,11 @@ class BP_Reply_By_Email {
 
 			// Add our special querystring to the Reply-To header!
 			if ( !empty( $querystring ) ) {
-			
+
 				// Encode the qs
 				// Don't like this? there's a filter for that!
 				$querystring = apply_filters( 'bp_rbe_encode_querystring', bp_rbe_encode( $querystring ), $querystring );
-				
+
 				// Inject the querystring into the email address
 				$args['headers'] .= 'Reply-To: ' . bp_rbe_inject_qs_in_email( $querystring ) . PHP_EOL;
 
@@ -183,26 +187,6 @@ class BP_Reply_By_Email {
 			$this->listener->secondary_item_id = $item->id;      // id of direct parent comment / update
 		}
 
-		// BP Group Email Subscription (GES) plugin compatibility
-		// GES already hooks into this action to send emails in groups, so let's not reinvent the wheel.
-		// Here, we test to see if a forum topic / post is being made and we'll let GES handle the rest!
-		if ( function_exists( 'activitysub_load_buddypress' ) && strpos( $item->type, 'new_forum_' ) !== false ) {
-			$this->listener->component         = $bp->forums->id;
-			$this->listener->item_id           = $item->secondary_item_id; // topic id
-			$this->listener->secondary_item_id = $item->item_id;           // group id
-
-			// If a forum post is being made, we still need to grab the topic id
-			if ( $item->type == 'new_forum_post' ) {
-
-				// Sanity check!
-				if ( !bp_is_active( $bp->forums->id ) )
-					return;
-
-				$post = bp_forums_get_post( $item->secondary_item_id );
-				$this->listener->item_id = $post->topic_id;
-			}
-		}
-
 		/* future support for blog comments - maybe so, maybe no?
 		if ( $item->type == 'new_blog_comment' ) {
 			$this->listener->component         = $bp->blogs->id;
@@ -210,6 +194,44 @@ class BP_Reply_By_Email {
 			$this->listener->secondary_item_id = $item->secondary_item_id; // blog id
 		}
 		*/
+	}
+
+	/**
+	 * BP Group Email Subscription (GES) plugin compatibility.
+	 *
+	 * GES hooks into the 'bb_new_post' action to send emails in groups, so let's not reinvent the wheel.
+	 * Here, we test to see if a forum topic / post is being made and we'll let GES handle the rest!
+	 *
+	 * @global object $bp
+	 * @param int $post_id The forum post ID created by bbPress
+	 * @since 1.0-beta
+	 */
+	function group_forum_listener( $post_id ) {
+		global $bp;
+
+		// requires latest version of GES
+		if ( ! function_exists( 'ass_group_notification_forum_posts' ) )
+			return;
+
+		$this->listener->component = $bp->forums->id;
+
+		// get the topic ID if it's locally cached
+		if ( ! empty( $bp->rbe->temp->topic_id ) ) {
+			$topic_id = $bp->rbe->temp->topic_id;
+		}
+		// query for the topic ID
+		else {
+			$post     = bb_get_post( $post_id );
+			$topic_id = $post->topic_id;
+		}
+
+		// topic id
+		$this->listener->item_id   = $topic_id;
+
+		// group id; we filter bp_get_current_group_id() when we post from our IMAP inbox check via WP-cron
+		// @see BP_Reply_By_Email::get_temporary_variables()
+		// @see BP_Reply_By_Email::set_group_id()
+		$this->listener->secondary_item_id = bp_get_current_group_id();
 	}
 
 	/**
@@ -225,6 +247,50 @@ class BP_Reply_By_Email {
 		$this->listener->component = $bp->messages->id;
 		$this->listener->item_id   = $item->thread_id;
 		$this->listener->user_id   = $item->sender_id;
+	}
+
+	/**
+	 * When posting group forum topics or posts via IMAP, we need to grab some temporary variables to 
+	 * pass to other methods - {@link BP_Reply_By_Email::group_forum_listener()} and {@link BP_Reply_By_Email::set_group_id()}.
+	 *
+	 * @global object $bp
+	 * @param array $retval Array of arguments
+	 * @return array Array of arguments
+	 * @since 1.0-beta
+	 */
+	function get_temporary_variables( $retval ) {
+		global $bp;
+
+		// we need to temporarily hold the group ID so we can pass it
+		// to $this->group_forum_listener() via $this->set_group_id()
+		$bp->rbe->temp->group_id = $retval['group_id'];
+
+		// if we're using the 'bp_rbe_groups_new_group_forum_post_args' filter,
+		// the topic ID is passed as well, so let's save it to prevent querying for it later on!
+		if ( ! empty( $retval['topic_id'] ) ) {
+			$bp->rbe->temp->topic_id = $retval['topic_id'];
+		}
+
+		return $retval;
+	}
+
+	/**
+	 * Overrides the current group ID with our locally-cached one from 
+	 * {@link BP_Reply_By_Email::get_temporary_variables()} if available.
+	 *
+	 * @global object $bp
+	 * @param int $retval The group ID
+	 * @return int $retval The group ID
+	 * @since 1.0-beta
+	 */
+	function set_group_id( $retval ) {
+		global $bp;
+
+		if ( ! empty( $bp->rbe->temp ) ) {
+			return $bp->rbe->temp->group_id;
+		}
+
+		return $retval;
 	}
 }
 
