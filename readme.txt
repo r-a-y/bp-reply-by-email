@@ -33,7 +33,7 @@ You can also create new forum topics from your email inbox as well.
 
 1. Create a new IMAP email account. (GMail is good!)  Do *not* use an existing email account!
 1. Install and activate the plugin.
-1. Navigate to "BuddyPress > Reply By Email" in the WP admin dashboard and fill in the settings.  If you see a section called "Webhost Warnings", please resolve any issues that appear.
+1. Navigate to "BuddyPress > Reply By Email" in the WP admin dashboard and fill in the settings.  On multisite, navigate to the blog admin dashboard where you have BuddyPress installed and go to "Settings > Reply By Email".  If you see a section called "Webhost Warnings", please resolve any issues that appear.
 1. Make sure at least the Activity component is enabled in BuddyPress.
 
 **Upgrading manually**
@@ -93,6 +93,10 @@ If you know of any others, let me know and I'll list them here!
 
 
 == Changelog ==
+
+= 1.0-beta-20120521 =
+* Compatible with dev version of the [Group Email Subscription plugin](https://github.com/boonebgorges/buddypress-group-email-subscription/zipball/master). If you're using an older version of Group Email, upgrade to dev!
+* Better detection for multipart / encoded / HTML emails.
 
 = 1.0-beta-20120418 =
 * Make sure we're only connected to the inbox once per session.

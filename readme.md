@@ -20,11 +20,15 @@ If you feel adventurous, view **readme.txt** for full details about the plugin a
 ## Todo ##
 
 * Manually allow admins to disable inbox checks in the settings area without deactivating the plugin.
-* Look into why the Group Email Subscription plugin sends group forum replies to the same poster.  It should omit posts from the author.
 
 ---
 
 ## Dev changelog ##
+
+### 20120521 ###
+
+* Compatible with dev version of the [Group Email Subscription plugin]. If you're using an older version of Group Email, upgrade to dev!
+* Better detection for multipart / encoded / HTML emails.
 
 ### 20120418 ###
 
@@ -39,3 +43,5 @@ If you feel adventurous, view **readme.txt** for full details about the plugin a
 * Add a debug log. By default, debug log is created at /wp-content/bp-rbe-debug.txt
 * Fix posting new forum topics.
 * Fix various bugs and notices.
+
+[Group Email Subscription plugin]: https://github.com/boonebgorges/buddypress-group-email-subscription/zipball/master
