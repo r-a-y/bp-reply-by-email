@@ -218,96 +218,24 @@ function bp_rbe_decode( $string, $param = false ) {
 }
 
 /**
- * Gets loaded PHP modules and their respective settings.
- *
- * Lightly modified from {@link http://www.php.net/manual/en/function.phpinfo.php#84259}.
- *
- * @uses ob_start() Output buffer {@link phpinfo()} so we can grab info into an array
- * @uses phpinfo() Use "INFO_MODULES" parameter to grab only module info
- * @return array Array with PHP module information
- * @since 1.0-beta
- */
-function bp_rbe_get_phpinfo(){
-
-	ob_start();
-	phpinfo( INFO_MODULES );
-
-	$phpinfo = array();
-
-	if( preg_match_all( '#(?:<h2>(?:<a name=".*?">)?(.*?)(?:</a>)?</h2>)|(?:<tr(?: class=".*?")?><t[hd](?: class=".*?")?>(.*?)\s*</t[hd]>(?:<t[hd](?: class=".*?")?>(.*?)\s*</t[hd]>(?:<t[hd](?: class=".*?")?>(.*?)\s*</t[hd]>)?)?</tr>)#s', ob_get_clean(), $matches, PREG_SET_ORDER ) ) {
-
-		foreach( $matches as $match ) {
-			if( strlen( $match[1] ) )
-				$phpinfo[$match[1]] = array();
-
-			elseif( isset( $match[3] ) )
-				$phpinfo[end(array_keys($phpinfo))][$match[2]] = isset( $match[4] ) ? array( strip_tags($match[3]), strip_tags( $match[4]) ) : strip_tags( $match[3] );
-
-			else
-				$phpinfo[end(array_keys($phpinfo))][] = $match[2];
-		}
-	}
-
-	return $phpinfo;
-}
-
-/**
- * Gets IMAP and OpenSSL information from server's PHP configuration.
- *
- * Is there a better way to do this other than output buffering {@link phpinfo()}?
- *
- * @uses bp_rbe_get_phpinfo() Get entire PHP info
- * @return mixed Array with IMAP information on success, false on failure
- * @since 1.0-beta
- */
-function bp_rbe_get_imap_info() {
-	$phpinfo = bp_rbe_get_phpinfo();
-
-	if ( !empty( $phpinfo['imap'] ) ) {
-		$array['imap'] = $phpinfo['imap'];
-
-		// OpenSSL info might be handy as well, let's add it if available
-		if ( !empty( $phpinfo['openssl'] ) )
-			$array['openssl'] = $phpinfo['openssl'];
-
-		return $array;
-	}
-
-	return false;
-}
-
-/**
  * Is IMAP SSL support enabled?
  *
- * Takes $openssl_check as a parameter. Default is true.
- * If set to false, this doesn't check to see if OpenSSL is enabled.
- * Might be handy for some PHP compiled builds.
+ * Check to see if both the OpenSSL and IMAP modules are loaded.
  *
- * @uses bp_rbe_get_imap_info() Gets IMAP-compiled PHP info
+ * @uses get_loaded_extensions() Gets names of all PHP modules that are compiled and loaded.
  * @return bool
  * @since 1.0-beta
  */
-function bp_rbe_is_imap_ssl( $openssl_check = true ) {
-	$imap = bp_rbe_get_imap_info();
+function bp_rbe_is_imap_ssl() {
+	$modules = get_loaded_extensions();
 
-	if ( $imap['imap']['SSL Support'] == 'enabled' ) {
-		if ( $openssl_check ) {
-			if ( $imap['openssl']['OpenSSL support'] == 'enabled' ) {
-				$retval = true;
-			}
-			else {
-				$retval = false;
-			}
-		}
-		else {
-			$retval = true;
-		}
-	}
-	else {
-		$retval = false;
-	}
+	if ( ! in_array( 'openssl', $modules ) )
+		return false;
 
-	return apply_filters( 'bp_rbe_is_imap_ssl', $retval );
+	if ( ! in_array( 'imap', $modules ) )
+		return false;
+
+	return true;
 }
 
 /**
