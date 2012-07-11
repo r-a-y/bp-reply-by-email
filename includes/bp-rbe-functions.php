@@ -504,7 +504,7 @@ function bp_rbe_new_topic_info() {
 function bp_rbe_custom_cron_schedule( $schedules ) {
 
 	$schedules['bp_rbe_custom'] = array(
-		'interval' => bp_rbe_get_execution_time() + 15,	// interval in seconds; add 15 seconds leeway
+		'interval' => bp_rbe_get_execution_time(), // interval in seconds
 		'display'  => sprintf( __( 'Every %s minutes', 'bp-rbe' ), bp_rbe_get_execution_time( 'minutes' ) )
 	);
 
@@ -517,13 +517,14 @@ function bp_rbe_custom_cron_schedule( $schedules ) {
  * @since 1.0-beta
  */
 function bp_rbe_cron() {
-	if ( !wp_next_scheduled( 'bp_rbe_schedule' ) )
+	if ( ! wp_next_scheduled( 'bp_rbe_schedule' ) )
 		wp_schedule_event( time(), 'bp_rbe_custom', 'bp_rbe_schedule' );
 
 	// if we need to spawn cron, do it here
+	// @see BP_Reply_By_Email_IMAP::run()
 	if ( bp_get_option( 'bp_rbe_spawn_cron' ) ) {
-		// this emulates a visitor hitting our site, which will trigger wp_cron() and our scheduled hook above
-		wp_remote_post( bp_core_get_root_domain(), array( 'timeout' => 0.01, 'blocking' => false, 'sslverify' => apply_filters( 'https_local_ssl_verify', true ) ) );
+		// manually spawn cron
+		spawn_cron();
 
 		// remove our DB marker
 		bp_delete_option( 'bp_rbe_spawn_cron' );

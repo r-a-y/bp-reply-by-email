@@ -303,11 +303,19 @@ class BP_Reply_By_Email_IMAP {
 			bp_rbe_log( '--- Closing current connection automatically ---' );
 
 			// clear our scheduled hook to prevent wryly cron irregularity
+			// see https://github.com/r-a-y/bp-reply-by-email/issues/5
 			wp_clear_scheduled_hook( 'bp_rbe_schedule' );
 
-			// since we clear our scheduled hook, it would take two page hits to run our task instead of one
-			// let's create a marker so we can spawn cron manually on the first page hit
+			// since we clear our scheduled hook, it would take two page hits:
+			// the first to reschedule the task and the second to run our task
+
+			// so let's create a marker so we can spawn cron manually on the first page hit
 			// @see bp_rbe_cron()
+
+			// note: this does add an extra DB query on each page load...
+			//       perhaps make this a toggleable option via a define?
+			//       this would be beneficial for very active sites looking
+			//       to optimize their DB queries
 			bp_update_option( 'bp_rbe_spawn_cron', 1 );
 		}
 		else {
