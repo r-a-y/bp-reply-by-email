@@ -17,6 +17,16 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class BP_Reply_By_Email_IMAP {
 
+	/**
+	 * Holds the single-running RBE IMAP object.
+	 *
+	 * @var BP_Reply_By_Email_IMAP
+	 */
+	private static $instance = false;
+
+	/**
+	 * Holds the current IMAP connection.
+	 */
 	protected $connection = false;
 
 	/**
@@ -26,23 +36,32 @@ class BP_Reply_By_Email_IMAP {
 	 * @static
 	 */
 	public static function &init() {
-		static $instance = false;
-
-		if ( !$instance ) {
-			$instance = new BP_Reply_By_Email_IMAP;
+		if ( self::$instance === false ) {
+			self::$instance = new self();
 		}
 
-		return $instance;
+		return self::$instance;
 	}
+
+	/**
+	 * Private constructor. Intentionally left empty.
+	 *
+	 * Instantiate this class by using {@link BP_Reply_By_Email_IMAP::init()}.
+	 */
+	private function __construct() {}
 
 	/**
 	 * The main function we use to parse an IMAP inbox.
 	 */
-	function run() {
+	public function run() {
 		global $bp, $wpdb;
 
+		// $instance must be initialized before we go on!
+		if ( self::$instance === false )
+			return false;
+
 		// If safe mode isn't on, then let's set the execution time to unlimited
-		if ( !ini_get( 'safe_mode' ) )
+		if ( ! ini_get( 'safe_mode' ) )
 			set_time_limit(0);
 
 		// Try to connect
@@ -75,6 +94,8 @@ class BP_Reply_By_Email_IMAP {
 				// Loop through each email message
 				for ( $i = 1; $i <= $msg_num; ++$i ) :
 
+					// Email header check ******************************************
+
 					$headers = $this->header_parser( $this->connection, $i );
 
 					if ( !$headers ) {
@@ -83,6 +104,8 @@ class BP_Reply_By_Email_IMAP {
 					}
 
 					bp_rbe_log( 'Message #' . $i . ' of ' . $msg_num . ': email headers successfully parsed' );
+
+					// User check **************************************************
 
 					$user_id = email_exists( $this->address_parser( $headers, 'From' ) );
 
@@ -93,7 +116,8 @@ class BP_Reply_By_Email_IMAP {
 
 					bp_rbe_log( 'Message #' . $i . ': user id successfully parsed - user id is - ' . $user_id );
 
-					// Grab address tag from "To" email address
+					// Querystring check *******************************************
+
 					$qs = $this->get_address_tag( $this->address_parser( $headers, 'To' ) );
 
 					if ( !$qs ) {
@@ -103,7 +127,8 @@ class BP_Reply_By_Email_IMAP {
 
 					bp_rbe_log( 'Message #' . $i . ': address tag successfully parsed' );
 
-					// Parse our encoded querystring into variables
+					// Parameters parser *******************************************
+
 					// Check if we're posting a new item or not
 					if ( $this->is_new_item( $qs ) )
 						$params = $this->querystring_parser( $qs, $user_id );
@@ -117,7 +142,8 @@ class BP_Reply_By_Email_IMAP {
 
 					bp_rbe_log( 'Message #' . $i . ': params = ' . print_r( $params, true ) );
 
-					// Parse email body
+					// Email body parser *******************************************
+
 					$body = $this->body_parser( $this->connection, $i );
 
 					// If there's no email body and this is a reply, stop!
@@ -126,8 +152,11 @@ class BP_Reply_By_Email_IMAP {
 						continue;
 					}
 
-					// Extract each param into its own variable
+					// Extract params **********************************************
+
 					extract( $params );
+
+					// Posting time! ***********************************************
 
 					// Activity reply
 					if ( !empty( $a ) ) :
@@ -166,6 +195,8 @@ class BP_Reply_By_Email_IMAP {
 
 						// remove the filter after posting
 						remove_filter( 'bp_activity_comment_action', 'bp_rbe_activity_comment_action' );
+
+						// unset some variables
 						unset( $activity_count );
 						unset( $a );
 						unset( $p );
@@ -180,9 +211,9 @@ class BP_Reply_By_Email_IMAP {
 
 							// If user is a member of the group and not banned, then let's post the forum reply!
 							if ( $can_post || ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) ) {
-								$forum_post_id = bp_rbe_groups_new_group_forum_post( array( 
-									'post_text' => $body, 
-									'topic_id'  => $t, 
+								$forum_post_id = bp_rbe_groups_new_group_forum_post( array(
+									'post_text' => $body,
+									'topic_id'  => $t,
 									'user_id'   => $user_id,
 									'group_id'  => $g
 								) );
@@ -291,8 +322,18 @@ class BP_Reply_By_Email_IMAP {
 
 			// If the IMAP connection is down, reconnect
 			if( ! imap_ping( $this->connection ) ) {
-				bp_rbe_log( '-- IMAP connection is down, reconnecting... --' );
-				$this->connect();
+				bp_rbe_log( '-- IMAP connection is down, attempting to reconnect... --' );
+
+				// attempt to reconnect
+				$reopen = imap_reopen( $this->connection, $this->get_mailbox() );
+
+				if ( $reopen ) {
+					bp_rbe_log( '-- Reconnection successful! --' );
+				}
+				else {
+					bp_rbe_log( '-- Reconnection failed! :( --' );
+					bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
+				}
 			}
 
 			// Unset some variables to clear some memory
@@ -325,28 +366,16 @@ class BP_Reply_By_Email_IMAP {
 
 	/**
 	 * Connects to the IMAP inbox.
+	 *
+	 * @return bool
 	 */
-	function connect() {
+	private function connect() {
 		global $bp_rbe;
-
-		// Imap connection is already established!
-		if ( is_resource( $this->connection ) ) {
-			bp_rbe_log( '--- Already connected! ---' );
-			return true;
-		}
-
-		// This needs some testing...
-		$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
-
-		// Need to readjust this before public release
-		// In the meantime, let's add a filter!
-		$hostname = '{' . $bp_rbe->settings['servername'] . ':' . $bp_rbe->settings['port'] . '/imap' . $ssl . '}INBOX';
-		$hostname = apply_filters( 'bp_rbe_hostname', $hostname );
 
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
 
 		// Let's open the IMAP stream!
-		$this->connection = @imap_open( $hostname, $bp_rbe->settings['username'], $bp_rbe->settings['password'] );
+		$this->connection = @imap_open( $this->get_mailbox(), $bp_rbe->settings['username'], $bp_rbe->settings['password'] );
 
 		if ( $this->connection === false ) {
 			bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
@@ -363,8 +392,10 @@ class BP_Reply_By_Email_IMAP {
 
 	/**
 	 * Closes the IMAP connection.
+	 *
+	 * @return bool
 	 */
-	function close() {
+	private function close() {
 		// Do something before closing
 		do_action( 'bp_rbe_imap_before_close', $this->connection );
 
@@ -392,6 +423,28 @@ class BP_Reply_By_Email_IMAP {
 	}
 
 	/**
+	 * Get the mailbox we want to connect to.
+	 *
+	 * This, basically, returns the first parameter of {@link imap_open()}, which
+	 * is also the second parameter of {@link imap_reopen()}.
+	 *
+	 * @return string
+	 */
+	public function get_mailbox() {
+		global $bp_rbe;
+
+		// This needs some testing...
+		$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
+
+		// Need to readjust this before public release
+		// In the meantime, let's add a filter!
+		$mailbox = '{' . $bp_rbe->settings['servername'] . ':' . $bp_rbe->settings['port'] . '/imap' . $ssl . '}INBOX';
+		$mailbox = apply_filters( 'bp_rbe_mailbox', $mailbox );
+
+		return $mailbox;
+	}
+
+	/**
 	 * Returns true when the main IMAP loop should finally stop in our version of a poor man's daemon.
 	 *
 	 * Info taken from Christopher Nadeau's post - {@link http://devlog.info/2010/03/07/creating-daemons-in-php/#lphp-4}.
@@ -402,7 +455,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @uses unlink() Deletes this txt file so we can do another check later.
 	 * @return bool
 	 */
-	function should_stop() {
+	public function should_stop() {
 		clearstatcache();
 
 		if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ) ) {
@@ -421,7 +474,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param int $i The current email message number
 	 * @return mixed Array of email headers. False if no headers or if the email is junk.
 	 */
-	function header_parser( $imap, $i ) {
+	private function header_parser( $imap, $i ) {
 		// Grab full, raw email header
 		$header = imap_fetchheader( $imap, $i );
 
@@ -475,7 +528,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param bool $reply If we're parsing a reply or not. Default set to true.
 	 * @return mixed Either the email body on success or false on failure
 	 */
-	function body_parser( $imap, $i, $reply = true ) {
+	private function body_parser( $imap, $i, $reply = true ) {
 		// get the email structure
 		$structure = imap_fetchstructure( $imap, $i );
 
@@ -546,7 +599,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param string $key The key we want to check against the array.
 	 * @return mixed Either the email address on success or false on failure
 	 */
-	function address_parser( $headers, $key ) {
+	private function address_parser( $headers, $key ) {
 		if ( empty( $headers[$key] ) ) {
 			bp_rbe_log( $key . ' parser - empty key' );
 			return false;
@@ -588,7 +641,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param string $address The email address containing the address tag
 	 * @return mixed Either the address tag on success or false on failure
 	 */
-	function get_address_tag( $address ) {
+	private function get_address_tag( $address ) {
 		global $bp_rbe;
 
 		// $address might already be false, so let's return false right away
@@ -611,9 +664,10 @@ class BP_Reply_By_Email_IMAP {
 	 * @uses bp_rbe_decode() To decode the encoded querystring
 	 * @uses wp_parse_str() WP's version of parse_str() to parse the querystring
 	 * @param string $qs The encoded address tag we want to decode
+	 * @param int $user_id  The user ID. New posted items will pass this parameter for decoding. See inline doc of function for more details.
 	 * @return mixed Either an array of params on success or false on failure
 	 */
-	function querystring_parser( $qs, $user_id = false ) {
+	private function querystring_parser( $qs, $user_id = false ) {
 
 		// New posted items will pass $user_id along with $qs for decoding
 		// This is done as an additional security measure because the "From" header
@@ -674,10 +728,10 @@ class BP_Reply_By_Email_IMAP {
 	 * eg. djlkjkdjfkd-new = true
 	 *     jkljd8fujkdjkdf = false
 	 *
-	 * @param string $tag The address tag we're checking for.
+	 * @param string $qs The address tag we're checking for.
 	 * @return bool
 	 */
-	function is_new_item( $qs ) {
+	private function is_new_item( $qs ) {
 		$new = '-new';
 
 		if ( substr( $qs, -strlen( $new ) ) == $new )
