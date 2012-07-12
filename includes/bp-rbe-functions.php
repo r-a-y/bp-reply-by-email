@@ -40,7 +40,7 @@ function bp_rbe_is_required_completed( $settings = false ) {
 /**
  * Check to see if we're connected to the IMAP inbox.
  *
- * To check if we're connected a DB entry is updated in {@link BP_Reply_By_Email_IMAP::connect()}
+ * To check if we're connected, a DB entry is updated in {@link BP_Reply_By_Email_IMAP::connect()}
  * and in {@link BP_Reply_By_Email_IMAP::close()}.
  *
  * @return bool
@@ -441,9 +441,8 @@ function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
  * @since 1.0-beta
  */
 function bp_rbe_new_topic_info_css() {
-	global $bp;
 
-	if ( bp_is_group_forum() && empty( $bp->action_variables ) && $bp->loggedin_user->id ) :
+	if ( bp_is_group_forum() && ! bp_action_variables() && bp_loggedin_user_id() ) :
 ?>
 	<style type="text/css">
 		#rbe-toggle { display:none; }
@@ -469,7 +468,7 @@ function bp_rbe_new_topic_info() {
 	<p><?php _e( 'You can post new topics to this group from the comfort of your email inbox.', 'bp-rbe' ) ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></p>
 
 	<div id="rbe-message">
-		<h5><?php printf( __( 'Send an email to <strong><a href="%s">%s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto: {$bp->groups->current_group->name} <" . bp_rbe_groups_get_encoded_email_address(). ">", bp_rbe_groups_get_encoded_email_address(), $bp->groups->current_group->name ); ?></h5>
+		<h5><?php printf( __( 'Send an email to <strong><a href="%s">%s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto: " . bp_get_current_group_name() . " <" . bp_rbe_groups_get_encoded_email_address(). ">", bp_rbe_groups_get_encoded_email_address(), bp_get_current_group_name() ); ?></h5>
 
 		<ul>
 			<li><?php printf( __( 'Compose a new email from the same email address you registered with &ndash; %s', 'bp-rbe' ), '<strong>' . $bp->loggedin_user->userdata->user_email . '</strong>' ) ?>.</li>
@@ -540,8 +539,6 @@ function bp_rbe_cron() {
  */
 function bp_rbe_check_imap_inbox() {
 
-	$imap = BP_Reply_By_Email_IMAP::init();
-
 	// check to see if we're connected via our DB marker
 	if ( bp_rbe_is_connected() ) {
 		bp_rbe_log( '--- Cronjob wants to connect - however according to our DB indicator, we already have an active IMAP connection! ---' );
@@ -549,6 +546,7 @@ function bp_rbe_check_imap_inbox() {
 	}
 
 	// run our inbox check
+	$imap = BP_Reply_By_Email_IMAP::init();
 	$imap->run();
 }
 
@@ -750,12 +748,10 @@ function bp_rbe_groups_encoded_email_address( $user_id = false, $group_id = fals
 	 * @since 1.0-beta
 	 */
 	function bp_rbe_groups_get_encoded_email_address( $user_id = false, $group_id = false ) {
-		global $bp;
+		$user_id  = ! $user_id  ? bp_loggedin_user_id()     : $user_id;
+		$group_id = ! $group_id ? bp_get_current_group_id() : $group_id;
 
-		$user_id  = !$user_id ? $bp->loggedin_user->id : $user_id;
-		$group_id = !$group_id ? $bp->groups->current_group->id : $group_id;
-
-		if ( !$user_id || !$group_id )
+		if ( ! $user_id || ! $group_id )
 			return false;
 
 		$gstring     = 'g=' . $group_id;
