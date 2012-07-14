@@ -368,26 +368,6 @@ function bp_rbe_remove_email_client_signature( $content ) {
 }
 
 /**
- * After successfully posting an email message to BuddyPress,
- * we mark the email for deletion for user privacy issues.
- *
- * In GMail, we have to move the message to the Trash folder,
- * since deleting an email simply moves it to "All Mail".
- *
- * @param resource $imap The current IMAP connection
- * @param int $i The current message number
- * @since 1.0-beta
- */
-function bp_rbe_parsed_to_trash( $imap, $i ) {
-	global $bp_rbe;
-
-	if ( $bp_rbe->settings['gmail'] )
-		imap_mail_move( $imap, $i, '[Gmail]/Trash' );
-	else
-		imap_delete( $imap, $i );
-}
-
-/**
  * Logs no match errors during IMAP inbox checks.
  *
  * @uses bp_rbe_log() Logs error messages in a custom log

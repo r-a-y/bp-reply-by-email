@@ -26,23 +26,28 @@ if ( bp_rbe_is_required_completed() ) :
 	// email inbox parsing
 	/**
 	 * In Gmail, imap_delete() moves the email to the "All Mail" folder; it doesn't mark the email for deletion.
-	 * For emails that do not match our BP criteria, we use imap_delete() so you can always view failed attempts in Gmail.
-	 * However, you might want to remove this action and do your own thing. (eg. move the email to another folder).
+	 *
+	 * Note: If you're using Gmail AND you're hooking into the "bp_rbe_imap_no_match" or "bp_rbe_imap_loop" filters,
+	 *       DO NOT USE imap_mail_move() or imap_mail_copy() as this will F up the message loop.
+	 *
+	 *       From my testing, using GMail and imap_mail_move() / imap_mail_copy() will also expunge the email.
+	 *       (Will need to test non-Gmail IMAP servers.)
+	 *
+	 *       Expunging an email *during the message loop with multiple emails* will screw up the message numbers.
+	 *       For more details, view:
+	 *       https://bugs.php.net/bug.php?id=10536#988465219
+	 *
+	 * If you're not using Gmail, you might want to remove the following actions and do your own thing.
+	 * (eg. move the email to another folder instead of marking emails for deletion).
 	 */
-	add_action( 'bp_rbe_imap_no_match',           'imap_delete',            10, 2 );
-	add_action( 'bp_rbe_imap_loop',               'bp_rbe_parsed_to_trash', 10, 2 );
+	add_action( 'bp_rbe_imap_no_match',           'imap_delete',                10, 2 );
+	add_action( 'bp_rbe_imap_loop',               'imap_delete',                10, 2 );
 
 	// log error messages
 	add_action( 'bp_rbe_imap_no_match',           'bp_rbe_imap_log_no_matches', 10, 4 );
 	
-	/**
-	 * Outright delete the emails that are marked for deletion once we're done.
-	 * You might want to remove the following actions and do your own thing. (eg. move the email to another folder).
-	 *
-	 * Note: In Gmail, imap_expunge() doesn't apply to emails using imap_delete(). Emails stay intact in the "All Mail" folder.
-	 */
+	// outright delete the emails that are marked for deletion once we're done.
 	add_action( 'bp_rbe_imap_after_loop',         'imap_expunge' );
-	add_action( 'bp_rbe_imap_before_close',       'imap_expunge' );
 
 	// new topic info screen
 	add_action( 'wp_head',                        'bp_rbe_new_topic_info_css', 99 );
