@@ -79,10 +79,10 @@ class BP_Reply_By_Email_IMAP {
 		for ( $now = time(), $future = time() + $duration; $future > $now; $now = time() ) :
 
 			// Get number of messages
-			$msg_num = imap_num_msg( $this->connection );
+			$message_count = imap_num_msg( $this->connection );
 
 			// If there are messages in the inbox, let's start parsing!
-			if( $msg_num != 0 ) :
+			if( $message_count != 0 ) :
 
 				// According to this:
 				// http://www.php.net/manual/pl/function.imap-headerinfo.php#95012
@@ -92,7 +92,7 @@ class BP_Reply_By_Email_IMAP {
 				bp_rbe_log( '- Checking inbox -' );
 
 				// Loop through each email message
-				for ( $i = 1; $i <= $msg_num; ++$i ) :
+				for ( $i = 1; $i <= $message_count; ++$i ) :
 
 					// Email header check ******************************************
 
@@ -103,7 +103,7 @@ class BP_Reply_By_Email_IMAP {
 						continue;
 					}
 
-					bp_rbe_log( 'Message #' . $i . ' of ' . $msg_num . ': email headers successfully parsed' );
+					bp_rbe_log( 'Message #' . $i . ' of ' . $message_count . ': email headers successfully parsed' );
 
 					// User check **************************************************
 
@@ -301,10 +301,10 @@ class BP_Reply_By_Email_IMAP {
 					unset( $body );
 				endfor;
 
-			endif;
+				// do something after the loop
+				do_action( 'bp_rbe_imap_after_loop', $this->connection );
 
-			// do something after the loop
-			do_action( 'bp_rbe_imap_after_loop', $this->connection );
+			endif;
 
 			// stop the loop if necessary
 			if ( $this->should_stop() ) {
@@ -337,7 +337,7 @@ class BP_Reply_By_Email_IMAP {
 			}
 
 			// Unset some variables to clear some memory
-			unset( $msg_num );
+			unset( $message_count );
 		endfor;
 
 		if ( $this->close() ) {
@@ -477,6 +477,12 @@ class BP_Reply_By_Email_IMAP {
 	private function header_parser( $imap, $i ) {
 		// Grab full, raw email header
 		$header = imap_fetchheader( $imap, $i );
+
+		// No header? Return false
+		if ( empty( $header ) ) {
+			bp_rbe_log( 'Message #' . $i . ': error - no IMAP header' );
+			return false;
+		}
 
 		// Do a regex match
 		$pattern = apply_filters( 'bp_rbe_header_regex', '/([^: ]+): (.+?(?:\r\n\s(?:.+?))*)\r\n/m' );
