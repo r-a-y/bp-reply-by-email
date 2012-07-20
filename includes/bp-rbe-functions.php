@@ -255,17 +255,6 @@ function bp_rbe_log( $message ) {
 	error_log( '[' . gmdate( 'd-M-Y H:i:s' ) . '] ' . $message . "\n", 3, BP_RBE_DEBUG_LOG_PATH );
 }
 
-/**
- * Gets the last line of a given string.
- *
- * @param string $text The text we want to grab the last line for
- * @return string
- * @since 1.0-beta
- */
-function bp_rbe_get_last_line( $text ) {
-	return trim( substr( strrchr( $text, 10 ), 1 ) );
-}
-
 /** Hook-related ********************************************************/
 
 /**
@@ -359,32 +348,132 @@ function bp_rbe_html_to_plaintext( $content ) {
 }
 
 /**
- * Tries to remove the email signature of most common email clients from email replies.
+ * Tries to remove the email signature of *most* common email clients from email replies.
  *
- * @uses bp_rbe_get_last_line() Gets the last line of a given string
+ * Keyword here is *most*! :) A work-in-progress!
+ *
  * @param string $content The content we want to modify
  * @return string
  * @since 1.0-beta
  */
 function bp_rbe_remove_email_client_signature( $content ) {
-	$last_line = bp_rbe_get_last_line( $content );
 
-	switch( $last_line ) {
-		// remove common mobile device sigs
-		// is this string localized in other countries? better safe than sorry!
-		case strpos( $last_line, __( 'Sent from my ', 'bp-rbe' ) ) === 0 :
-			$content = substr( $content, 0, strrpos( $content, 10 ) );
+	// Good reference article:
+	// http://stackoverflow.com/questions/1372694/strip-signatures-and-replies-from-emails#answer-2193937
+	//
+	// I've implemented basically everything except #2 and #6
 
-			break;
 
-		// remove common desktop email client reply lines
-		// if last character of last line is a colon (':'), remove the last line entirely
-		// eg. 'On DATE, USER wrote:'
-		//     'USER wrote:'
-		case substr( $last_line, -1 ) === ':' :
-			$content = substr( $content, 0, strrpos( $content, 10 ) );
+	// helpful ascii whitespace debugger
+	//var_dump( str_replace( array( "\r\n", "\r", "\n", "\t"), array( '\\r\\n', '\\r', '\\n', '\\t' ), $content ) );
 
-			break;
+	// (1) Standard email sig delimiter
+	//
+	// eg. "--\r\n
+	//      John Doe"
+	//
+	if ( strpos( $content, chr( 10 ) . '--' . chr( 13 ) . chr( 10 ) ) !== false ) {
+		$content = substr( $content, 0, strpos( $content, chr( 10 ) . '--' . chr( 13 ) . chr( 10 ) ) );
+	}
+
+	// (2) Common mobile email client sigs:
+	// check to see if any line begins with "Sent from my "
+	elseif ( strrpos( $content, chr( 10 ) . 'Sent from my ' ) !== false ) {
+		$content = substr( $content, 0, strrpos( $content, chr( 10 ) . 'Sent from my ' ) );
+
+	}
+
+	// (3)(i) Miscellaneous email sigs: Outlook Desktop, Novell Groupwise Web Access
+	//
+	// These clients (and probably others) use an indeterminate amount of dashes to
+	// separate the body and the signature; let's check for at least 20 occurences in a row
+	// @todo Perhaps use a longer length to be extra safe?
+	elseif ( strrpos( $content, chr( 10 ) . '--------------------' ) !== false ) {
+		$content = substr( $content, 0, strrpos( $content, chr( 10 ) . '--------------------' ) );
+	}
+
+	// (3)(ii) Miscellaneous email sigs: Outlook Web Access
+	//
+	// Outlook Web Access sigs look like this:
+	//
+	// 	________________________________________
+	//      From: ...
+	//
+	// Since the multiple underscores are sometimes of an indeterminant length,
+	// we check for at least 20 occurences
+	// @todo Perhaps use a longer length to be extra safe?
+	elseif ( strrpos( $content, chr( 10 ) . '____________________' ) !== false ) {
+		$content = substr( $content, 0, strrpos( $content, chr( 10 ) . '____________________' ) );
+	}
+
+	// (3)(iii) Miscellaneous email sigs: Outlook Desktop
+	//
+	// Some Outlook Desktop sigs look like this:
+	//
+	// 	-----Original Message-----
+	//      From: ...
+	//
+	elseif ( strrpos( $content, chr( 10 ) . '-----Original Message-----' ) !== false ) {
+		$content = substr( $content, 0, strrpos( $content, chr( 10 ) . '-----Original Message-----' ) );
+	}
+
+	// (3)(iv) Miscellaneous email sigs: Lotus Notes
+	//
+	// eg. "-----Blah <blah.com> wrote: -----"
+	//
+	// The reason we do two checks here is people might use five dashes to emulate a <hr> tag.
+	elseif ( strrpos( $content, chr( 10 ) . '-----' ) !== false && strrpos( $content, ': -----' ) !== false ) {
+		$content = substr( $content, 0, strrpos( $content, chr( 10 ) . '-----' ) );
+	}
+
+	// (4) Common email client sigs:
+	// check if last character of last line ends with a colon.
+	//
+	// eg. 'On DATE, USER wrote:'
+	//     'USER wrote:'
+	//
+	// This is the last check because it's slightly more intensive than the others
+	else {
+		// split email into an array of lines; reverse the order
+		$lines = array_reverse( preg_split( '/$\R?^/m', $content ) );
+
+		//print_r($lines);
+
+		// last character of last line ends with a colon!
+		if ( substr( rtrim( $lines[0] ), -1 ) === ':' ) {
+
+			$i = 0;
+
+			// now we check to see if the sig was wrapped after a certain character limit.
+			//
+			// 	eg. 'On DATE, USER
+			//           wrote:'
+			//
+			// chances are this sig takes up a maximum of two lines, but just to be safe, I'm using this method!
+			//
+			// this is done by checking if each line from the last line is less than the last line
+			//
+			// this could be a little bit too greedy because I'm looking for the next empty line...
+			// but we'll see what happens!
+			while ( ! empty( $lines[$i + 1] ) ) {
+				// if the nth-to-last line is less than the current line, stop now!
+				if ( strlen( $lines[$i + 1] ) < strlen( $lines[$i] ) )
+					break;
+
+				// iterate!
+				++$i;
+
+				// strip from the beginning of the sig
+				$content = substr( $content, 0, strrpos( $content, $lines[$i] ) );
+
+			}
+
+			// if $i didn't iterate, this means the sig is on the last line only
+			if ( $i == 0 ) {
+				$content = substr( $content, 0, strrpos( $content, $lines[0] ) );
+			}
+
+		}
 	}
 
 	return $content;
