@@ -336,6 +336,29 @@ function bp_rbe_remove_eol_char( $content ) {
 }
 
 /**
+ * Converts HTML to plain-text.
+ *
+ * Uses the html2text functions from the {@link http://openiaml.org/ IAML Modelling Platform}
+ * by {@link mailto:j.m.wright@massey.ac.nz Jevon Wright}.
+ *
+ * Licensed under the Eclipse Public License v1.0:
+ * {@link http://www.eclipse.org/legal/epl-v10.html}
+ *
+ * Thanks Jevon! :)
+ *
+ * @link https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php
+ * @uses convert_html_to_text() Converts HTML to plain-text.
+ * @param string $content The HTML content we want to convert to plain-text.
+ * @return string Converted plain-text.
+ */
+function bp_rbe_html_to_plaintext( $content ) {
+	if ( ! function_exists( 'convert_html_to_text' ) )
+		require( BP_RBE_DIR . '/includes/functions.html2text.php' );
+
+	return convert_html_to_text( $content );
+}
+
+/**
  * Tries to remove the email signature of most common email clients from email replies.
  *
  * @uses bp_rbe_get_last_line() Gets the last line of a given string

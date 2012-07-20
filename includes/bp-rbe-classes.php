@@ -568,7 +568,7 @@ class BP_Reply_By_Email_IMAP {
 				break;
 		}
 
-		// do something special for HTML emails
+		// do something special for emails that only contain HTML
 		if ( strtolower( $structure->subtype ) == 'html' ) {
 			$body = apply_filters( 'bp_rbe_parse_html_email', $body, $structure );
 		}

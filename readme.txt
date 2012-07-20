@@ -2,8 +2,8 @@
 Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
-Requires at least: WordPress 3.2, BuddyPress 1.5
-Tested up to: WordPress 3.3.1, BuddyPress 1.5.5
+Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
+Tested up to: WordPress 3.4.1, BuddyPress 1.5.6
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -84,6 +84,10 @@ If you know of any others, let me know and I'll list them here!
 * Test with other IMAP providers like Fastmail.FM, etc.  If they work, add prebuilt configuration for these providers.
 * Add support for subdomain addressing in a future release.  Fastmail.fm's paid accounts support this (eg. anythinghere@USERNAME.fastmail.fm).
 
+== Special Thanks ==
+
+* Jevon Wright - for his [html2text](https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php) functions from the [IAML Modelling Platform](http://openiaml.org/).  Licensed under the [Eclipse Public License v1.0](http://www.eclipse.org/legal/epl-v10.html).
+
 
 == Screenshots ==
 
@@ -95,7 +99,7 @@ If you know of any others, let me know and I'll list them here!
 == Changelog ==
 
 = 1.0-beta-20120521 =
-* Compatible with dev version of the [Group Email Subscription plugin](https://github.com/boonebgorges/buddypress-group-email-subscription/zipball/master). If you're using an older version of Group Email, upgrade to dev!
+* Compatible with [Group Email Subscription plugin v3.2+](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/). If you're using an older version of Group Email, upgrade to the latest version!
 * Better detection for multipart / encoded / HTML emails.
 
 = 1.0-beta-20120418 =

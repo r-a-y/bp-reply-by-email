@@ -5,7 +5,7 @@
  * @package BP_Reply_By_Email
  * @subpackage Hooks
  */
- 
+
 // Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -18,6 +18,9 @@ if ( bp_rbe_is_required_completed() ) :
 
 	add_action( 'init',                           'bp_rbe_cron' );
 	add_action( 'admin_init',                     'bp_rbe_cron' );
+
+	// html email to plain-text
+	add_filter( 'bp_rbe_parse_html_email',        'bp_rbe_html_to_plaintext' );
 
 	// email body parsing
 	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_eol_char', 1 );
@@ -45,7 +48,7 @@ if ( bp_rbe_is_required_completed() ) :
 
 	// log error messages
 	add_action( 'bp_rbe_imap_no_match',           'bp_rbe_imap_log_no_matches', 10, 4 );
-	
+
 	// outright delete the emails that are marked for deletion once we're done.
 	add_action( 'bp_rbe_imap_after_loop',         'imap_expunge' );
 
