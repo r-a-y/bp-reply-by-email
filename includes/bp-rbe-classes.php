@@ -196,8 +196,9 @@ class BP_Reply_By_Email_IMAP {
 							continue;
 						}
 
-						// might want to do something special like add some activity meta
-						do_action( 'bp_rbe_new_activity_comment', $comment_id );
+						// special hook for RBE activity items
+						// might want to do something like add some activity meta
+						do_action( 'bp_rbe_new_activity', $comment_id, 'activity_comment', $a, $p );
 
 						bp_rbe_log( 'Message #' . $i . ': activity comment successfully posted!' );
 

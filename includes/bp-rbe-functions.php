@@ -140,31 +140,18 @@ function bp_rbe_encode( $string, $param = false ) {
 		$key = $param . $key;
 
 	// filter the key
-	$key = apply_filters( 'bp_rbe_key_before_encode', sha1( $key ), $string, $param );
+	$key = apply_filters( 'bp_rbe_key_before_encode', $key, $string, $param );
 
-	$strLen = strlen( $string );
-	$keyLen = strlen( $key );
-
-	// prevent PHP warnings
-	$hash = '';
-	$j = NULL;
-
-	for ( $i = 0; $i < $strLen; ++$i ) {
-
-		$ordStr = ord( substr( $string, $i, 1) );
-
-		if ( $j == $keyLen )
-			$j = 0;
-
-		$ordKey = ord( substr( $key, $j, 1 ) );
-
-		++$j;
-
-		$hash .= strrev( base_convert( dechex( $ordStr + $ordKey ), 16, 36 ) );
-
+	if ( ! class_exists( 'Crypt_AES' ) ) {
+		require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
 	}
 
-	return $hash;
+	$cipher = new Crypt_AES();
+	$cipher->setKey( $key );
+	
+	$encrypt = bin2hex( $cipher->encrypt( $string ) );
+
+	return apply_filters( 'bp_rbe_encode', $encrypt, $string, $key );
 }
 
 /**
@@ -190,32 +177,33 @@ function bp_rbe_decode( $string, $param = false ) {
 		$key = $param . $key;
 
 	// filter the key
-	$key = apply_filters( 'bp_rbe_key_before_decode', sha1( $key ), $string, $param );
+	$key = apply_filters( 'bp_rbe_key_before_decode', $key, $string, $param );
 
-	$strLen = strlen( $string );
-	$keyLen = strlen( $key );
-
-	// prevent PHP warnings
-	$hash = '';
-	$j = NULL;
-
-	for ( $i = 0; $i < $strLen; $i += 2 ) {
-
-		$ordStr = hexdec( base_convert( strrev( substr( $string, $i, 2) ), 36, 16) );
-
-		if ( $j == $keyLen )
-			$j = 0;
-
-		$ordKey = ord( substr( $key, $j, 1 ) );
-
-		++$j;
-
-		$hash .= chr( $ordStr - $ordKey );
-
+	if ( ! class_exists( 'Crypt_AES' ) ) {
+		require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
 	}
+	$cipher = new Crypt_AES();
+	$cipher->setKey( $key );
+	
+	$decrypt = $cipher->decrypt( hex2bin( $string ) );
 
-	return $hash;
+	return apply_filters( 'bp_rbe_decode', $decrypt, $string, $key );
 }
+
+if ( ! function_exists( 'hex2bin' ) ) :
+/**
+ * hex2bin() isn't available in PHP < 5.4.
+ *
+ * So let's add our compatible version here.
+ *
+ * @uses pack()
+ * @param string $text Hexadecimal representation of data.
+ * @return mixed Returns the binary representation of the given data or FALSE on failure.
+ */
+function hex2bin( $text ) {
+    return pack( 'H*', $text );
+}
+endif;
 
 /**
  * Is IMAP SSL support enabled?
@@ -319,7 +307,7 @@ function bp_rbe_remove_eol_char( $content ) {
 	$char = apply_filters( 'bp_rbe_eol_char', '>' );
 
 	if ( substr( $content, -strlen( $char ) ) == $char )
-		return substr( $content, 0, strrpos( $content, PHP_EOL . $char ) );
+		return substr( $content, 0, strrpos( $content, chr( 10 ) . $char ) );
 
 	return $content;
 }
@@ -452,9 +440,6 @@ function bp_rbe_remove_email_client_signature( $content ) {
 			// chances are this sig takes up a maximum of two lines, but just to be safe, I'm using this method!
 			//
 			// this is done by checking if each line from the last line is less than the last line
-			//
-			// this could be a little bit too greedy because I'm looking for the next empty line...
-			// but we'll see what happens!
 			while ( ! empty( $lines[$i + 1] ) ) {
 				// if the nth-to-last line is less than the current line, stop now!
 				if ( strlen( $lines[$i + 1] ) < strlen( $lines[$i] ) )
@@ -714,7 +699,7 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 		$primary_link     = bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug . '/?topic_page=' . $page;
 
 		/* Record this in activity streams */
-		bp_activity_add( array(
+		$activity_id = bp_activity_add( array(
 			'user_id'           => $user_id,
 			'action'            => apply_filters( 'groups_activity_new_forum_post_action', $activity_action, $post_id, $post_text, &$topic ),
 			'content'           => apply_filters( 'groups_activity_new_forum_post_content', $activity_content, $post_id, $post_text, &$topic ),
@@ -725,6 +710,9 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 			'secondary_item_id' => $post_id,
 			'hide_sitewide'     => ( $group->status == 'public' ) ? false : true
 		) );
+
+		// special hook for RBE activity items
+		do_action( 'bp_rbe_new_activity', $activity_id, 'new_forum_post', $group_id, $post_id );
 
 		do_action( 'groups_new_forum_topic_post', $group_id, $post_id );
 
@@ -798,7 +786,7 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 		$activity_content = bp_create_excerpt( $topic_text );
 
 		/* Record this in activity streams */
-		bp_activity_add( array(
+		$activity_id = bp_activity_add( array(
 			'user_id'            => $user_id,
 			'action'             => apply_filters( 'groups_activity_new_forum_topic_action', $activity_action, $topic_text, &$topic ),
 			'content'            => apply_filters( 'groups_activity_new_forum_topic_content', $activity_content, $topic_text, &$topic ),
@@ -809,6 +797,9 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 			'secondary_item_id'  => $topic_id,
 			'hide_sitewide'      => ( $group->status == 'public' ) ? false : true
 		) );
+		
+		// special hook for RBE activity items
+		do_action( 'bp_rbe_new_activity', $activity_id, 'new_forum_topic', $group_id, $topic_id );
 
 		do_action( 'groups_new_forum_topic', $group_id, &$topic );
 
