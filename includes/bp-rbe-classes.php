@@ -182,7 +182,7 @@ class BP_Reply_By_Email_IMAP {
 						// Add our filter to override the activity action in bp_activity_new_comment()
 						bp_rbe_activity_comment_action_filter( $user_id );
 
-						bp_activity_new_comment(
+						$comment_id = bp_activity_new_comment(
 							 array(
 								'content'	=> $body,
 								'user_id'	=> $user_id,
@@ -190,6 +190,14 @@ class BP_Reply_By_Email_IMAP {
 								'parent_id'	=> $p  // ID of the parent comment
 							)
 						);
+
+						if ( ! $comment_id ) {
+							do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'activity_comment_fail' );
+							continue;
+						}
+
+						// might want to do something special like add some activity meta
+						do_action( 'bp_rbe_new_activity_comment', $comment_id );
 
 						bp_rbe_log( 'Message #' . $i . ': activity comment successfully posted!' );
 
@@ -226,7 +234,7 @@ class BP_Reply_By_Email_IMAP {
 								bp_rbe_log( 'Message #' . $i . ': forum reply successfully posted!' );
 
 								// could potentially add attachments
-								do_action( 'bp_rbe_email_new_forum_post', $this->connection, $i, $forum_post_id, $g, $user_id );
+								do_action( 'bp_rbe_new_forum_post', $this->connection, $i, $forum_post_id, $g, $user_id );
 							}
 
 							unset( $t );
@@ -283,7 +291,7 @@ class BP_Reply_By_Email_IMAP {
 								bp_rbe_log( 'Message #' . $i . ': forum topic successfully posted!' );
 
 								// could potentially add attachments
-								do_action_ref_array( 'bp_rbe_email_new_forum_topic', array( $this->connection, $i, &$topic, $g, $user_id ) );
+								do_action_ref_array( 'bp_rbe_new_forum_topic', array( $this->connection, $i, &$topic, $g, $user_id ) );
 							}
 
 							unset( $g );
@@ -497,17 +505,16 @@ class BP_Reply_By_Email_IMAP {
 			return false;
 		}
 
-		// Test to see if our email is an auto-reply message
-		// If so, return false
-		if ( !empty( $headers['X-Autoreply'] ) && $headers['X-Autoreply'] == 'yes' ) {
+		// 'X-AutoReply' header check
+		if ( ! empty( $headers['X-Autoreply'] ) && $headers['X-Autoreply'] == 'yes' ) {
 			bp_rbe_log( 'Message #' . $i . ': error - this is an autoreply message, so stop now!' );
 			return false;
 		}
 
+		// 'Precedence' header check
 		// Test to see if our email is an out of office automated reply or mailing list email
-		// If so, return false
 		// See http://en.wikipedia.org/wiki/Email#Header_fields
-		if ( !empty( $headers['Precedence'] ) ) :
+		if ( ! empty( $headers['Precedence'] ) ) :
 			switch ( $headers['Precedence'] ) {
 				case 'bulk' :
 				case 'junk' :
@@ -517,6 +524,45 @@ class BP_Reply_By_Email_IMAP {
 				break;
 			}
 		endif;
+
+		// 'Auto-Submitted' header check
+		// See https://tools.ietf.org/html/rfc3834#section-5
+		if ( ! empty( $headers['Auto-Submitted'] ) ) :
+			switch ( strtolower( $headers['Auto-Submitted'] ) ) {
+				case 'auto-replied' :
+				case 'auto-generated' :
+					bp_rbe_log( 'Message #' . $i . ': error - this is an auto-reply using the "Auto-Submitted" header, so stop now!' );
+					return false;
+				break;
+			}
+		endif;
+
+		// 'X-Auto-Response-Suppress' header check
+		// used in MS Exchange mail servers
+		// See http://msdn.microsoft.com/en-us/library/ee219609%28v=EXCHG.80%29.aspx
+		if ( ! empty( $headers['X-Auto-Response-Suppress'] ) ) :
+			switch ( $headers['X-Auto-Response-Suppress'] ) {
+				// non-standard value, but seems to be in use
+				case 'All' :
+
+				// these are official values
+				case 'OOF' :
+				case 'AutoReply' :
+					bp_rbe_log( 'Message #' . $i . ': error - this is auto-reply from MS Exchange, so stop now!' );
+					return false;
+				break;
+			}
+		endif;
+
+		// 'X-FC-MachineGenerated' header check
+		// used in FirstClass mail servers
+		if ( ! empty( $headers['X-FC-MachineGenerated'] ) ) {
+			bp_rbe_log( 'Message #' . $i . ': error - this is an auto-reply from FirstClass mail, so stop now!' );
+			return false;
+		}
+
+		// @todo Perhaps implement more auto-reply checks from this:
+		// http://wiki.exim.org/EximAutoReply#Router-1
 
 		// Want to do more checks? Here's the filter!
 		return apply_filters( 'bp_rbe_parse_email_headers', $headers, $header );
@@ -585,6 +631,12 @@ class BP_Reply_By_Email_IMAP {
 
 			// Return email body up to our pointer only
 			$body = apply_filters( 'bp_rbe_parse_email_body_reply', trim( substr( $body, 0, $pointer ) ), $body, $structure );
+		}
+		
+		// this means we're posting something new (eg. new forum topic)
+		// do something special for this case
+		else {
+			$body = apply_filters( 'bp_rbe_parse_email_body_new', $body, $structure );
 		}
 
 		if ( empty( $body ) ) {
