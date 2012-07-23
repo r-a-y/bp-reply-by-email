@@ -22,9 +22,12 @@ if ( bp_rbe_is_required_completed() ) :
 	// html email to plain-text
 	add_filter( 'bp_rbe_parse_html_email',        'bp_rbe_html_to_plaintext' );
 
-	// email body parsing
+	// email reply parsing
 	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_eol_char', 1 );
 	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_email_client_signature' );
+
+	// email new item parsing
+	add_filter( 'bp_rbe_parse_email_body_new',    'bp_rbe_remove_line_wrap_from_plaintext', 10, 2 );
 
 	// email inbox parsing
 	/**
@@ -44,7 +47,7 @@ if ( bp_rbe_is_required_completed() ) :
 	 * (eg. move the email to another folder instead of marking emails for deletion).
 	 */
 	add_action( 'bp_rbe_imap_no_match',           'imap_delete',                10, 2 );
-	add_action( 'bp_rbe_imap_loop',               'imap_delete',                10, 2 );
+	add_action( 'bp_rbe_imap_loop',               'imap_delete',                99, 2 );
 
 	// log error messages
 	add_action( 'bp_rbe_imap_no_match',           'bp_rbe_imap_log_no_matches', 10, 4 );

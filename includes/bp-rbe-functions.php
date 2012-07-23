@@ -148,7 +148,7 @@ function bp_rbe_encode( $string, $param = false ) {
 
 	$cipher = new Crypt_AES();
 	$cipher->setKey( $key );
-	
+
 	$encrypt = bin2hex( $cipher->encrypt( $string ) );
 
 	return apply_filters( 'bp_rbe_encode', $encrypt, $string, $key );
@@ -184,7 +184,7 @@ function bp_rbe_decode( $string, $param = false ) {
 	}
 	$cipher = new Crypt_AES();
 	$cipher->setKey( $key );
-	
+
 	$decrypt = $cipher->decrypt( hex2bin( $string ) );
 
 	return apply_filters( 'bp_rbe_decode', $decrypt, $string, $key );
@@ -333,6 +333,45 @@ function bp_rbe_html_to_plaintext( $content ) {
 		require( BP_RBE_DIR . '/includes/functions.html2text.php' );
 
 	return convert_html_to_text( $content );
+}
+
+/**
+ * Removes line wrap from plain-text emails.
+ *
+ * At the moment, this is used when posting new forum topics via email.
+ *
+ * @param string $body The body we want to remove the line-wraps
+ * @param obj $structure The structure of the email from imap_fetchstructure()
+ * @return string Converted plain-text.
+ * @todo Need to check line endings on other OSs... might use PHP_EOL instead
+ */
+function bp_rbe_remove_line_wrap_from_plaintext( $body, $structure ) {
+	// just in case, we only do this to emails that are not HTML-only
+	if ( $structure->subtype != 'html' ) {
+		// replace double CRLF with double LF
+		$body = str_replace( "\r\n\r\n", "\n\n", $body );
+
+		// keep line breaks for certain instances
+		// hacky at best... :(
+		// doesn't handle numbered list items
+		// @todo craft a nice regex to do this instead and cover all instances?
+
+		// any line ending with a colon
+		$body = str_replace( ":\r\n", ':<RAY>', $body );
+
+		// any line beginning with '-', '*', ' '
+		$body = str_replace( "\r\n-", '<RAY>-', $body );
+		$body = str_replace( "\r\n*", '<RAY>*', $body );
+		$body = str_replace( "\r\n ", '<RAY> ', $body );
+
+		// now remove single CRLF so line wrap is gone!
+		$body = str_replace( "\r\n", '', $body );
+
+		// add back the line breaks
+		$body = str_replace( '<RAY>', "\n", $body );
+	}
+
+	return $body;
 }
 
 /**
@@ -797,7 +836,7 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 			'secondary_item_id'  => $topic_id,
 			'hide_sitewide'      => ( $group->status == 'public' ) ? false : true
 		) );
-		
+
 		// special hook for RBE activity items
 		do_action( 'bp_rbe_new_activity', $activity_id, 'new_forum_topic', $group_id, $topic_id );
 
