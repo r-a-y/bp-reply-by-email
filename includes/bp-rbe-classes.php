@@ -382,9 +382,12 @@ class BP_Reply_By_Email_IMAP {
 		global $bp_rbe;
 
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
+		
+		// decode the password
+		$password = bp_rbe_decode( array( 'string' => $bp_rbe->settings['password'], 'key' => wp_salt() ) );
 
 		// Let's open the IMAP stream!
-		$this->connection = @imap_open( $this->get_mailbox(), $bp_rbe->settings['username'], $bp_rbe->settings['password'] );
+		$this->connection = @imap_open( $this->get_mailbox(), $bp_rbe->settings['username'], $password );
 
 		if ( $this->connection === false ) {
 			bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
@@ -744,7 +747,7 @@ class BP_Reply_By_Email_IMAP {
 				$qs = substr( $qs, 0, $new );
 
 				// pass $user_id to bp_rbe_decode()
-				$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( $qs, $user_id ), $qs, $user_id );
+				$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( array( 'string' => $qs, 'param' => $user_id ) ), $qs, $user_id );
 			}
 			else
 				return false;
@@ -752,7 +755,7 @@ class BP_Reply_By_Email_IMAP {
 
 		// Replied items will use the regular $qs for decoding
 		else {
-			$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( $qs ), $qs, $user_id );
+			$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( array( 'string' => $qs ) ), $qs, $user_id );
 		}
 
 		// These are the default params we want to check for

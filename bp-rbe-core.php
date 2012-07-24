@@ -20,23 +20,25 @@ class BP_Reply_By_Email {
 	/**
 	 * Initializes the class when called upon.
 	 */
-	function init() {
+	public function init() {
 
 		// settings
 		$this->settings = bp_get_option( 'bp-rbe' );
 
 		/** Includes *********************************************************************/
-		$files = array( 'classes', 'functions', 'hooks' );
 
-		foreach ( $files as $file )
-			require_once( BP_RBE_DIR . "/includes/bp-rbe-{$file}.php" );
+		require( BP_RBE_DIR . '/includes/bp-rbe-classes.php' );
+		require( BP_RBE_DIR . '/includes/bp-rbe-functions.php' );
+		require( BP_RBE_DIR . '/includes/bp-rbe-hooks.php' );
 
 		/** Localization *****************************************************************/
+
 		add_action( 'plugins_loaded',        array( &$this, 'localization' ) );
 
 		/** Settings check ***************************************************************/
+
 		// If requirements are not fulfilled, then throw an admin notice and stop now!
-		if ( !bp_rbe_is_required_completed( $this->settings ) ) {
+		if ( ! bp_rbe_is_required_completed( $this->settings ) ) {
 			add_action( 'admin_notices', array( &$this, 'admin_notice' ) );
 			return;
 		}
@@ -69,7 +71,7 @@ class BP_Reply_By_Email {
 	 * @uses load_textdomain() Loads a .mo file into WP
 	 * @since 1.0-beta
 	 */
-	function localization() {
+	public function localization() {
 		$mofile		= sprintf( 'bp-rbe-%s.mo', get_locale() );
 		$mofile_global	= WP_LANG_DIR . '/' . $mofile;
 		$mofile_local	= BP_RBE_DIR . '/languages/' . $mofile;
@@ -87,7 +89,7 @@ class BP_Reply_By_Email {
 	 *
 	 * @since 1.0-beta
 	 */
-	function admin_notice() {
+	public function admin_notice() {
 	?>
 		<div id="message" class="error"><p><?php _e( 'BuddyPress Reply By Email cannot initialize.  Please navigate to "BuddyPress > Reply By Email" to fill in the required fields and address the webhost warnings.', 'bp-rbe' ) ?></p></div>
 	<?php
@@ -102,7 +104,7 @@ class BP_Reply_By_Email {
 	 * @return array
 	 * @since 1.0-beta
 	 */
-	function wp_mail_filter( $args ) {
+	public function wp_mail_filter( $args ) {
 		global $bp;
 
 		// Check to see if our "listener" object exists
@@ -138,11 +140,11 @@ class BP_Reply_By_Email {
 			}
 
 			// Add our special querystring to the Reply-To header!
-			if ( !empty( $querystring ) ) {
+			if ( ! empty( $querystring ) ) {
 
 				// Encode the qs
 				// Don't like this? there's a filter for that!
-				$querystring = apply_filters( 'bp_rbe_encode_querystring', bp_rbe_encode( $querystring ), $querystring );
+				$querystring = apply_filters( 'bp_rbe_encode_querystring', bp_rbe_encode( array( 'string' => $querystring ) ), $querystring );
 
 				// Inject the querystring into the email address
 				$args['headers'] .= 'Reply-To: ' . bp_rbe_inject_qs_in_email( $querystring ) . PHP_EOL;
@@ -168,8 +170,10 @@ class BP_Reply_By_Email {
 	 * @param object $item The activity object created during {@link BP_Activity_Activity::save()}
 	 * @since 1.0-beta
 	 */
-	function activity_listener( $item ) {
+	public function activity_listener( $item ) {
 		global $bp;
+
+		$this->listener = new stdClass;
 
 		// activity component
 		$this->listener->component = $bp->activity->id;
@@ -206,12 +210,14 @@ class BP_Reply_By_Email {
 	 * @param int $post_id The forum post ID created by bbPress
 	 * @since 1.0-beta
 	 */
-	function group_forum_listener( $post_id ) {
+	public function group_forum_listener( $post_id ) {
 		global $bp;
 
 		// requires latest version of GES
 		if ( ! function_exists( 'ass_group_notification_forum_posts' ) )
 			return;
+
+		$this->listener = new stdClass;
 
 		$this->listener->component = $bp->forums->id;
 
@@ -241,8 +247,10 @@ class BP_Reply_By_Email {
 	 * @param object $item The message object created during {@link BP_Messages_Message::send()}
 	 * @since 1.0-beta
 	 */
-	function message_listener( $item ) {
+	public function message_listener( $item ) {
 		global $bp;
+
+		$this->listener = new stdClass;
 
 		$this->listener->component = $bp->messages->id;
 		$this->listener->item_id   = $item->thread_id;
@@ -258,8 +266,10 @@ class BP_Reply_By_Email {
 	 * @return array Array of arguments
 	 * @since 1.0-beta
 	 */
-	function get_temporary_variables( $retval ) {
+	public function get_temporary_variables( $retval ) {
 		global $bp;
+
+		$bp->rbe = $bp->rbe->temp = new stdClass;
 
 		// we need to temporarily hold the group ID so we can pass it
 		// to $this->group_forum_listener() via $this->set_group_id()
@@ -283,7 +293,7 @@ class BP_Reply_By_Email {
 	 * @return int $retval The group ID
 	 * @since 1.0-beta
 	 */
-	function set_group_id( $retval ) {
+	public function set_group_id( $retval ) {
 		global $bp;
 
 		if ( ! empty( $bp->rbe->temp ) ) {

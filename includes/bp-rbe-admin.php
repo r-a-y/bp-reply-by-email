@@ -60,7 +60,7 @@ class BP_Reply_By_Email_Admin {
 			$parent = 'bp-general-settings';
 		}
 
-		$page = add_submenu_page( $parent, __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( &$this, 'load' ) );
+		$page = add_submenu_page( $parent, __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'BP Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( &$this, 'load' ) );
 
 		add_action( "admin_head-{$page}",   array( &$this, 'head' ) );
 		add_action( "admin_footer-{$page}", array( &$this, 'footer' ) );
@@ -83,10 +83,10 @@ class BP_Reply_By_Email_Admin {
 		$path = 'admin.php?page=bp-rbe';
 
 		// Backwards compatibility with older WP versions
-		$admin_page = is_multisite() && function_exists( 'is_network_admin' ) ? network_admin_url( $path ) : admin_url( $path );
+		//$admin_page = is_multisite() && function_exists( 'is_network_admin' ) ? network_admin_url( $path ) : admin_url( $path );
 
 		// Settings link - move to front
-		$settings_link = sprintf( '<a href="%s">%s</a>', $admin_page, __( 'Settings', 'bp-rbe' ) );
+		$settings_link = sprintf( '<a href="%s">%s</a>', $path, __( 'Settings', 'bp-rbe' ) );
 		array_unshift( $links, $settings_link );
 
 		// Donate link
@@ -242,6 +242,10 @@ class BP_Reply_By_Email_Admin {
 			}
 		}
 
+		// encode the password
+		if ( !empty( $password ) )
+			$output['password'] = bp_rbe_encode( array( 'string' => $password, 'key' => wp_salt() ) );
+
 		/* error time! */
 
 		if ( strlen( $input['tag'] ) > 1 && !$output['tag'] )
@@ -270,7 +274,7 @@ class BP_Reply_By_Email_Admin {
 		<div class="wrap">
 			<?php screen_icon('edit-comments'); ?>
 
-			<h2><?php _e( 'Reply By Email Settings', 'bp-rbe' ) ?></h2>
+			<h2><?php _e( 'BP Reply By Email Settings', 'bp-rbe' ) ?></h2>
 
 			<?php $this->display_errors() ?>
 
@@ -510,8 +514,13 @@ class BP_Reply_By_Email_Admin {
 
 			case 'text' :
 			case 'password' :
+				$value = $this->get_option( $name, false );
+
+				if ( $type == 'password' ) {
+					$value = bp_rbe_decode( array( 'string' => $value, 'key' => wp_salt() ) );
+				}
 			?>
-				<input class="<?php echo $size; ?>-text" value="<?php $this->get_option( $name ) ?>" name="<?php $this->field( $name ) ?>" id="<?php $this->field( $name, true ) ?>" type="<?php echo $type; ?>" />
+				<input class="<?php echo $size; ?>-text" value="<?php echo $value; ?>" name="<?php $this->field( $name ) ?>" id="<?php $this->field( $name, true ) ?>" type="<?php echo $type; ?>" />
 			<?php
 				if ( $desc )
 					echo '<span class="description">' . $desc . '</span>';

@@ -118,76 +118,111 @@ function bp_rbe_inject_qs_in_email( $qs ) {
 }
 
 /**
- * Encodes a string using the key set from the admin area.
- * Second parameter is to prefix something to the key. Handy to set different keys.
+ * Encodes a string.
  *
- * Modified from Abhiskek Sanghvi's encode() function {@link http://myphpscriptz.com/2010/08/basic-string-encodingdecoding-functions/}
+ * By default, uses AES encryption from {@link http://phpseclib.sourceforge.net/ phpseclib}.
+ * Licensed under the {@link http://www.opensource.org/licenses/mit-license.html MIT License}.
  *
- * @param string $string The content we want to encode
- * @param string $param Optional. The string we want to prepend to the key.
+ * Thanks phpseclib! :)
+ *
+ * @param array $args Array of arguments. See inline doc of function for full details.
  * @return string The encoded string
  * @since 1.0-beta
  */
-function bp_rbe_encode( $string, $param = false ) {
+function bp_rbe_encode( $args = array() ) {
 	global $bp_rbe;
 
-	$key = $bp_rbe->settings['key'];
+	$defaults = array (
+ 		'string' => false,                    // the content we want to encode
+ 		'key'    => $bp_rbe->settings['key'], // the key used to aid in encryption; defaults to the key set in the admin area
+ 		'param'  => false,                    // the string we want to prepend to the key; handy to set different keys
+ 		'mode'   => 'aes',                    // mode of encryption; defaults to 'aes'
+	);
 
-	if ( empty( $key ) )
+	$args = wp_parse_args( $args, $defaults );
+
+	extract( $args );
+
+	if ( empty( $string ) || empty( $key ) )
 		return false;
 
 	if ( $param )
 		$key = $param . $key;
 
-	// filter the key
-	$key = apply_filters( 'bp_rbe_key_before_encode', $key, $string, $param );
+	$encrypt = false;
 
-	if ( ! class_exists( 'Crypt_AES' ) ) {
-		require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
+	// default mode is AES
+	// you can override this with the filter below to prevent the AES library from loading
+	// to modify the return value, use the 'bp_rbe_encode' filter
+	$mode = apply_filters( 'bp_rbe_encode_mode', $mode );
+
+	if ( $mode == 'aes' ) {
+		if ( ! class_exists( 'Crypt_AES' ) ) {
+			require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
+		}
+	
+		$cipher = new Crypt_AES();
+		$cipher->setKey( $key );
+	
+		// converts AES binary string to hexadecimal
+		$encrypt = bin2hex( $cipher->encrypt( $string ) );
 	}
 
-	$cipher = new Crypt_AES();
-	$cipher->setKey( $key );
-
-	$encrypt = bin2hex( $cipher->encrypt( $string ) );
-
-	return apply_filters( 'bp_rbe_encode', $encrypt, $string, $key );
+	return apply_filters( 'bp_rbe_encode', $encrypt, $string, $mode, $key, $param );
 }
 
 /**
- * Decodes a string using the key set from the admin area.
- * Second parameter is to prefix something to the key. Handy to set different keys.
+ * Decodes an encrypted string.
  *
- * Modified from Abhiskek Sanghvi's decode() function {@link http://myphpscriptz.com/2010/08/basic-string-encodingdecoding-functions/}
+ * By default, uses AES decryption from {@link http://phpseclib.sourceforge.net/ phpseclib}.
+ * Licensed under the {@link http://www.opensource.org/licenses/mit-license.html MIT License}.
  *
- * @param string $string The encoded string we want to decode
- * @param string $param Optional. The string we should prepend to the key.
+ * Thanks phpseclib! :)
+ *
+ * @param array $args Array of arguments. See inline doc of function for full details.
  * @return string The decoded string
  * @since 1.0-beta
  */
-function bp_rbe_decode( $string, $param = false ) {
+function bp_rbe_decode( $args = array() ) {
 	global $bp_rbe;
 
-	$key = $bp_rbe->settings['key'];
+	$defaults = array (
+ 		'string' => false,                    // the encoded string we want to dencode
+ 		'key'    => $bp_rbe->settings['key'], // the key used to aid in encryption; defaults to the key set in the admin area
+ 		'param'  => false,                    // the string we want to prepend to the key; handy to set different keys
+ 		'mode'   => 'aes',                    // mode of decryption; defaults to 'aes'
+	);
 
-	if ( empty( $key ) )
+	$args = wp_parse_args( $args, $defaults );
+
+	extract( $args );
+
+	if ( empty( $string ) || empty( $key ) )
 		return false;
 
 	if ( $param )
 		$key = $param . $key;
 
-	// filter the key
-	$key = apply_filters( 'bp_rbe_key_before_decode', $key, $string, $param );
+	$decrypt = false;
 
-	if ( ! class_exists( 'Crypt_AES' ) ) {
-		require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
+	// default mode is AES
+	// you can override this with the filter below to prevent the AES library from loading
+	// to modify the return value, use the 'bp_rbe_decode' filter
+	$mode = apply_filters( 'bp_rbe_encode_mode', $mode );
+		
+	if ( $mode == 'aes' ) {
+		if ( ! class_exists( 'Crypt_AES' ) ) {
+			require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
+		}
+	
+		$cipher = new Crypt_AES();
+		$cipher->setKey( $key );
+	
+		// converts hexadecimal AES string back to binary and then decrypts string back to plain-text
+		$decrypt = $cipher->decrypt( hex2bin( $string ) );
 	}
-	$cipher = new Crypt_AES();
-	$cipher->setKey( $key );
 
-	$decrypt = $cipher->decrypt( hex2bin( $string ) );
-
-	return apply_filters( 'bp_rbe_decode', $decrypt, $string, $key );
+	return apply_filters( 'bp_rbe_decode', $decrypt, $string, $mode, $key, $param );
 }
 
 if ( ! function_exists( 'hex2bin' ) ) :
@@ -878,7 +913,7 @@ function bp_rbe_groups_encoded_email_address( $user_id = false, $group_id = fals
 
 		$gstring     = 'g=' . $group_id;
 
-		$querystring = apply_filters( 'bp_rbe_encode_group_querystring', bp_rbe_encode( $gstring, $user_id ), $user_id, $group_id );
+		$querystring = apply_filters( 'bp_rbe_encode_group_querystring', bp_rbe_encode( array( 'string' => $gstring, 'param' => $user_id ) ), $user_id, $group_id );
 
 		return bp_rbe_inject_qs_in_email( $querystring . '-new' );
 	}
