@@ -375,8 +375,10 @@ class BP_Reply_By_Email_Admin {
 				<img alt="" src="http<?php if ( is_ssl() ) echo 's'; ?>://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1" />
 			</form>
 
-			<!-- Output options data, so we can see how it currently looks -->
-			<pre><?php print_r( $this->settings ) ?></pre>
+			<h3><?php _e( 'Need Help?', 'bp-rbe' ); ?></h3>
+			
+			<p><?php printf( __( '<a href="%s">Check out the BP Reply By Email wiki</a> for articles, FAQs and more information.', 'bp-rbe' ), 'https://github.com/r-a-y/bp-reply-by-email/wiki/' ); ?></p>
+
 		</div>
 	<?php
 	}
@@ -459,7 +461,7 @@ class BP_Reply_By_Email_Admin {
 		</p>
 
 		<p>
-			<?php printf( __( 'View the <em>"WordPress\' pseudo-cron and workaround"</em> section in the <a href="%s">readme</a> for a potential solution.', 'bp-rbe' ), BP_RBE_URL . 'readme.txt' ) ?>
+			<?php printf( __( '<a href="%s">View this article</a> for a potential solution.', 'bp-rbe' ), 'https://github.com/r-a-y/bp-reply-by-email/wiki/Frequently-Asked-Questions#wiki-traffic' ); ?>
 		</p>
 
 	<?php
