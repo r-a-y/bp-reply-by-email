@@ -3,14 +3,14 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 3.4.1, BuddyPress 1.5.6
+Tested up to: WordPress 3.4.x, BuddyPress 1.6-RC1
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
 
 == Description ==
 
-Brings Basecamp-like reply via email functionality to your BuddyPress site.
+BuddyPress Reply By Email is a plugin for [BuddyPress](http://buddypress.org) that allows you to reply to various email notifications from the comfort of your email inbox.
 
 You can reply to the following items from your inbox:
 
@@ -19,73 +19,37 @@ You can reply to the following items from your inbox:
 * Private messages
 * Group forum topics / posts (requires [BP Group Email Subscription Plugin](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/))
 
-You can also create new forum topics from your email inbox as well.
+You can also create new group forum topics from your email inbox as well.
 
-**NOTE**
-* Currently, you will need to setup a dedicated IMAP email account that supports [address tags](http://en.wikipedia.org/wiki/Email_address#Address_tags).  Free options include [GMail](http://www.gmail.com) (or [Google Apps Mail](http://www.google.com/apps/intl/en/group/index.html)) and [FastMail.fm](http://www.fastmail.fm/?STKI=6098221) *(referral link)*.
-* Your webhost will need to enable the IMAP extension for PHP (if it isn't enabled already).
+**Minimum Requirements**
+* WordPress 3.4.1, BuddyPress 1.5.6
+* [IMAP module enabled in PHP](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server)
+* An email address that supports IMAP and [address tags](https://en.wikipedia.org/wiki/Email_address#Address_tags)
+
+**Wiki**
+Check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by-email/wiki) for more information!
+
 
 == Installation ==
 
-**IMPORTANT**
-* You will need to setup a dedicated IMAP email account that supports [address tags](http://en.wikipedia.org/wiki/Email_address#Address_tags).  Free options include [GMail](http://www.gmail.com) (or [Google Apps Mail](http://www.google.com/apps/intl/en/group/index.html)) and [FastMail.fm](http://www.fastmail.fm/?STKI=6098221) *(referral link)*.
-* Your host will need to enable the IMAP extension for PHP (if it isn't enabled already).
-
-1. Create a new IMAP email account. (GMail is good!)  Do *not* use an existing email account!
-1. Install and activate the plugin.
-1. Navigate to "BuddyPress > Reply By Email" in the WP admin dashboard and fill in the settings.  On multisite, navigate to the blog admin dashboard where you have BuddyPress installed and go to "Settings > Reply By Email".  If you see a section called "Webhost Warnings", please resolve any issues that appear.
-1. Make sure at least the Activity component is enabled in BuddyPress.
+**Quick Setup with Gmail**
+[Check out the guide here.](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail)
 
 **Upgrading manually**
 
 If you already have the plugin activated, but you choose to upgrade the plugin manually via FTP, you must deactivate the plugin and reactivate it again.
 
+
 == Frequently Asked Questions ==
 
-#### I've filled in my GMail account info in the plugin's settings, but the plugin isn't working! ####
+[Check out the FAQ here.](https://github.com/r-a-y/bp-reply-by-email/wiki/Frequently-Asked-Questions)
 
-Make sure you've enabled IMAP in your GMail account:
-http://mail.google.com/support/bin/answer.py?answer=77695
+Also check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by-email/wiki) for more information!
 
-Also make sure your username and password is correct!
-
-
-#### How do I reply to group forum topics / posts via email? ####
-
-This feature requires installing the [BP Group Email Subscription Plugin](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/).
-
-*NOTE* You can only reply to group forum topics and posts via email if you've setup your group to receive either "All Mail" or "New Topics" in BP Group Email Subscription.
-
-
-#### WordPress' pseudo-cron and workaround ####
-
-BuddyPress Reply By Email hooks into Wordpress' scheduling functions and hooks.  (Good!)
-However, the way Wordpress works is these schedules are only fired when a user visits your site. (Not-so-good!)
-
-For example, let's say I schedule BP Reply By Email to run every five minutes.  Six minutes pass by and I expect my task to run again, however if no user visits my site, the task will not run. (Tear runs down face!)
-
-This isn't so bad if you have a site that generates decent traffic, but what about smaller-scale sites?
-
-A potential solution is to use an external service to hit your website.  (Basically a cron job for our cron!)
-
-Here are a couple of free options that allow you to do just that!
-
-* [Pingdom](http://www.pingdom.com/#freemodal) - Free plan offers monitoring one website.  Intervals are configurable from 1, 5, 15, 30 or 60 minutes.
-* [Alertfox](http://alertfox.com/free-website-monitoring) - Free plan offers to check your site every five minutes.
-* [Was It Up?](http://wasitup.com) - Checks your website every five minutes.
-* [UptimeRobot](http://www.uptimerobot.com/) - Checks your website every five minutes.
-
-If you know of any others, let me know and I'll list them here!
-
-
-== Roadmap ==
-
-* Admin settings are currently site-aware.  Make settings network-aware.
-* Test with other IMAP providers like Fastmail.FM, etc.  If they work, add prebuilt configuration for these providers.
-* Add support for subdomain addressing in a future release.  Fastmail.fm's paid accounts support this (eg. anythinghere@USERNAME.fastmail.fm).
 
 == Special Thanks ==
 
+* Jim Wigginton - for his `Crypt_AES` class from the [PHP Secure Communications Library](http://phpseclib.sourceforge.net/). Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
 * Jevon Wright - for his [html2text](https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php) functions from the [IAML Modelling Platform](http://openiaml.org/).  Licensed under the [Eclipse Public License v1.0](http://www.eclipse.org/legal/epl-v10.html).
 
 
@@ -98,22 +62,5 @@ If you know of any others, let me know and I'll list them here!
 
 == Changelog ==
 
-= 1.0-beta-20120521 =
-* Compatible with [Group Email Subscription plugin v3.2+](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/). If you're using an older version of Group Email, upgrade to the latest version!
-* Better detection for multipart / encoded / HTML emails.
-
-= 1.0-beta-20120418 =
-* Make sure we're only connected to the inbox once per session.
-* Fix cron scheduling issues.
-* Code cleanup.
-
-= 1.0-beta-20120404 =
-* Requires at least BP 1.5.
-* When email settings are saved, check to see if the connection is valid.
-* Add a debug log. By default, debug log is created at /wp-content/bp-rbe-debug.txt
-* Fix posting new forum topics.
-* Fix various bugs and notices.
-
 = 1.0-beta =
-* Initial private release
-* Warning: If this isn't on the WP plugin depository, this means there are still some bugs to work out and is still a work in progress!
+* Initial public release

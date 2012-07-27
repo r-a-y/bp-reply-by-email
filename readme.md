@@ -1,47 +1,35 @@
 # BuddyPress Reply By Email #
 
-This plugin is **not** quite ready for public consumption yet and is a private release.
+BuddyPress Reply By Email is a plugin for [BuddyPress](http://buddypress.org) that allows you to reply to various email notifications from the comfort of your email inbox.
 
-Do **not** run this on production environments!
+You can reply to the following items from your inbox:
 
-If you feel adventurous, view **readme.txt** for full details about the plugin and installation process.
+* @mentions
+* Activity replies
+* Private messages
+* Group forum topics / posts (requires [BP Group Email Subscription Plugin](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/))
 
----
+You can also create new group forum topics from your email inbox as well.
 
-## Testing notes ##
+This plugin was developed for the [CUNY Academic Commons](http://commons.gc.cuny.edu).  Licensed under the GPLv2 or later.
 
-* If you're replying to items via email, make sure that you're replying from the email address you registered with on WordPress. Why? Because RBE checks your email address to see if you're a valid user.
-* Check the debug log (wp-content/bp-rbe-debug.txt) if you run into errors and post issues about them.
-* If you're upgrading from an older release, you must deactivate the plugin and reactivate it again.
-* To stop inbox checks, right now, you'll have to deactivate the plugin.  Still working on making this better.
+#### Minimum Requirements
+* WordPress 3.4.1, BuddyPress 1.5.6
+* [IMAP module enabled in PHP](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server)
+* An email address that supports IMAP and [address tags](https://en.wikipedia.org/wiki/Email_address#Address_tags)
 
----
+#### Getting Started
+* [Quick Setup with GMail](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail)
+* [Frequently Asked Questions](https://github.com/r-a-y/bp-reply-by-email/wiki/Frequently-Asked-Questions)
 
-## Todo ##
+#### Get Help
+* [Wiki](https://github.com/r-a-y/bp-reply-by-email/wiki/)
+* [Troubleshooting Guide](https://github.com/r-a-y/bp-reply-by-email/wiki/Troubleshooting-Guide)
+* [Bug Tracker](https://github.com/r-a-y/bp-reply-by-email/issues)
 
-* Manually allow admins to disable inbox checks in the settings area without deactivating the plugin.
+***
 
----
+#### Thanks
 
-## Dev changelog ##
-
-### 20120521 ###
-
-* Compatible with dev version of the [Group Email Subscription plugin]. If you're using an older version of Group Email, upgrade to dev!
-* Better detection for multipart / encoded / HTML emails.
-
-### 20120418 ###
-
-* Make sure we're only connected to the inbox once per session.
-* Fix cron scheduling issues.
-* Code cleanup.
-
-### 20120404 ###
-
-* Requires at least BP 1.5.
-* When email settings are saved, check to see if the credentials are valid.
-* Add a debug log. By default, debug log is created at /wp-content/bp-rbe-debug.txt
-* Fix posting new forum topics.
-* Fix various bugs and notices.
-
-[Group Email Subscription plugin]: https://github.com/boonebgorges/buddypress-group-email-subscription/zipball/master
+* Jim Wigginton - for his `Crypt_AES` class from the [PHP Secure Communications Library](http://phpseclib.sourceforge.net/). Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
+* Jevon Wright - for his [html2text](https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php) functions from the [IAML Modelling Platform](http://openiaml.org/).  Licensed under the [Eclipse Public License v1.0](http://www.eclipse.org/legal/epl-v10.html).
