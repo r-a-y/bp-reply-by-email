@@ -160,10 +160,10 @@ function bp_rbe_encode( $args = array() ) {
 		if ( ! class_exists( 'Crypt_AES' ) ) {
 			require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
 		}
-	
+
 		$cipher = new Crypt_AES();
 		$cipher->setKey( $key );
-	
+
 		// converts AES binary string to hexadecimal
 		$encrypt = bin2hex( $cipher->encrypt( $string ) );
 	}
@@ -209,15 +209,15 @@ function bp_rbe_decode( $args = array() ) {
 	// you can override this with the filter below to prevent the AES library from loading
 	// to modify the return value, use the 'bp_rbe_decode' filter
 	$mode = apply_filters( 'bp_rbe_encode_mode', $mode );
-		
+
 	if ( $mode == 'aes' ) {
 		if ( ! class_exists( 'Crypt_AES' ) ) {
 			require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
 		}
-	
+
 		$cipher = new Crypt_AES();
 		$cipher->setKey( $key );
-	
+
 		// converts hexadecimal AES string back to binary and then decrypts string back to plain-text
 		$decrypt = $cipher->decrypt( hex2bin( $string ) );
 	}
@@ -292,6 +292,7 @@ function bp_rbe_activity_comment_action_filter( $user_id ) {
 	global $bp_rbe;
 
 	// hack to pass user ID!
+	$bp_rbe->filter = new stdClass;
 	$bp_rbe->filter->user_id = $user_id;
 
 	add_filter( 'bp_activity_comment_action', 'bp_rbe_activity_comment_action' );
@@ -328,6 +329,75 @@ function bp_rbe_activity_comment_view_link( $link, $activity ) {
 	}
 
 	return $link;
+}
+
+/**
+ * When posting via email, we also update the last activity entries in BuddyPress.
+ *
+ * This is so your BuddyPress site doesn't look dormant when your members
+ * are emailing each other back and forth! :)
+ *
+ * @param array $args Depending on the filter that this function is hooked into, contents will vary
+ * @since 1.0-beta2
+ */
+function bp_rbe_log_last_activity( $args ) {
+	// get user id from activity entry
+	if ( ! empty( $args['user_id'] ) )
+		$user_id = $args['user_id'];
+
+	// get user id from PM
+	elseif ( ! empty( $args['sender_id'] ) )
+		$user_id = $args['sender_id'];
+	else
+		$user_id = false;
+
+	// if no user ID, return now
+	if ( empty( $user_id ) )
+		return;
+
+	// update 'last_activity' user meta entry
+	bp_update_user_meta( $user_id, 'last_activity', bp_core_current_time() );
+
+	// now update 'last_activity' group meta entry if applicable
+	if ( ! empty( $args['type'] ) ) {
+		switch ( $args['type'] ) {
+			case 'new_forum_topic' :
+			case 'new_forum_post' :
+				// sanity check!
+				if ( ! bp_is_active( 'groups' ) )
+					return;
+
+				groups_update_last_activity( $args['item_id'] );
+
+				break;
+
+			// for group activity comments, we have to look up the parent activity to see
+			// if the activity comment came from a group
+			case 'activity_comment' :
+				// we don't need to proceed if the groups component was disabled
+				if ( ! bp_is_active( 'groups' ) )
+					return;
+
+				// sanity check!
+				if ( ! bp_is_active( 'activity' ) )
+					return;
+
+				// grab the parent activity
+				$activity = bp_activity_get_specific( 'activity_ids=' . $args['item_id'] );
+
+				if ( ! empty( $activity['activities'][0] ) ) {
+					$parent_activity = $activity['activities'][0];
+
+					// if parent activity update is from the groups component,
+					// that means the activity comment was in a group!
+					// so update group 'last_activity' meta entry
+					if ( $parent_activity->component == 'groups' )
+						groups_update_last_activity( $parent_activity->item_id );
+				}
+
+				break;
+		}
+	}
 }
 
 /**
@@ -786,7 +856,14 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 		) );
 
 		// special hook for RBE activity items
-		do_action( 'bp_rbe_new_activity', $activity_id, 'new_forum_post', $group_id, $post_id );
+		do_action( 'bp_rbe_new_activity', array(
+			'activity_id'       => $activity_id,
+			'type'              => 'new_forum_post',
+			'user_id'           => $user_id,
+			'item_id'           => $group_id,
+			'secondary_item_id' => $post_id,
+			'content'           => $activity_content
+		) );
 
 		do_action( 'groups_new_forum_topic_post', $group_id, $post_id );
 
@@ -873,7 +950,14 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 		) );
 
 		// special hook for RBE activity items
-		do_action( 'bp_rbe_new_activity', $activity_id, 'new_forum_topic', $group_id, $topic_id );
+		do_action( 'bp_rbe_new_activity', array(
+			'activity_id'       => $activity_id,
+			'type'              => 'new_forum_topic',
+			'user_id'           => $user_id,
+			'item_id'           => $group_id,
+			'secondary_item_id' => $topic_id,
+			'content'           => $activity_content
+		) );
 
 		do_action( 'groups_new_forum_topic', $group_id, &$topic );
 

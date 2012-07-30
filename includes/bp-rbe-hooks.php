@@ -29,6 +29,10 @@ if ( bp_rbe_is_required_completed() ) :
 	// email body parsing
 	add_filter( 'bp_rbe_parse_email_body',        'bp_rbe_remove_line_wrap_from_plaintext', 10, 2 );
 
+	// log last activity when posting via email
+	add_action( 'bp_rbe_new_activity',            'bp_rbe_log_last_activity' );
+	add_action( 'bp_rbe_new_pm_reply',            'bp_rbe_log_last_activity' );
+
 	// email inbox parsing
 	/**
 	 * In Gmail, imap_delete() moves the email to the "All Mail" folder; it doesn't mark the email for deletion.

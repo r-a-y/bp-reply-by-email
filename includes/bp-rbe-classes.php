@@ -198,7 +198,14 @@ class BP_Reply_By_Email_IMAP {
 
 						// special hook for RBE activity items
 						// might want to do something like add some activity meta
-						do_action( 'bp_rbe_new_activity', $comment_id, 'activity_comment', $a, $p );
+						do_action( 'bp_rbe_new_activity', array(
+							'activity_id'       => $comment_id,
+							'type'              => 'activity_comment',
+							'user_id'           => $user_id,
+							'item_id'           => $a,
+							'secondary_item_id' => $p,
+							'content'           => $body
+						) );
 
 						bp_rbe_log( 'Message #' . $i . ': activity comment successfully posted!' );
 
@@ -246,13 +253,25 @@ class BP_Reply_By_Email_IMAP {
 						if ( bp_is_active( $bp->messages->id ) ) :
 							bp_rbe_log( 'Message #' . $i . ': this is a private message reply' );
 
-							messages_new_message (
+							$message_id = messages_new_message (
 								array(
 									'thread_id' => $m,
 									'sender_id' => $user_id,
 									'content'   => $body
 								)
 							);
+							
+							if ( ! $message_id ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_fail' );
+								continue;
+							}
+
+							// special hook for RBE parsed PMs
+							do_action( 'bp_rbe_new_pm_reply', array(
+								'thread_id' => $m,
+								'sender_id' => $user_id,
+								'content'   => $body
+							) );
 
 							bp_rbe_log( 'Message #' . $i . ': PM reply successfully posted!' );
 
