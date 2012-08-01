@@ -650,6 +650,10 @@ function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
 		case 'forum_topic_fail' :
 			$message = __( 'error - forum topic failed to be created', 'bp-rbe' );
 			break;
+
+		case 'private_message_fail' :
+			$message = __( 'error - private message failed to be created', 'bp-rbe' );
+			break;
 	}
 
 	if ( $message )
