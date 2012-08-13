@@ -107,9 +107,11 @@ class BP_Reply_By_Email {
 	public function wp_mail_filter( $args ) {
 		global $bp;
 
-		// Check to see if our "listener" object exists
+		$listener = $this->listener;
+
+		// Check to see if our 'listener' object has an item_id
 		// If so, start manipulating the email headers!
-		if ( $listener = $this->listener ) :
+		if ( ! empty( $listener->item_id ) ) :
 
 			// Make sure we don't get rid of any headers that might be declared
 			if ( empty( $args['headers'] ) )
@@ -173,6 +175,11 @@ class BP_Reply_By_Email {
 	public function activity_listener( $item ) {
 		global $bp;
 
+		// use this hook to block any unwanted activity items from being RBE'd!
+		// see https://github.com/r-a-y/bp-reply-by-email/wiki/Developer-Guide
+		if ( apply_filters( 'bp_rbe_block_activity_item', false, $item ) )
+			return;
+
 		$this->listener = new stdClass;
 
 		// activity component
@@ -181,23 +188,35 @@ class BP_Reply_By_Email {
 		// the user id
 		$this->listener->user_id   = $item->user_id;
 
-		// activity update
-		if ( $item->type == 'activity_update' ) {
-			$this->listener->item_id = $this->listener->secondary_item_id = $item->id;
-		}
-		// activity comment
-		else {
-			$this->listener->item_id           = $item->item_id; // id of root activity update
-			$this->listener->secondary_item_id = $item->id;      // id of direct parent comment / update
+		switch ( $item->type ) {
+			case 'activity_update' :
+				$this->listener->item_id = $this->listener->secondary_item_id = $item->id;
+
+				break;
+
+			case 'activity_comment' :
+				$this->listener->item_id           = $item->item_id; // id of root activity update
+				$this->listener->secondary_item_id = $item->id;      // id of direct parent comment / update
+
+				break;
+
+			/* future support for blog comments - maybe so, maybe no?
+			case 'new_blog_comment' :
+				$this->listener->component         = $bp->blogs->id;
+				$this->listener->item_id           = $item->item_id;           // post id
+				$this->listener->secondary_item_id = $item->secondary_item_id; // blog id
+
+				break;
+			*/
+
+			// devs: use the following hook to extend RBE's activity listener capability
+			// see https://github.com/r-a-y/bp-reply-by-email/wiki/Developer-Guide
+			default :
+				do_action( 'bp_rbe_extend_activity_listener', $this->listener, $item );
+
+				break;
 		}
 
-		/* future support for blog comments - maybe so, maybe no?
-		if ( $item->type == 'new_blog_comment' ) {
-			$this->listener->component         = $bp->blogs->id;
-			$this->listener->item_id           = $item->item_id;           // post id
-			$this->listener->secondary_item_id = $item->secondary_item_id; // blog id
-		}
-		*/
 	}
 
 	/**
@@ -258,7 +277,7 @@ class BP_Reply_By_Email {
 	}
 
 	/**
-	 * When posting group forum topics or posts via IMAP, we need to grab some temporary variables to 
+	 * When posting group forum topics or posts via IMAP, we need to grab some temporary variables to
 	 * pass to other methods - {@link BP_Reply_By_Email::group_forum_listener()} and {@link BP_Reply_By_Email::set_group_id()}.
 	 *
 	 * @global object $bp
@@ -285,7 +304,7 @@ class BP_Reply_By_Email {
 	}
 
 	/**
-	 * Overrides the current group ID with our locally-cached one from 
+	 * Overrides the current group ID with our locally-cached one from
 	 * {@link BP_Reply_By_Email::get_temporary_variables()} if available.
 	 *
 	 * @global object $bp
