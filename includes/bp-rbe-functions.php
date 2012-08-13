@@ -348,6 +348,7 @@ function bp_rbe_log_last_activity( $args ) {
 	// get user id from PM
 	elseif ( ! empty( $args['sender_id'] ) )
 		$user_id = $args['sender_id'];
+
 	else
 		$user_id = false;
 
@@ -443,9 +444,7 @@ function bp_rbe_html_to_plaintext( $content ) {
 /**
  * Removes line wrap from plain-text emails.
  *
- * At the moment, this is used when posting new forum topics via email.
- *
- * @param string $body The body we want to remove the line-wraps
+ * @param string $body The body we want to remove line-wraps for
  * @param obj $structure The structure of the email from imap_fetchstructure()
  * @return string Converted plain-text.
  * @todo Need to check line endings on other OSs... might use PHP_EOL instead
@@ -473,7 +472,7 @@ function bp_rbe_remove_line_wrap_from_plaintext( $body, $structure ) {
 		$body = str_replace( "\r\n", '', $body );
 
 		// add back the line breaks
-		$body = str_replace( '<RAY>', "\n", $body );
+		$body = str_replace( '<RAY>', "\n ", $body );
 	}
 
 	return $body;

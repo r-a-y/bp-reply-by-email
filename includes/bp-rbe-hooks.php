@@ -26,9 +26,6 @@ if ( bp_rbe_is_required_completed() ) :
 	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_eol_char', 1 );
 	add_filter( 'bp_rbe_parse_email_body_reply',  'bp_rbe_remove_email_client_signature' );
 
-	// email body parsing
-	add_filter( 'bp_rbe_parse_email_body',        'bp_rbe_remove_line_wrap_from_plaintext', 10, 2 );
-
 	// log last activity when posting via email
 	add_action( 'bp_rbe_new_activity',            'bp_rbe_log_last_activity' );
 	add_action( 'bp_rbe_new_pm_reply',            'bp_rbe_log_last_activity' );
