@@ -444,6 +444,18 @@ function bp_rbe_html_to_plaintext( $content ) {
 /**
  * Removes line wrap from plain-text emails.
  *
+ * Plain-text emails usually wrap after a certain amount of characters 
+ * (GMail wraps after ~78 characters) and this will also be reflected on 
+ * the frontend of BuddyPress.
+ *
+ * This function attempts to remove the line wrap from plain-text emails
+ * during email parsing so things will look pretty on the frontend.
+ * 
+ * But, this isn't used at the moment due to bugginess!
+ * If you want to try it, hook this function to the 'bp_rbe_parse_email_body' filter.
+ *
+ * Note: Github's RBE doesn't strip line wraps.
+ *
  * @param string $body The body we want to remove line-wraps for
  * @param obj $structure The structure of the email from imap_fetchstructure()
  * @return string Converted plain-text.
