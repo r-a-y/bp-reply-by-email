@@ -444,13 +444,13 @@ function bp_rbe_html_to_plaintext( $content ) {
 /**
  * Removes line wrap from plain-text emails.
  *
- * Plain-text emails usually wrap after a certain amount of characters 
- * (GMail wraps after ~78 characters) and this will also be reflected on 
+ * Plain-text emails usually wrap after a certain amount of characters
+ * (GMail wraps after ~78 characters) and this will also be reflected on
  * the frontend of BuddyPress.
  *
  * This function attempts to remove the line wrap from plain-text emails
  * during email parsing so things will look pretty on the frontend.
- * 
+ *
  * But, this isn't used at the moment due to bugginess!
  * If you want to try it, hook this function to the 'bp_rbe_parse_email_body' filter.
  *
@@ -481,10 +481,10 @@ function bp_rbe_remove_line_wrap_from_plaintext( $body, $structure ) {
 		$body = str_replace( "\r\n ", '<RAY> ', $body );
 
 		// now remove single CRLF so line wrap is gone!
-		$body = str_replace( "\r\n", '', $body );
+		$body = str_replace( "\r\n", ' ', $body );
 
 		// add back the line breaks
-		$body = str_replace( '<RAY>', "\n ", $body );
+		$body = str_replace( '<RAY>', "\n", $body );
 	}
 
 	return $body;
@@ -620,7 +620,8 @@ function bp_rbe_remove_email_client_signature( $content ) {
 }
 
 /**
- * Logs no match errors during IMAP inbox checks.
+ * Logs no match errors during IMAP inbox checks and also sends a failure
+ * message back to the original sender for feedback purposes.
  *
  * @uses bp_rbe_log() Logs error messages in a custom log
  * @param resource $imap The current IMAP connection
@@ -630,45 +631,187 @@ function bp_rbe_remove_email_client_signature( $content ) {
  * @since 1.0-beta
  */
 function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
-	$message = false;
+	$log = $message = $test = false;
 
+	// log messages based on the type
 	switch ( $type ) {
+
+		/** RBE **********************************************************/
+
+		case 'no_address_tag' :
+			$log = __( 'error - no address tag could be found', 'bp-rbe' );
+
+			break;
+
 		case 'no_user_id' :
-			$message = __( 'error - no user ID could be found', 'bp-rbe' );
+			$log     = __( 'error - no user ID could be found', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+You tried to use the email address - "%s" - to reply by email.  Unfortunately, we could not find this email address in our system.
+
+This usually happens when you have configured your email client to reply with a custom "From:" email address.
+In the future, please make sure to reply using the same email address at which you received the original notification from.
+
+If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' ) );
+			break;
+
+		case 'user_is_spammer' :
+			$log = __( 'notice - user is marked as a spammer.  reply not posted!', 'bp-rbe' );
+
 			break;
 
 		case 'no_params' :
-			$message = __( 'error - no parameters were found', 'bp-rbe' );
+			$log = __( 'error - no parameters were found', 'bp-rbe' );
+
 			break;
 
 		case 'no_reply_body' :
-		case 'new_forum_topic_empty' :
-			$message = __( 'error - body message was empty', 'bp-rbe' );
+			$log = __( 'error - body message for reply was empty', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+Your reply could not be posted because we could not find the "%s" marker in the body of your email.
+
+In the future, please make sure you reply *above* this line for your comment to be posted on the site.
+
+If you have any questions, please let us know.', 'bp-rbe' ), __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ) );
+
 			break;
 
+		/** ACTIVITY *****************************************************/
+
 		case 'root_activity_deleted' :
-			$message = __( 'error - the root activity update was deleted before this could be posted', 'bp-rbe' );
+			$log     = __( 'error - root activity update was deleted before this could be posted', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+Your reply:
+
+"%s"
+
+Could not be posted because the activity entry you were replying to no longer exists.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
 			break;
 
 		case 'root_or_parent_activity_deleted' :
-			$message = __( 'error - the root or parent activity update was deleted before this could be posted', 'bp-rbe' );
+			$log     = __( 'error - root or parent activity update was deleted before this could be posted', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+Your reply:
+
+"%s"
+
+Could not be posted because the activity entry you were replying to no longer exists.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
+			break;
+
+		/** FORUMS *******************************************************/
+
+		case 'user_cannot_post_in_group' :
+			$log = __( 'notice - user cannot post in group because user is either banned or not a member of the group. reply not posted!', 'bp-rbe' );
+
+			break;
+
+		case 'new_forum_topic_empty' :
+			$log     = __( 'error - body message for new forum topic was empty', 'bp-rbe' );
+
+			$message = __( 'Hi there,
+
+We could not post your new forum topic by email because we could not find any text in the body of the email.
+
+In the future, please make sure to type something in your email! :)
+
+If you have any questions, please let us know.', 'bp-rbe' );
+
 			break;
 
 		case 'forum_reply_fail' :
-			$message = __( 'error - forum reply failed to post', 'bp-rbe' );
+			$log     = __( 'error - forum topic was deleted before reply could be posted', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+Your forum reply:
+
+"%s"
+
+Could not be posted because the forum topic you were replying to no longer exists.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
 			break;
 
 		case 'forum_topic_fail' :
-			$message = __( 'error - forum topic failed to be created', 'bp-rbe' );
+			$log     = __( 'error - forum topic failed to be created', 'bp-rbe' );
+
+			// this is a pretty generic message...
+			$message = sprintf( __( 'Hi there,
+
+Your forum topic titled "%s" could not be posted due to an error.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'Subject' ) );
+
+			break;
+
+		/** PRIVATE MESSAGES *********************************************/
+
+		// most likely a spammer trying to infiltrate an existing PM thread
+		case 'private_message_not_in_thread' :
+			$log = __( 'error - user is not a part of the existing PM conversation', 'bp-rbe' );
+
+			break;
+
+		case 'private_message_thread_deleted' :
+			$log     = __( 'error - private message thread was deleted by all parties before this could be posted', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+Your private message reply:
+
+"%s"
+
+Could not be posted because the private message thread you were replying to no longer exists.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
 			break;
 
 		case 'private_message_fail' :
-			$message = __( 'error - private message failed to be created', 'bp-rbe' );
+			$log     = __( 'error - private message failed to post', 'bp-rbe' );
+			$message = sprintf( __( 'Hi there,
+
+Your reply:
+
+"%s"
+
+Could not be posted due to an error.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
 			break;
 	}
 
-	if ( $message )
-		bp_rbe_log( sprintf( __( 'Message #%d: %s', 'bp-rbe' ), $i, $message ) );
+	// internal logging
+	if ( $log )
+		bp_rbe_log( sprintf( __( 'Message #%d: %s', 'bp-rbe' ), $i, $log ) );
+
+	// failure message to author
+	// if you want to turn off failure messages, use the filter below
+	if ( apply_filters( 'bp_rbe_enable_failure_message', true ) && $message ) {
+		$to = BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' );
+
+		if ( ! empty( $to ) ) {
+			$sitename = wp_specialchars_decode( get_blog_option( bp_get_root_blog_id(), 'blogname' ), ENT_QUOTES );
+			$subject  = sprintf( __( '[%s] Your Reply By Email message could not be posted', 'bp-rbe' ), $sitename );
+
+			wp_mail( $to, $subject, $message );
+		}
+	}
 }
 
 /**
@@ -806,6 +949,7 @@ function bp_rbe_stop_imap() {
  *
  * Duplicated because:
  * 	- groups_new_group_forum_post() hardcodes the $user_id.
+ *      - groups_new_group_forum_post() doesn't check if the corresponding topic is deleted before posting.
  * 	- $bp->groups->current_group doesn't exist outside the BP groups component.
  * 	- {@link groups_record_activity()} restricts a bunch of parameters - use full {@link bp_activity_add()} instead.
  *
@@ -834,16 +978,22 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 	$post_text = apply_filters( 'group_forum_post_text_before_save',     $post_text );
 	$topic_id  = apply_filters( 'group_forum_post_topic_id_before_save', $topic_id );
 
+	// initialize bundled bbPress
+	// @todo perhaps use $wpdb instead and do away with the 'bbpress_init' hook as it's hella intensive
+	do_action( 'bbpress_init' );
+
+	global $bbdb;
+
+	// do a direct bbPress DB call
+	if ( isset( $bbdb ) ) {
+		$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = {$topic_id}" ) );
+	}
+
+	// if the topic was deleted, stop now!
+	if ( $topic->topic_status == 1 )
+		return false;
+
 	if ( $post_id = bp_forums_insert_post( array( 'post_text' => $post_text, 'topic_id' => $topic_id, 'poster_id' => $user_id ) ) ) {
-		global $bbdb;
-
-		do_action( 'bbpress_init' );
-
-		// do a direct bbPress DB call
-		if ( isset( $bbdb ) ) {
-			$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = {$topic_id}" ) );
-		}
-
 		$group = groups_get_group( 'group_id=' . $group_id );
 
 		// If no page passed, calculate the page where the new post will reside.
@@ -937,9 +1087,11 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 		'topic_poster_name'      => bp_core_get_user_displayname( $user_id ),
 		'topic_last_poster_name' => bp_core_get_user_displayname( $user_id )
 	) ) ) {
-		global $bbdb;
 
+		// initialize bundled bbPress
 		do_action( 'bbpress_init' );
+
+		global $bbdb;
 
 		// do a direct bbPress DB call
 		if ( isset( $bbdb ) ) {

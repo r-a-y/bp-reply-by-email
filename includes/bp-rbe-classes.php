@@ -51,7 +51,7 @@ class BP_Reply_By_Email_IMAP {
 	private function __construct() {}
 
 	/**
-	 * The main function we use to parse an IMAP inbox.
+	 * The main method we use to parse an IMAP inbox.
 	 */
 	public function run() {
 		global $bp, $wpdb;
@@ -73,6 +73,7 @@ class BP_Reply_By_Email_IMAP {
 
 		// Total duration we should keep the IMAP stream alive for in seconds
 		$duration = bp_rbe_get_execution_time();
+		bp_rbe_log( '--- Keep alive for ' . $duration / 60 . ' minutes ---' );
 
 		// Mark the current timestamp, mark the future time when we should close the IMAP connection;
 		// Do our parsing until $future > $now; re-mark the timestamp at end of loop... rinse and repeat!
@@ -105,9 +106,23 @@ class BP_Reply_By_Email_IMAP {
 
 					bp_rbe_log( 'Message #' . $i . ' of ' . $message_count . ': email headers successfully parsed' );
 
+					// Querystring check *******************************************
+
+					$qs = self::get_address_tag( self::address_parser( $headers, 'To' ) );
+
+					if ( !$qs ) {
+						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_address_tag' );
+						continue;
+					}
+
+					bp_rbe_log( 'Message #' . $i . ': address tag successfully parsed' );
+
 					// User check **************************************************
 
-					$user_id = email_exists( $this->address_parser( $headers, 'From' ) );
+					$email = self::address_parser( $headers, 'From' );
+					bp_rbe_log( 'User email address is ' . $email );
+
+					$user_id = email_exists( $email );
 
 					if ( !$user_id ) {
 						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_user_id' );
@@ -116,16 +131,12 @@ class BP_Reply_By_Email_IMAP {
 
 					bp_rbe_log( 'Message #' . $i . ': user id successfully parsed - user id is - ' . $user_id );
 
-					// Querystring check *******************************************
+					// Spammer check ***********************************************
 
-					$qs = $this->get_address_tag( $this->address_parser( $headers, 'To' ) );
-
-					if ( !$qs ) {
-						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_address_tag' );
+					if ( bp_core_is_user_spammer( $user_id ) ) {
+						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_is_spammer' );
 						continue;
 					}
-
-					bp_rbe_log( 'Message #' . $i . ': address tag successfully parsed' );
 
 					// Parameters parser *******************************************
 
@@ -144,13 +155,17 @@ class BP_Reply_By_Email_IMAP {
 
 					// Email body parser *******************************************
 
-					$body = $this->body_parser( $this->connection, $i );
+					$body = self::body_parser( $this->connection, $i );
 
 					// If there's no email body and this is a reply, stop!
 					if ( !$body && !$this->is_new_item( $qs ) ) {
 						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_reply_body' );
 						continue;
 					}
+
+					// log the body for replied items
+					if ( !$this->is_new_item( $qs ) )
+						bp_rbe_log( 'Message #' . $i . ': body contents - ' . $body );
 
 					// Extract params **********************************************
 
@@ -246,6 +261,12 @@ class BP_Reply_By_Email_IMAP {
 								do_action( 'bp_rbe_new_forum_post', $this->connection, $i, $forum_post_id, $g, $user_id );
 							}
 
+							// the user cannot post in this group b/c user is either banned or not part of the group
+							else {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_cannot_post_in_group' );
+								continue;
+							}
+
 							unset( $t );
 						endif;
 
@@ -254,29 +275,50 @@ class BP_Reply_By_Email_IMAP {
 						if ( bp_is_active( $bp->messages->id ) ) :
 							bp_rbe_log( 'Message #' . $i . ': this is a private message reply' );
 
-							$message_id = messages_new_message (
-								array(
+							// see if the PM thread still exists
+							if ( messages_is_valid_thread( $m ) ) {
+
+								// see if the user is in the PM conversation
+								$has_access = messages_check_thread_access( $m, $user_id );
+
+								if ( !$has_access ) {
+									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_not_in_thread' );
+									continue;
+								}
+
+								// post the PM!
+								$message_id = messages_new_message (
+									array(
+										'thread_id' => $m,
+										'sender_id' => $user_id,
+										'content'   => $body
+									)
+								);
+
+								if ( ! $message_id ) {
+									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_fail' );
+									continue;
+								}
+
+								// special hook for RBE parsed PMs
+								do_action( 'bp_rbe_new_pm_reply', array(
 									'thread_id' => $m,
 									'sender_id' => $user_id,
 									'content'   => $body
-								)
-							);
-							
-							if ( ! $message_id ) {
-								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_fail' );
+								) );
+
+								bp_rbe_log( 'Message #' . $i . ': PM reply successfully posted!' );
+
+								unset( $message_id );
+								unset( $has_access );
+							}
+
+							// the PM thread doesn't exist anymore
+							else {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_thread_deleted' );
 								continue;
 							}
 
-							// special hook for RBE parsed PMs
-							do_action( 'bp_rbe_new_pm_reply', array(
-								'thread_id' => $m,
-								'sender_id' => $user_id,
-								'content'   => $body
-							) );
-
-							bp_rbe_log( 'Message #' . $i . ': PM reply successfully posted!' );
-
-							unset( $message_id );
 							unset( $m );
 						endif;
 
@@ -286,8 +328,11 @@ class BP_Reply_By_Email_IMAP {
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
 							bp_rbe_log( 'Message #' . $i . ': this is a new forum topic' );
 
-							$body    = $this->body_parser( $this->connection, $i, false );
-							$subject = $this->address_parser( $headers, 'Subject' );
+							$body    = self::body_parser( $this->connection, $i, false );
+							$subject = self::address_parser( $headers, 'Subject' );
+
+							bp_rbe_log( 'Message #' . $i . ': body contents - ' . $body );
+							bp_rbe_log( 'Subject - ' . $subject );
 
 							if ( empty( $body ) || empty( $subject ) ) {
 								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'new_forum_topic_empty' );
@@ -326,8 +371,10 @@ class BP_Reply_By_Email_IMAP {
 
 					// Unset some variables to clear some memory
 					unset( $headers );
-					unset( $params );
 					unset( $qs );
+					unset( $email );
+					unset( $user_id );
+					unset( $params );
 					unset( $body );
 				endfor;
 
@@ -392,6 +439,8 @@ class BP_Reply_By_Email_IMAP {
 		else {
 			bp_rbe_log( '--- Invalid connection during close time ---' );
 		}
+
+		exit();
 	}
 
 	/**
@@ -403,7 +452,7 @@ class BP_Reply_By_Email_IMAP {
 		global $bp_rbe;
 
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
-		
+
 		// decode the password
 		$password = bp_rbe_decode( array( 'string' => $bp_rbe->settings['password'], 'key' => wp_salt() ) );
 
@@ -507,7 +556,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param int $i The current email message number
 	 * @return mixed Array of email headers. False if no headers or if the email is junk.
 	 */
-	private function header_parser( $imap, $i ) {
+	public function header_parser( $imap, $i ) {
 		// Grab full, raw email header
 		$header = imap_fetchheader( $imap, $i );
 
@@ -605,7 +654,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param bool $reply If we're parsing a reply or not. Default set to true.
 	 * @return mixed Either the email body on success or false on failure
 	 */
-	private function body_parser( $imap, $i, $reply = true ) {
+	public static function body_parser( $imap, $i, $reply = true ) {
 		// get the email structure
 		$structure = imap_fetchstructure( $imap, $i );
 
@@ -657,7 +706,7 @@ class BP_Reply_By_Email_IMAP {
 			// Return email body up to our pointer only
 			$body = apply_filters( 'bp_rbe_parse_email_body_reply', trim( substr( $body, 0, $pointer ) ), $body, $structure );
 		}
-		
+
 		// this means we're posting something new (eg. new forum topic)
 		// do something special for this case
 		else {
@@ -669,7 +718,6 @@ class BP_Reply_By_Email_IMAP {
 			return false;
 		}
 
-		bp_rbe_log( 'Message #' . $i . ': body contents - ' . $body );
 		return apply_filters( 'bp_rbe_parse_email_body', trim( $body ), $structure );
 	}
 
@@ -682,7 +730,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param string $key The key we want to check against the array.
 	 * @return mixed Either the email address on success or false on failure
 	 */
-	private function address_parser( $headers, $key ) {
+	public static function address_parser( $headers, $key ) {
 		if ( empty( $headers[$key] ) ) {
 			bp_rbe_log( $key . ' parser - empty key' );
 			return false;
@@ -710,7 +758,7 @@ class BP_Reply_By_Email_IMAP {
 			$headers[$key] = substr( $headers[$key], ++$lbracket, $rbracket - $lbracket );
 		}
 
-		bp_rbe_log( $key . ' parser - ' . $headers[$key] );
+		//bp_rbe_log( $key . ' parser - ' . $headers[$key] );
 
 		return $headers[$key];
 	}
@@ -724,7 +772,7 @@ class BP_Reply_By_Email_IMAP {
 	 * @param string $address The email address containing the address tag
 	 * @return mixed Either the address tag on success or false on failure
 	 */
-	private function get_address_tag( $address ) {
+	public static function get_address_tag( $address ) {
 		global $bp_rbe;
 
 		// $address might already be false, so let's return false right away
