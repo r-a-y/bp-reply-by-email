@@ -648,7 +648,7 @@ function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
 
 			$message = sprintf( __( 'Hi there,
 
-You tried to use the email address - "%s" - to reply by email.  Unfortunately, we could not find this email address in our system.
+You tried to use the email address - %s - to reply by email.  Unfortunately, we could not find this email address in our system.
 
 This usually happens when you have configured your email client to reply with a custom "From:" email address.
 In the future, please make sure to reply using the same email address at which you received the original notification from.
@@ -812,6 +812,52 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			wp_mail( $to, $subject, $message );
 		}
 	}
+}
+
+/**
+ * When RBE posts a new group forum post, record the post meta in bundled bbPress
+ * so we can reference it later in the topic post loop.
+ *
+ * @uses bb_update_postmeta() To add post meta in bundled bbPress.
+ * @since 1.0-beta2
+ */
+function bp_rbe_group_forum_record_meta( $id ) {
+	// since we post items outside of BP's screen functions, it should be safe
+	// to just check if BP's current component and actions are false
+	if ( ! bp_current_component() && ! bp_current_action() )
+		bb_update_postmeta( $id, 'bp_rbe', 1 );
+}
+
+/**
+ * When RBE posts a new activity item, record the activity meta.
+ *
+ * Could be used in a custom activity loop to grab activities made by RBE later.
+ *
+ * @uses bp_activity_update_meta() To add activity meta.
+ * @since 1.0-beta2
+ */
+function bp_rbe_activity_record_meta( $args ) {
+	bp_activity_update_meta( $args['activity_id'], 'bp_rbe', 1 );
+}
+
+/**
+ * Modify the topic post timestamp to append our custom RBE string.
+ *
+ * Checks to see if the current topic post was posted by RBE, if so, alter the
+ * timestamp string.
+ *
+ * @since 1.0-beta2
+ */
+function bp_rbe_alter_forum_post_timestamp( $timestamp ) {
+	global $topic_template;
+
+	// if the forum post was made via email, alter the post timestamp to add our custom string ;)
+	// hackalicious!
+	if ( ! empty( $topic_template->post->bp_rbe ) )
+		// piggyback off of GES' email icon with the 'gemail_icon' class!
+		return $timestamp . ' <span class="bp-forum-post-rbe gemail_icon">' . __( 'via email', 'bp-rbe' ) . '</span>';
+
+	return $timestamp;
 }
 
 /**
@@ -1003,7 +1049,7 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 			$page    = ceil( $topic->topic_posts / $pag_num );
 		}
 
-		$activity_action  = sprintf( __( '%s posted on the forum topic %s in the group %s via email:', 'bp-rbe'), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
+		$activity_action  = sprintf( __( '%s replied to the forum topic %s in the group %s via email:', 'bp-rbe'), bp_core_get_userlink( $user_id ), '<a href="' . bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug .'/">' . esc_attr( $topic->topic_title ) . '</a>', '<a href="' . bp_get_group_permalink( $group ) . '">' . esc_attr( $group->name ) . '</a>' );
 		$activity_content = bp_create_excerpt( $post_text );
 		$primary_link     = bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug . '/?topic_page=' . $page;
 
@@ -1030,6 +1076,7 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 			'content'           => $activity_content
 		) );
 
+		// apply BP's group forum post hook
 		do_action( 'groups_new_forum_topic_post', $group_id, $post_id );
 
 		return $post_id;
@@ -1126,6 +1173,7 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 			'content'           => $activity_content
 		) );
 
+		// apply BP's group forum topic hook
 		do_action( 'groups_new_forum_topic', $group_id, &$topic );
 
 		return $topic;
