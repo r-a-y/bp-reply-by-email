@@ -453,6 +453,13 @@ class BP_Reply_By_Email_IMAP {
 
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
 
+		// if our DB marker says we're already connected, stop now!
+		// this is an extra precaution
+		if ( bp_rbe_is_connected() ) {
+			bp_rbe_log( '--- RBE is already connected! ---' );
+			return false;
+		}
+
 		// decode the password
 		$password = bp_rbe_decode( array( 'string' => $bp_rbe->settings['password'], 'key' => wp_salt() ) );
 
