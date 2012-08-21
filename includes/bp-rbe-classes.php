@@ -945,16 +945,16 @@ abstract class BP_Reply_By_Email_Extension {
 	 * Hooks! We do the dirty work here, so you don't have to! :)
 	 */
 	protected function setup_hooks() {
-		add_action( 'bp_rbe_extend_activity_listener',          array( $this, 'extend_activity_listener' ), 10, 2 );
-		add_filter( 'bp_rbe_extend_querystring',                array( $this, 'extend_querystring' ),       10, 2 );
+		add_action( 'bp_rbe_extend_activity_listener',          array( $this, 'extend_activity_listener' ),  10, 2 );
+		add_filter( 'bp_rbe_extend_querystring',                array( $this, 'extend_querystring' ),        10, 2 );
 		add_filter( 'bp_rbe_allowed_params',                    array( $this, 'register_params' ) );
-		add_action( 'bp_rbe_imap_loop',                         array( $this, 'post_by_email' ),            10, 6 );
+		add_action( 'bp_rbe_imap_loop',                         array( $this, 'post_by_email' ),             10, 6 );
 
 		// (recommended to extend) custom hooks to log unmet conditions during posting
 		// your extension should do some error handling to let RBE know what's happening
 		// and optionally, you should inform the sender that their email failed to post
-		add_filter( 'bp_rbe_extend_log_no_match',               array( $this, 'internal_rbe_log',           10, 5 ) );
-		add_filter( 'bp_rbe_extend_log_no_match_email_message', array( $this, 'failure_message_to_sender',  10, 5 ) );
+		add_filter( 'bp_rbe_extend_log_no_match',               array( $this, 'internal_rbe_log' ),          10, 5 );
+		add_filter( 'bp_rbe_extend_log_no_match_email_message', array( $this, 'failure_message_to_sender' ), 10, 5 );
 	}
 
 	/**
