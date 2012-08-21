@@ -367,7 +367,7 @@ class BP_Reply_By_Email_IMAP {
 					endif;
 
 					// Do something at the end of the loop; useful for 3rd-party plugins
-					do_action( 'bp_rbe_imap_loop', $this->connection, $i, $params, $body, $user_id );
+					do_action( 'bp_rbe_imap_loop', $this->connection, $i, $headers, $params, $body, $user_id );
 
 					// Unset some variables to clear some memory
 					unset( $headers );
