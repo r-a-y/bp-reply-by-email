@@ -101,4 +101,27 @@ function bp_rbe_deactivate() {
 }
 register_deactivation_hook( __FILE__, 'bp_rbe_deactivate' );
 
+/**
+ * BP Reply By Email default extensions.
+ *
+ * Currently supports BuddyPress Docs.
+ * More to come in the future?
+ *
+ * @since 1.0-beta2
+ */
+function bp_rbe_default_extensions() {
+	// if RBE requirements aren't fulfilled, stop now!
+	if ( ! bp_rbe_is_required_completed() )
+		return;
+
+	// BuddyPress Docs
+	if ( defined( 'BP_DOCS_VERSION' ) ) {
+		require( BP_RBE_DIR . '/includes/bp-rbe-extend-bpdocs.php' );
+		
+		// initialize the BP Docs RBE extension!
+		new BP_Docs_Comment_RBE_Extension;
+	}
+}
+add_action( 'bp_include', 'bp_rbe_default_extensions', 20 );
+
 ?>
