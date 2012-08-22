@@ -651,7 +651,7 @@ function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
 You tried to use the email address - %s - to reply by email.  Unfortunately, we could not find this email address in our system.
 
 This usually happens when you have configured your email client to reply with a custom "From:" email address.
-In the future, please make sure to reply using the same email address at which you received the original notification from.
+In the future, please make sure to reply using the same email address at which you received the original notification.
 
 If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' ) );
 			break;
