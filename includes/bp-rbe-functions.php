@@ -711,10 +711,25 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 			break;
 
-		/** FORUMS *******************************************************/
+		/** GROUP FORUMS *************************************************/
 
-		case 'user_cannot_post_in_group' :
-			$log = __( 'notice - user cannot post in group because user is either banned or not a member of the group. reply not posted!', 'bp-rbe' );
+		case 'user_not_group_member' :
+			$log     = __( 'error - user is not a member of the group. forum reply not posted.', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+Your forum reply:
+
+"%s"
+
+Could not be posted because you are no longer a member of this group.  To comment on the forum thread, please rejoin the group.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
+			break;
+
+		case 'user_banned_from_group' :
+			$log = __( 'notice - user is banned from group. forum reply not posted.', 'bp-rbe' );
 
 			break;
 
@@ -1180,6 +1195,28 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 	}
 
 	return false;
+}
+
+/**
+ * Get a group member's info.
+ *
+ * Basically a copy of {@link BP_Groups_Member::populate()} without the
+ * extra {@link BP_Core_User()} call.
+ *
+ * @param int $user_id The user ID
+ * @param int $group_id The group ID
+ * @param mixed Object of group member data on success. NULL on failure.
+ * @since 1.0-beta2
+ */
+function bp_rbe_get_group_member_info( $user_id = false, $group_id = false ) {
+	global $bp, $wpdb;
+
+	if ( ! $user_id || ! $group_id )
+		return false;
+
+	$sql = $wpdb->prepare( "SELECT * FROM {$bp->groups->table_name_members} WHERE user_id = %d AND group_id = %d", $user_id, $group_id );
+
+	return $wpdb->get_row( $sql );
 }
 
 /** Template ************************************************************/

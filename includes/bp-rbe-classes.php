@@ -239,35 +239,43 @@ class BP_Reply_By_Email_IMAP {
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
 							bp_rbe_log( 'Message #' . $i . ': this is a forum reply' );
 
-							$can_post = apply_filters( 'bp_rbe_group_can_post', user_can( $user_id, 'edit_users' ), $user_id );
+							// get all group member data for the user in one swoop!
+							$group_member_data = bp_rbe_get_group_member_info( $user_id, $g );
 
-							// If user is a member of the group and not banned, then let's post the forum reply!
-							if ( $can_post || ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) ) {
-								$forum_post_id = bp_rbe_groups_new_group_forum_post( array(
-									'post_text' => $body,
-									'topic_id'  => $t,
-									'user_id'   => $user_id,
-									'group_id'  => $g
-								) );
-
-								if ( !$forum_post_id ) {
-									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'forum_reply_fail' );
-									continue;
-								}
-
-								bp_rbe_log( 'Message #' . $i . ': forum reply successfully posted!' );
-
-								// could potentially add attachments
-								do_action( 'bp_rbe_new_forum_post', $this->connection, $i, $forum_post_id, $g, $user_id );
-							}
-
-							// the user cannot post in this group b/c user is either banned or not part of the group
-							else {
-								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_cannot_post_in_group' );
+							// user is not a member of the group anymore
+							if ( empty( $group_member_data ) ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_not_group_member' );
 								continue;
 							}
 
+							// user is banned from group
+							if ( (int) $group_member_data->is_banned == 1 ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_banned_from_group' );
+								continue;
+							}
+
+							/* okay, we should be good to post now! */
+
+							$forum_post_id = bp_rbe_groups_new_group_forum_post( array(
+								'post_text' => $body,
+								'topic_id'  => $t,
+								'user_id'   => $user_id,
+								'group_id'  => $g
+							) );
+
+							if ( !$forum_post_id ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'forum_reply_fail' );
+								continue;
+							}
+
+							bp_rbe_log( 'Message #' . $i . ': forum reply successfully posted!' );
+
+							// could potentially add attachments
+							do_action( 'bp_rbe_new_forum_post', $this->connection, $forum_post_id, $user_id, $g, $headers );
+
 							unset( $t );
+							unset( $group_member_data );
+							unset( $forum_post_id );
 						endif;
 
 					// Private message reply
@@ -339,30 +347,43 @@ class BP_Reply_By_Email_IMAP {
 								continue;
 							}
 
-							$can_post = apply_filters( 'bp_rbe_group_can_post', user_can( $user_id, 'edit_users' ), $user_id );
+							// get all group member data for the user in one swoop!
+							$group_member_data = bp_rbe_get_group_member_info( $user_id, $g );
 
-							// If user is a member of the group and not banned, then let's post the forum topic!
-							if ( $can_post || ( groups_is_user_member( $user_id, $g ) && !groups_is_user_banned( $user_id, $g ) ) ) {
-								$topic = bp_rbe_groups_new_group_forum_topic( array(
-									'topic_title' => $subject,
-									'topic_text'  => $body,
-									'user_id'     => $user_id,
-									'group_id'    => $g
-								) );
-
-								if ( !$topic ) {
-									do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'new_topic_fail' );
-									continue;
-								}
-
-								bp_rbe_log( 'Message #' . $i . ': forum topic successfully posted!' );
-
-								// could potentially add attachments
-								do_action_ref_array( 'bp_rbe_new_forum_topic', array( $this->connection, $i, &$topic, $g, $user_id ) );
+							// user is not a member of the group anymore
+							if ( empty( $group_member_data ) ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_not_group_member' );
+								continue;
 							}
+
+							// user is banned from group
+							if ( (int) $group_member_data->is_banned == 1 ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_banned_from_group' );
+								continue;
+							}
+
+							/* okay, we should be good to post now! */
+
+							$topic = bp_rbe_groups_new_group_forum_topic( array(
+								'topic_title' => $subject,
+								'topic_text'  => $body,
+								'user_id'     => $user_id,
+								'group_id'    => $g
+							) );
+
+							if ( !$topic ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'new_topic_fail' );
+								continue;
+							}
+
+							bp_rbe_log( 'Message #' . $i . ': forum topic successfully posted!' );
+
+							// could potentially add attachments
+							do_action( 'bp_rbe_new_forum_topic', $this->connection, $topic, $user_id, $g, $headers );
 
 							unset( $g );
 							unset( $subject );
+							unset( $group_member_data );
 						endif;
 					endif;
 
