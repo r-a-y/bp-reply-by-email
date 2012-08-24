@@ -881,8 +881,9 @@ function bp_rbe_alter_forum_post_timestamp( $timestamp ) {
  * @since 1.0-beta
  */
 function bp_rbe_new_topic_info_css() {
+	$current_group = groups_get_current_group();
 
-	if ( bp_is_group_forum() && ! bp_action_variables() && bp_loggedin_user_id() ) :
+	if ( bp_is_group_forum() && ! bp_action_variables() && bp_loggedin_user_id() && ! empty( $current_group->is_member ) ) :
 ?>
 	<style type="text/css">
 		#rbe-toggle { display:none; }
@@ -902,6 +903,12 @@ function bp_rbe_new_topic_info_css() {
  */
 function bp_rbe_new_topic_info() {
 	global $bp;
+
+	$group = groups_get_current_group();
+
+	// if current user is not a member of the group, stop now!
+	if ( empty( $group->is_member ) )
+		return;
 ?>
 	<h4><?php _e( 'Post New Topics via Email', 'bp-rbe' ) ?></h4>
 
