@@ -67,7 +67,7 @@ function bp_rbe_is_connected() {
 function bp_rbe_cleanup() {
 	// clear RBE's scheduled hook
 	wp_clear_scheduled_hook( 'bp_rbe_schedule' );
-	
+
 	// remove remnants from any previous failed attempts to stop the inbox
 	bp_rbe_should_stop();
 
@@ -298,6 +298,93 @@ function bp_rbe_log( $message ) {
 		return;
 
 	error_log( '[' . gmdate( 'd-M-Y H:i:s' ) . '] ' . $message . "\n", 3, BP_RBE_DEBUG_LOG_PATH );
+}
+
+/**
+ * Returns an array containing X number of rows from the end of a file.
+ *
+ * Function is renamed from Dan Roscoe's PHP-Tail function:
+ * https://github.com/ruscoe/PHP-Tail
+ *
+ * Licensed under the MIT License:
+ * http://www.opensource.org/licenses/mit-license.php
+ *
+ * Thanks Dan! Thdan!
+ *
+ * @param string $filename
+ * @param int $lines_to_display
+ * @return array
+ * @link https://github.com/ruscoe/PHP-Tail
+ * @since 1.0-beta2
+ */
+function bp_rbe_tail( $filename, $lines_to_display ) {
+
+	// Open the file.
+	if ( !$open_file = fopen( $filename, 'r' ) ) {
+		return false;
+	}
+
+	// Ignore new line characters at the end of the file
+	$pointer = -2;
+
+	$char = '';
+
+	$beginning_of_file = false;
+
+	$lines = array();
+
+	for ( $i=1; $i <= $lines_to_display; $i++ ) {
+
+		if ( $beginning_of_file == true ) {
+			continue;
+		}
+
+		/**
+		 * Starting at the end of the file, move the pointer back one
+		 * character at a time until it lands on a new line sequence.
+		 */
+
+		while ( $char != "\n" ) {
+
+			// If the beginning of the file is passed
+			if( fseek( $open_file, $pointer, SEEK_END ) < 0 ) {
+
+				$beginning_of_file = true;
+
+				// Move the pointer to the first character
+				rewind( $open_file );
+
+				break;
+
+			}
+
+			// Subtract one character from the pointer position
+			$pointer--;
+
+			// Move the pointer relative to the end of the file
+			fseek( $open_file, $pointer, SEEK_END );
+
+			// Get the current character at the pointer
+			$char = fgetc( $open_file );
+
+		}
+
+		array_push( $lines, fgets( $open_file ) );
+
+		// Reset the character.
+		$char = '';
+
+	}
+
+	// Close the file.
+	fclose( $open_file );
+
+	/**
+	 * Return the array of lines reversed, so they appear in the same
+	 * order they appear in the file.
+	*/
+	return array_reverse( $lines );
+
 }
 
 /** Hook-related ********************************************************/
@@ -852,6 +939,48 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 }
 
 /**
+ * Failsafe for RBE.
+ *
+ * RBE occasionally hangs during the inbox loop.  This function tries
+ * to snap RBE out of it by checking the last few lines of the RBE
+ * debug log.
+ *
+ * If all lines match our failed cronjob message, then reset RBE so
+ * RBE can run fresh on the next scheduled run.
+ *
+ * @uses bp_rbe_tail() Grabs the last N lines from the RBE debug log
+ * @uses bp_rbe_cleanup() Cleans up the DB entries that RBE uses
+ * @since 1.0-beta2
+ */
+function bp_rbe_failsafe() {
+	// get the last N lines from the RBE debug log
+	$last_entries = bp_rbe_tail( constant( 'BP_RBE_DEBUG_LOG_PATH' ), constant( 'BP_RBE_TAIL_LINES' ) );
+
+	if ( empty( $last_entries ) )
+		return;
+
+	// count the number of tines our 'cronjob wants to connect' message occurs
+	$counter = 0;
+
+	// see if each line contains our cronjob fail string
+	foreach ( $last_entries as $entry ) {
+		if ( strpos( $entry, '--- Cronjob wants to connect - however according to our DB indicator, we already have an active IMAP connection! ---' ) !== false )
+			++$counter;
+	}
+
+	// if all lines match the cronjob fail string, reset RBE!
+	if ( $counter == constant( 'BP_RBE_TAIL_LINES' ) ) {
+		bp_rbe_log( '--- Uh-oh! Looks like RBE is stuck! - FORCE RBE cleanup ---' );
+
+		// cleanup RBE!
+		bp_rbe_cleanup();
+
+		// use this hook to perhaps send an email to the admin?
+		do_action( 'bp_rbe_failsafe_complete' );
+	}
+}
+
+/**
  * When RBE posts a new group forum post, record the post meta in bundled bbPress
  * so we can reference it later in the topic post loop.
  *
@@ -1011,6 +1140,9 @@ function bp_rbe_check_imap_inbox() {
 	// check to see if we're connected via our DB marker
 	if ( bp_rbe_is_connected() ) {
 		bp_rbe_log( '--- Cronjob wants to connect - however according to our DB indicator, we already have an active IMAP connection! ---' );
+
+		// hook to do some checks if connected
+		do_action( 'bp_rbe_log_already_connected' );
 		return;
 	}
 

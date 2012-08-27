@@ -71,11 +71,18 @@ class BP_Reply_By_Email {
 	 * @access private
 	 */
 	private function constants() {
+		// this is true during dev period, will revert to false on release
+		// or maybe not due to the failsafe's reliance on the debug log?
 		if ( ! defined( 'BP_RBE_DEBUG' ) )
-			define( 'BP_RBE_DEBUG',          true ); // this is true during dev period, will revert to false on release
+			define( 'BP_RBE_DEBUG', true );
 
 		if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) )
 			define( 'BP_RBE_DEBUG_LOG_PATH', WP_CONTENT_DIR . '/bp-rbe-debug.log' );
+
+		// the number of lines to grab from the end of the RBE debug log
+		// @see bp_rbe_failsafe()
+		if ( ! defined( 'BP_RBE_TAIL_LINES' ) )
+			define( 'BP_RBE_TAIL_LINES', 3 );
 	}
 
 	/**
