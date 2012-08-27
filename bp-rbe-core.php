@@ -22,20 +22,25 @@ class BP_Reply_By_Email {
 	 */
 	public function init() {
 
-		// settings
+		/** Settings *****************************************************/
+
 		$this->settings = bp_get_option( 'bp-rbe' );
 
-		/** Includes *********************************************************************/
+		/** Includes *****************************************************/
 
-		require( BP_RBE_DIR . '/includes/bp-rbe-classes.php' );
-		require( BP_RBE_DIR . '/includes/bp-rbe-functions.php' );
-		require( BP_RBE_DIR . '/includes/bp-rbe-hooks.php' );
+		$this->includes();
 
-		/** Localization *****************************************************************/
+		/** Constants ****************************************************/
 
+		$this->constants();
+
+		/** Localization *************************************************/
+
+		// we place this here instead of in hooks() because we want to
+		// localize even before our requirements are fulfilled
 		add_action( 'plugins_loaded',        array( &$this, 'localization' ) );
 
-		/** Settings check ***************************************************************/
+		/** Requirements check *******************************************/
 
 		// If requirements are not fulfilled, then throw an admin notice and stop now!
 		if ( ! bp_rbe_is_required_completed( $this->settings ) ) {
@@ -43,8 +48,42 @@ class BP_Reply_By_Email {
 			return;
 		}
 
-		/** Hooks ************************************************************************/
+		/** Hooks ********************************************************/
 
+		// requirements are fulfilled! load the hooks!
+		$this->hooks();
+	}
+
+	/**
+	 * Include required files.
+	 *
+	 * @access private
+	 */
+	private function includes() {
+		require( BP_RBE_DIR . '/includes/bp-rbe-classes.php' );
+		require( BP_RBE_DIR . '/includes/bp-rbe-functions.php' );
+		require( BP_RBE_DIR . '/includes/bp-rbe-hooks.php' );
+	}
+
+	/**
+	 * Setup our constants.
+	 *
+	 * @access private
+	 */
+	private function constants() {
+		if ( ! defined( 'BP_RBE_DEBUG' ) )
+			define( 'BP_RBE_DEBUG',          true ); // this is true during dev period, will revert to false on release
+
+		if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) )
+			define( 'BP_RBE_DEBUG_LOG_PATH', WP_CONTENT_DIR . '/bp-rbe-debug.log' );
+	}
+
+	/**
+	 * Setup RBE's hooks.
+	 *
+	 * @access private
+	 */
+	private function hooks() {
 		// Preferably, BP would add the fourth parameter to wp_mail() to each component's usage
 		// and allow us to filter that param. Until then, we do some elegant workarounds ;)
 

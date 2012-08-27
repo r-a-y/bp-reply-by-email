@@ -22,12 +22,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 define( 'BP_RBE_DIR', dirname( __FILE__ ) );
 define( 'BP_RBE_URL', plugin_dir_url( __FILE__ ) );
 
-if ( ! defined( 'BP_RBE_DEBUG' ) )
-	define( 'BP_RBE_DEBUG',          true ); // this is true during dev period, will revert to false on release
-
-if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) )
-	define( 'BP_RBE_DEBUG_LOG_PATH', WP_CONTENT_DIR . '/bp-rbe-debug.log' );
-
 /**
  * Loads BP Reply By Email only if BuddyPress is activated
  */
