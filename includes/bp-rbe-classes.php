@@ -405,7 +405,7 @@ class BP_Reply_By_Email_IMAP {
 			endif;
 
 			// stop the loop if necessary
-			if ( $this->should_stop() ) {
+			if ( bp_rbe_should_stop() ) {
 				if ( $this->close() ) {
 					bp_rbe_log( '--- Manual termination of connection confirmed! Kaching! ---' );
 				}
@@ -552,28 +552,6 @@ class BP_Reply_By_Email_IMAP {
 		$mailbox = apply_filters( 'bp_rbe_mailbox', $mailbox );
 
 		return $mailbox;
-	}
-
-	/**
-	 * Returns true when the main IMAP loop should finally stop in our version of a poor man's daemon.
-	 *
-	 * Info taken from Christopher Nadeau's post - {@link http://devlog.info/2010/03/07/creating-daemons-in-php/#lphp-4}.
-	 *
-	 * @see bp_rbe_stop_imap()
-	 * @uses clearstatcache() Clear stat cache. Needed when using file_exists() in a script like this.
-	 * @uses file_exists() Checks to see if our special txt file is created.
-	 * @uses unlink() Deletes this txt file so we can do another check later.
-	 * @return bool
-	 */
-	public function should_stop() {
-		clearstatcache();
-
-		if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ) ) {
-			unlink( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ); // delete the file for next time
-			return true;
-		}
-
-		return false;
 	}
 
 	/**
