@@ -54,7 +54,6 @@ add_action( 'bp_include', 'bp_rbe_init' );
 function bp_rbe_activate() {
 	// Load the bp-rbe functions file
 	require( BP_RBE_DIR . '/includes/bp-rbe-functions.php' );
-	require( BP_RBE_DIR . '/includes/bp-rbe-classes.php' );
 
 	if ( !$settings = bp_get_option( 'bp-rbe' ) )
 		$settings = array();
@@ -70,10 +69,7 @@ function bp_rbe_activate() {
 	bp_update_option( 'bp-rbe', $settings );
 
 	// remove remnants from any previous failed attempts to stop the inbox
-	BP_Reply_By_Email_IMAP::should_stop();
-
-	bp_delete_option( 'bp_rbe_is_connected' );
-	bp_delete_option( 'bp_rbe_spawn_cron' );
+	bp_rbe_cleanup();
 }
 register_activation_hook( __FILE__, 'bp_rbe_activate' );
 
@@ -81,9 +77,6 @@ register_activation_hook( __FILE__, 'bp_rbe_activate' );
  * Remove our scheduled function from WP and stop the IMAP loop.
  */
 function bp_rbe_deactivate() {
-	// remove the cron job
-	wp_clear_scheduled_hook( 'bp_rbe_schedule' );
-
 	// stop IMAP connection if active
 	if ( bp_rbe_is_connected() ) {
 		bp_rbe_stop_imap();
@@ -94,8 +87,8 @@ function bp_rbe_deactivate() {
 		bp_rbe_log( 'Daisy, Daisy, give me your answer, do...' );
 	}
 
-	bp_delete_option( 'bp_rbe_is_connected' );
-	bp_delete_option( 'bp_rbe_spawn_cron' );
+	// remove remnants from any previous failed attempts to stop the inbox
+	bp_rbe_cleanup();
 
 	bp_rbe_log( 'Plugin deactivated!' );
 }

@@ -57,6 +57,28 @@ function bp_rbe_is_connected() {
 }
 
 /**
+ * Cleanup RBE.
+ *
+ * Clears RBE's scheduled hook from WP, as well as any DB entries and
+ * files.
+ *
+ * @since 1.0-beta2
+ */
+function bp_rbe_cleanup() {
+	// clear RBE's scheduled hook
+	wp_clear_scheduled_hook( 'bp_rbe_schedule' );
+	
+	// remove remnants from any previous failed attempts to stop the inbox
+	bp_rbe_should_stop();
+
+	// clear RBE's connected marker
+	bp_delete_option( 'bp_rbe_is_connected' );
+
+	// update RBE's spawn cron so we spawn cron on the next user visit
+	bp_update_option( 'bp_rbe_spawn_cron', 1 );
+}
+
+/**
  * Get execution time for IMAP loop.
  * This is the amount of time that RBE stays connected to the IMAP inbox.
  *
@@ -1008,6 +1030,28 @@ function bp_rbe_check_imap_inbox() {
  */
 function bp_rbe_stop_imap() {
 	touch( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' );
+}
+
+/**
+ * Returns true when the main IMAP loop should finally stop in our version of a poor man's daemon.
+ *
+ * Info taken from Christopher Nadeau's post - {@link http://devlog.info/2010/03/07/creating-daemons-in-php/#lphp-4}.
+ *
+ * @see bp_rbe_stop_imap()
+ * @uses clearstatcache() Clear stat cache. Needed when using file_exists() in a script like this.
+ * @uses file_exists() Checks to see if our special txt file is created.
+ * @uses unlink() Deletes this txt file so we can do another check later.
+ * @return bool
+ */
+function bp_rbe_should_stop() {
+	clearstatcache();
+
+	if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ) ) {
+		unlink( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ); // delete the file for next time
+		return true;
+	}
+
+	return false;
 }
 
 /** Modified BP functions ***********************************************/
