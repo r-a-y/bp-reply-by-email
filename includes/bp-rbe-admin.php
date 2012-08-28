@@ -165,7 +165,7 @@ class BP_Reply_By_Email_Admin {
 		if ( !empty( $username ) ) {
 			$output['username'] = $username;
 
-			if ( is_email( $username ) && $input['gmail'] == 1 )
+			if ( is_email( $username ) )
 				$output['email'] = $username;
 		}
 
@@ -181,17 +181,18 @@ class BP_Reply_By_Email_Admin {
 			$output['tag']      = $input['tag'];
 
 		// override certain settings if "gmail" setting is true
-		if ( $input['gmail'] == 1 ) {
+		if ( ! empty( $input['gmail'] ) && $input['gmail'] == 1 ) {
 			$output['servername'] = 'imap.gmail.com';
 			$output['port']	      = 993;
 			$output['tag']	      = '+';
 			$output['gmail']      = 1;
 		}
-		// if unchecked, reset these settings
-		elseif ( $output['port'] || $output['servername'] || $output['tag'] ) {
-			unset( $output['port'] );
-			unset( $output['servername'] );
-			unset( $output['tag'] );
+		// use alternate server settings as defined by the user
+		else {
+			$output['servername'] = wp_filter_nohtml_kses( $input['servername'] );
+			$output['port']	      = absint( $input['port'] );
+			$output['tag']	      = wp_filter_nohtml_kses( $input['tag'] );
+			$output['gmail']      = 0;		
 		}
 
 		// check if key is alphanumeric
