@@ -431,6 +431,9 @@ class BP_Reply_By_Email_IMAP {
 				else {
 					bp_rbe_log( '-- Reconnection failed! :( --' );
 					bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
+
+					// cleanup RBE after failure
+					bp_rbe_cleanup();
 				}
 			}
 
