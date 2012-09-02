@@ -153,9 +153,13 @@ class BP_Reply_By_Email {
 	public function wp_mail_filter( $args ) {
 		global $bp;
 
+		// if our 'listener' object hasn't initialized, stop now!
+		if ( empty( $this->listener ) )
+			return $args;
+
 		$listener = $this->listener;
 
-		// Check to see if our 'listener' object has an item_id
+		// Make sure our 'listener' object has an 'item_id'
 		// If so, start manipulating the email headers!
 		if ( ! empty( $listener->item_id ) ) :
 
