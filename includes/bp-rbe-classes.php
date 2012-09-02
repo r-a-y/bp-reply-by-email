@@ -133,7 +133,9 @@ class BP_Reply_By_Email_IMAP {
 
 					// Spammer check ***********************************************
 
-					if ( bp_core_is_user_spammer( $user_id ) ) {
+					$is_spammer = ( version_compare( BP_VERSION, '5.3.0' ) >= 0 ) ? bp_is_user_spammer( $user_id ) : bp_core_is_user_spammer( $user_id );
+
+					if ( $is_spammer ) {
 						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_is_spammer' );
 						continue;
 					}
