@@ -1254,8 +1254,8 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 		/* Record this in activity streams */
 		$activity_id = bp_activity_add( array(
 			'user_id'           => $user_id,
-			'action'            => apply_filters( 'groups_activity_new_forum_post_action', $activity_action, $post_id, $post_text, &$topic ),
-			'content'           => apply_filters( 'groups_activity_new_forum_post_content', $activity_content, $post_id, $post_text, &$topic ),
+			'action'            => apply_filters( 'groups_activity_new_forum_post_action', $activity_action, $post_id, $post_text, $topic ),
+			'content'           => apply_filters( 'groups_activity_new_forum_post_content', $activity_content, $post_id, $post_text, $topic ),
 			'primary_link'      => apply_filters( 'groups_activity_new_forum_post_primary_link', "{$primary_link}#post-{$post_id}" ),
 			'component'         => $bp->groups->id,
 			'type'              => 'new_forum_post',
@@ -1351,8 +1351,8 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 		/* Record this in activity streams */
 		$activity_id = bp_activity_add( array(
 			'user_id'            => $user_id,
-			'action'             => apply_filters( 'groups_activity_new_forum_topic_action', $activity_action, $topic_text, &$topic ),
-			'content'            => apply_filters( 'groups_activity_new_forum_topic_content', $activity_content, $topic_text, &$topic ),
+			'action'             => apply_filters( 'groups_activity_new_forum_topic_action', $activity_action, $topic_text, $topic ),
+			'content'            => apply_filters( 'groups_activity_new_forum_topic_content', $activity_content, $topic_text, $topic ),
 			'primary_link'       => apply_filters( 'groups_activity_new_forum_topic_primary_link', bp_get_group_permalink( $group ) . 'forum/topic/' . $topic->topic_slug . '/' ),
 			'component'          => $bp->groups->id,
 			'type'               => 'new_forum_topic',
@@ -1372,7 +1372,7 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 		) );
 
 		// apply BP's group forum topic hook
-		do_action( 'groups_new_forum_topic', $group_id, &$topic );
+		do_action( 'groups_new_forum_topic', $group_id, $topic );
 
 		return $topic;
 	}
