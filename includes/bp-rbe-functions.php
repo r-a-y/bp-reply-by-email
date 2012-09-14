@@ -753,16 +753,21 @@ function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
 			break;
 
 		case 'no_user_id' :
-			$log     = __( 'error - no user ID could be found', 'bp-rbe' );
+			$log      = __( 'error - no user ID could be found', 'bp-rbe' );
 
-			$message = sprintf( __( 'Hi there,
+			$sitename = wp_specialchars_decode( get_blog_option( bp_get_root_blog_id(), 'blogname' ), ENT_QUOTES );
+
+			$message  = sprintf( __( 'Hi there,
 
 You tried to use the email address - %s - to reply by email.  Unfortunately, we could not find this email address in our system.
 
-This usually happens when you have configured your email client to reply with a custom "From:" email address.
-In the future, please make sure to reply using the same email address at which you received the original notification.
+This can happen in a couple of different ways:
+* You have configured your email client to reply with a custom "From:" email address.
+* You read email addressed to more than one account inside of a single Inbox.
 
-If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' ) );
+Make sure that, when replying by email, your "From:" email address is the same as the address you\'ve registered at %s.
+
+If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' ), $sitename );
 			break;
 
 		case 'user_is_spammer' :
