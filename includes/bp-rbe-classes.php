@@ -669,15 +669,23 @@ class BP_Reply_By_Email_IMAP {
 		// get the email structure
 		$structure = imap_fetchstructure( $imap, $i );
 
+		// setup encoding variable
+		$encoding  = $structure->encoding;
+
 		// this is a multipart email
 		if ( ! empty( $structure->parts ) ) {
-			// check each sub-part of a multipart email
-			for ( $j = 0, $k = count( $structure->parts ); $j < $k; ++$j ) {
-				// get the plain-text message only
-				if ( strtolower( $structure->parts[$j]->subtype ) == 'plain' ) {
-					$body = imap_fetchbody( $imap, $i, $j+1 );
-					continue;
-				}
+			// parse the parts!
+			$data = self::multipart_plain_text_parser( $structure->parts, $imap, $i );
+
+			// we successfully parsed something from the multipart email
+			if ( ! empty( $data ) ) {
+				// $data when extracted includes:
+				//	$body
+				//	$encoding
+				//	$params (if applicable)
+				extract( $data );
+
+				unset( $data );
 			}
 		}
 
@@ -687,7 +695,7 @@ class BP_Reply_By_Email_IMAP {
 		}
 
 		// decode emails with the following encoding
-		switch ( $structure->encoding ) {
+		switch ( $encoding ) {
 			// quoted-printable
 			case 4 :
 				$body = quoted_printable_decode( $body );
@@ -697,6 +705,25 @@ class BP_Reply_By_Email_IMAP {
 			case 3 :
 				$body = base64_decode( $body );
 				break;
+		}
+
+		// convert email to UTF-8 if not UTF-8
+		if ( ! empty( $params['charset'] ) && $params['charset'] != 'utf-8' ) {
+			// try to use mb_convert_encoding() first if it exists
+
+			// there are differing opinions as to whether iconv() is better than
+			// mb_convert_encoding()
+			// mb_convert_encoding() appears to have less problems than iconv()
+			// so this is used first
+			if ( function_exists( 'mb_convert_encoding' ) ) {
+				$body = mb_convert_encoding( $body, 'utf-8', $params['charset'] );
+			}
+
+			// fallback to iconv() if mb_convert_encoding()_doesn't exist
+			elseif ( function_exists( 'iconv' ) ) {
+				$body = iconv( $params['charset'], 'utf-8//TRANSLIT', $body );
+			}
+
 		}
 
 		// do something special for emails that only contain HTML
@@ -730,6 +757,67 @@ class BP_Reply_By_Email_IMAP {
 		}
 
 		return apply_filters( 'bp_rbe_parse_email_body', trim( $body ), $structure );
+	}
+
+	/**
+	 * Multipart plain-text parser.
+	 *
+	 * Used during {@link BP_Reply_By_Email_IMAP::body_parser()} if email is a multipart email.
+	 *
+	 * This method parses a multipart email to return the plain-text body as well as the encoding
+	 * type and other parameters on success.
+	 *
+	 * @param obj $parts The multiple parts of an email. See imap_fetchstructure() for more details.
+	 * @param resource $imap The current IMAP connection
+	 * @param int $i The current email message number
+	 * @param bool $subpart If we're parsing a subpart or not. Defaults to false.
+	 * @return array A populated array containing the body, encoding type and other parameters on success. Empty array on failure.
+	 */
+	public static function multipart_plain_text_parser( $parts, $imap, $i, $subpart = false ) {
+		$items = $params = array();
+
+		// check each sub-part of a multipart email
+		for ( $j = 0, $k = count( $parts ); $j < $k; ++$j ) {
+			// get subtype
+			$subtype = strtolower( $parts[$j]->subtype );
+
+			// get the plain-text message only
+			if ( $subtype == 'plain' ) {
+				// setup the part number
+				// if $subpart is true, we must use a decimal number
+				$partno            = ! $subpart ? $j+1 : $j+1 . '.' . ($j+1);
+
+				$items['body']     = imap_fetchbody( $imap, $i, $partno );
+				$items['encoding'] = $parts[$j]->encoding;
+
+				// add all additional parameters if available
+				if ( ! empty( $parts[$j]->parameters ) ) {
+					foreach ( $parts[$j]->parameters as $x )
+						$params[ strtolower( $x->attribute ) ] = $x->value;
+				}
+
+				// add all additional dparameters if available
+				if ( ! empty( $parts[$j]->dparameters ) ) {
+					foreach ( $parts[$j]->dparameters as $x )
+						$params[ strtolower( $x->attribute ) ] = $x->value;
+				}
+
+				continue;
+			}
+
+			// if subtype is 'alternative', we must recursively use this method again
+			elseif ( $subtype == 'alternative' ) {
+				$items = $this->multipart_plain_text_parser( $parts[$j]->parts, $imap, $i, true );
+
+				continue;
+			}
+		}
+
+		if ( ! empty( $params ) ) {
+			$items['params'] = $params;
+		}
+
+		return $items;
 	}
 
 	/**
