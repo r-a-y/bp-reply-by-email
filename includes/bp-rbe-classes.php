@@ -807,7 +807,7 @@ class BP_Reply_By_Email_IMAP {
 
 			// if subtype is 'alternative', we must recursively use this method again
 			elseif ( $subtype == 'alternative' ) {
-				$items = $this->multipart_plain_text_parser( $parts[$j]->parts, $imap, $i, true );
+				$items = self::multipart_plain_text_parser( $parts[$j]->parts, $imap, $i, true );
 
 				continue;
 			}
