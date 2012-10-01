@@ -740,7 +740,7 @@ function bp_rbe_remove_email_client_signature( $content ) {
  * @since 1.0-beta
  */
 function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
-	$log = $message = $test = false;
+	$log = $message = false;
 
 	// log messages based on the type
 	switch ( $type ) {
@@ -921,6 +921,13 @@ Your reply:
 Could not be posted due to an error.
 
 We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
+			break;
+
+		// 3rd-party plugins can filter the two variables below to add their own logs and email messages.
+		default :
+			$log     = apply_filters( 'bp_rbe_extend_log_no_match', $log, $type, $headers, $i, $imap );
+			$message = apply_filters( 'bp_rbe_extend_log_no_match_email_message', $message, $type, $headers, $i, $imap );
 
 			break;
 	}
