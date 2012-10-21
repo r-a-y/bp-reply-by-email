@@ -38,7 +38,7 @@ class BP_Reply_By_Email {
 
 		// we place this here instead of in hooks() because we want to
 		// localize even before our requirements are fulfilled
-		add_action( 'plugins_loaded',        array( &$this, 'localization' ) );
+		$this->localization();
 
 		/** Requirements check *******************************************/
 
