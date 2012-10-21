@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: BuddyPress Reply By Email v1.0-beta1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2012-10-21 16:29:17+0000\n"
+"PO-Revision-Date: 2012-10-21 23:26:39+0000\n"
 "Last-Translator: htrex <htrex@memefarmers.net>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -80,7 +80,7 @@ msgstr "Impostazioni BP Reply By Email"
 #: includes/bp-rbe-admin.php:291
 #@ bp-rbe
 msgid "Please enter the IMAP settings for your email account.  Fields marked with * are required."
-msgstr "Per favore inserisci le impostazioni IMAP per il tuo indirizzo di posta.  I campi marcati con * sono richiesti."
+msgstr "Per favore inserisci le impostazioni IMAP per il tuo account di posta.  I campi marcati con * sono richiesti."
 
 #: includes/bp-rbe-admin.php:298
 #@ bp-rbe
@@ -152,7 +152,7 @@ msgstr "Key *"
 #: includes/bp-rbe-admin.php:353
 #@ bp-rbe
 msgid "This key is used to verify incoming emails before anything is posted to BuddyPress.  By default, a key is randomly generated for you.  You should rarely have to change your key.  However, if you want to change it, please type in an alphanumeric key of your choosing."
-msgstr "Questa chiave è usata per verificare email in ingresso prima che qualsiasi cosa sia postata in BuddyPress. Una chiave casuale predefinita è stata generata per te. Dovresti aver bisogno raramente di cambiare la tua chiave. Comunque, se vuoi cambiarla, per favore scrivi una chiave alfanumerica a tua scelta."
+msgstr "Questa chiave è usata per verificare email in ingresso prima che qualsiasi cosa sia pubblicata in BuddyPress. Una chiave casuale predefinita è stata generata per te. Dovresti aver bisogno raramente di cambiare la tua chiave. Comunque, se vuoi cambiarla, per favore scrivi una chiave alfanumerica a tua scelta."
 
 #: includes/bp-rbe-admin.php:359
 #@ bp-rbe
@@ -210,7 +210,7 @@ msgstr "Avvisi Webhost"
 #: includes/bp-rbe-admin.php:450
 #@ bp-rbe
 msgid "Schedule Info"
-msgstr "Informazioni Pianificazione"
+msgstr "Informazioni di pianificazione"
 
 #: includes/bp-rbe-admin.php:454
 #, php-format
@@ -228,7 +228,7 @@ msgstr "<strong>Reply By Email</strong> è attualmente <span>NON CONNESSO</span>
 #, php-format
 #@ bp-rbe
 msgid "What this means is a user will need to visit your website after %s in order for the plugin to check your inbox again. This is a limitation of Wordpress' scheduling API."
-msgstr "Questo significa che un utente deve visitare il tuo sito dopo %s per fare in modo che il plugin controlli la tua inbox di nuovo. Questa è una limitazione della API di pianificazione di Wordpress."
+msgstr "Questo significa che un utente deve visitare il tuo sito dopo le ore %s per fare in modo che il plugin controlli di nuovo la tua inbox. Questa è una limitazione della API di pianificazione di Wordpress."
 
 #: includes/bp-rbe-admin.php:465
 #, php-format
@@ -779,18 +779,18 @@ msgstr "Scopri come!"
 #, php-format
 #@ bp-rbe
 msgid "Send an email to <strong><a href=\"%s\">%s</strong></a> and a new forum topic will be posted in %s."
-msgstr "Invia un\\'email a <strong><a href=\"%s\">%s</strong></a> per pubblicare un nuovo argomento del forum in %s."
+msgstr "Invia un'email a <strong><a href=\"%s\">%s</strong></a> per pubblicare un nuovo argomento del forum in %s."
 
 #: includes/bp-rbe-functions.php:1084
 #, php-format
 #@ bp-rbe
 msgid "Compose a new email from the same email address you registered with &ndash; %s"
-msgstr "Componi un nuovo messaggio email dallo stesso indirizzo con cui sei registrato in &ndash; %s"
+msgstr "Componi un nuovo messaggio email dallo stesso indirizzo con cui sei registrato &ndash; %s"
 
 #: includes/bp-rbe-functions.php:1085
 #@ bp-rbe
 msgid "Put the address above in the \"To:\" field of the email."
-msgstr "Metti l\\'indirizzo sopra nel campo \"A:\" dell\\'email."
+msgstr "Metti l'indirizzo sopra nel campo \"A:\" dell'email."
 
 #: includes/bp-rbe-functions.php:1086
 #@ bp-rbe
@@ -800,7 +800,7 @@ msgstr "L'oggetto dell'email diventerà il titolo dell'argomento."
 #: includes/bp-rbe-functions.php:1090
 #@ bp-rbe
 msgid "<strong>Note:</strong> The email address above is unique to you and this group. Do not share this email address with anyone else! (Each group member will have their own unique email address.)"
-msgstr "<strong>Nota:</strong> L\\'indirizzo email sopra è unico per te e questo gruppo. Non condividere questo indirizzo email con nessun altro! (Ciascun membro del gruppo avrà il suo indirizzo email unico.)"
+msgstr "<strong>Nota:</strong> L'indirizzo email sopra è unico per te e questo gruppo. Non condividere questo indirizzo email con nessun altro! (Ciascun membro del gruppo avrà il suo indirizzo email unico.)"
 
 #: includes/bp-rbe-functions.php:1117
 #, php-format
@@ -812,11 +812,11 @@ msgstr "Ogni %s minuti"
 #, php-format
 #@ bp-rbe
 msgid "%s replied to the forum topic %s in the group %s via email:"
-msgstr "%s ha risposto all\\'argomento del forum %s nel gruppo %s via email:"
+msgstr "%s ha risposto all'argomento del forum %s nel gruppo %s via email:"
 
 #: includes/bp-rbe-functions.php:1360
 #, php-format
 #@ bp-rbe
 msgid "%s started the forum topic %s in the group %s via email:"
-msgstr "%s ha iniziato l\\'argomento nel forum %s del gruppo %s via email:"
+msgstr "%s ha iniziato l'argomento nel forum %s del gruppo %s via email:"
 
