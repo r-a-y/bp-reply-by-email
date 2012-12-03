@@ -62,7 +62,7 @@ function bp_rbe_is_connected() {
  * Clears RBE's scheduled hook from WP, as well as any DB entries and
  * files.
  *
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_cleanup() {
 	// clear RBE's scheduled hook
@@ -315,7 +315,7 @@ function bp_rbe_log( $message ) {
  * @param int $lines_to_display
  * @return array
  * @link https://github.com/ruscoe/PHP-Tail
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_tail( $filename, $lines_to_display ) {
 
@@ -447,7 +447,7 @@ function bp_rbe_activity_comment_view_link( $link, $activity ) {
  * are emailing each other back and forth! :)
  *
  * @param array $args Depending on the filter that this function is hooked into, contents will vary
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_log_last_activity( $args ) {
 	// get user id from activity entry
@@ -515,7 +515,7 @@ function bp_rbe_log_last_activity( $args ) {
 /**
  * Clear user cache when no match is found.
  *
- * @since 1.0-beta2
+ * @since 1.0-RC1
  *
  * @param resource $imap The current IMAP connection
  * @param int $i The current message number
@@ -990,7 +990,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
  *
  * @uses bp_rbe_tail() Grabs the last N lines from the RBE debug log
  * @uses bp_rbe_cleanup() Cleans up the DB entries that RBE uses
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_failsafe() {
 	// get the last N lines from the RBE debug log
@@ -1025,7 +1025,7 @@ function bp_rbe_failsafe() {
  * so we can reference it later in the topic post loop.
  *
  * @uses bb_update_postmeta() To add post meta in bundled bbPress.
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_group_forum_record_meta( $id ) {
 	// since we post items outside of BP's screen functions, it should be safe
@@ -1040,7 +1040,7 @@ function bp_rbe_group_forum_record_meta( $id ) {
  * Could be used in a custom activity loop to grab activities made by RBE later.
  *
  * @uses bp_activity_update_meta() To add activity meta.
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_activity_record_meta( $args ) {
 	bp_activity_update_meta( $args['activity_id'], 'bp_rbe', 1 );
@@ -1052,7 +1052,7 @@ function bp_rbe_activity_record_meta( $args ) {
  * Checks to see if the current topic post was posted by RBE, if so, alter the
  * timestamp string.
  *
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_alter_forum_post_timestamp( $timestamp ) {
 	global $topic_template;
@@ -1431,7 +1431,7 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
  * @param int $user_id The user ID
  * @param int $group_id The group ID
  * @param mixed Object of group member data on success. NULL on failure.
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_get_group_member_info( $user_id = false, $group_id = false ) {
 	if ( ! $user_id || ! $group_id )

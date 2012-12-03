@@ -990,7 +990,7 @@ class BP_Reply_By_Email_IMAP {
  * You should call this class anytime *after* the 'bp_include' hook of priority 10,
  * but before or equal to the 'bp_loaded' hook.
  *
- * @since 1.0-beta2
+ * @since 1.0-RC1
  *
  * @package BP_Reply_By_Email
  * @subpackage Classes

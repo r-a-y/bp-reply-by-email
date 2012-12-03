@@ -4,7 +4,7 @@ Plugin Name: BuddyPress Reply By Email
 Description: Reply to BuddyPress items from the comfort of your email inbox.
 Author: r-a-y
 Author URI: http://buddypress.org/community/members/r-a-y/
-Version: 1.0-beta1
+Version: 1.0-RC1
 License: GPLv2 or later
 */
 
@@ -94,7 +94,7 @@ register_deactivation_hook( __FILE__, 'bp_rbe_deactivate' );
  * Currently supports BuddyPress Docs and bbPress
  * More to come in the future?
  *
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 function bp_rbe_default_extensions() {
 	// if RBE requirements aren't fulfilled, stop now!

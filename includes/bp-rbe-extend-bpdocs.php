@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * @package BP_Reply_By_Email
  * @subpackage Extensions
- * @since 1.0-beta2
+ * @since 1.0-RC1
  */
 class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 
