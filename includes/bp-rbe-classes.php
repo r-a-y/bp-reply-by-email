@@ -236,6 +236,8 @@ class BP_Reply_By_Email_IMAP {
 						unset( $p );
 
 					// Forum reply
+					// Note: This code is for the bundled forums that come with BuddyPress
+					// For bbPress 2, see the BBP_RBE_Extension class
 					elseif ( !empty( $t ) ) :
 
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
@@ -333,6 +335,8 @@ class BP_Reply_By_Email_IMAP {
 						endif;
 
 					// New forum topic
+					// Note: This code is for the bundled forums that come with BuddyPress
+					// For bbPress 2, see the BBP_RBE_Extension class
 					elseif ( !empty( $g ) ) :
 
 						if ( bp_is_active( $bp->groups->id ) && bp_is_active( $bp->forums->id ) ) :
@@ -974,6 +978,9 @@ class BP_Reply_By_Email_IMAP {
 /**
  * Abstract base class for adding support for RBE to your plugin.
  *
+ * This class relies on the activity component.  If your plugin doesn't rely
+ * on the activity component (eg. PMs), don't extend this class.
+ *
  * Extend this class and in your constructor call the bootstrap() method.
  * See inline docs in the bootstrap() method for more details.
  *
@@ -983,9 +990,10 @@ class BP_Reply_By_Email_IMAP {
  * You should call this class anytime *after* the 'bp_include' hook of priority 10,
  * but before or equal to the 'bp_loaded' hook.
  *
+ * @since 1.0-beta2
+ *
  * @package BP_Reply_By_Email
  * @subpackage Classes
- * @since 1.0-beta2
  */
 abstract class BP_Reply_By_Email_Extension {
 	/**

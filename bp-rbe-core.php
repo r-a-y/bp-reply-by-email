@@ -95,9 +95,10 @@ class BP_Reply_By_Email {
 		// and allow us to filter that param. Until then, we do some elegant workarounds ;)
 
 		// Setup our "listener" object for the following BP components
-		add_action( 'bp_activity_after_save',                   array( &$this, 'activity_listener' ), 9 );
+		add_action( 'bp_activity_after_save',                   array( &$this, 'activity_listener' ),    9 );
 		add_action( 'messages_message_after_save',              array( &$this, 'message_listener' ) );
 		add_action( 'bb_new_post',                              array( &$this, 'group_forum_listener' ), 9 );
+		add_action( 'bbp_pre_notify_subscribers',               array( &$this, 'bbp_listener' ),         10, 2 );
 
 		// These hooks are helpers for $this->group_forum_listener()
 		add_filter( 'bp_rbe_groups_new_group_forum_post_args',  array( &$this, 'get_temporary_variables' ) );
@@ -154,6 +155,7 @@ class BP_Reply_By_Email {
 		global $bp;
 
 		// if our 'listener' object hasn't initialized, stop now!
+		// @todo make this easier to extend in 3rd-party plugins
 		if ( empty( $this->listener ) )
 			return $args;
 
@@ -327,6 +329,29 @@ class BP_Reply_By_Email {
 		$this->listener->component = $bp->messages->id;
 		$this->listener->item_id   = $item->thread_id;
 		$this->listener->user_id   = $item->sender_id;
+	}
+
+	/**
+	 * bbPress 2 plugin compatibility.
+	 *
+	 * bbPress has built-in email subscriptions, so let's not reinvent the wheel!
+	 *
+	 * Here, we hook into the 'bbp_pre_notify_subscriptions' hook so we can
+	 * setup our listener.
+	 *
+	 * This listener is only for bbPress forums that are not attached to
+	 * BuddyPress groups.
+	 *
+	 * For BuddyPress groups, see the BBP_RBE_Extension::extend_activity_listener() method instead.
+	 *
+	 * @param int $reply_id The forum reply ID created by bbPress
+	 * @param int $topic_id The forum topic ID created by bbPress
+	 */
+	public function bbp_listener( $reply_id, $topic_id ) {
+		$this->listener = new stdClass;
+
+		$this->listener->component = 'bbpress';
+		$this->listener->item_id   = $topic_id;
 	}
 
 	/**

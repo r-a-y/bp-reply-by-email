@@ -473,6 +473,8 @@ function bp_rbe_log_last_activity( $args ) {
 		switch ( $args['type'] ) {
 			case 'new_forum_topic' :
 			case 'new_forum_post' :
+			case 'bbp_topic_create' :
+			case 'bbp_reply_create' :
 				// sanity check!
 				if ( ! bp_is_active( 'groups' ) )
 					return;
@@ -1046,7 +1048,9 @@ function bp_rbe_alter_forum_post_timestamp( $timestamp ) {
 function bp_rbe_new_topic_info_css() {
 	$current_group = groups_get_current_group();
 
-	if ( bp_is_group_forum() && ! bp_action_variables() && bp_loggedin_user_id() && ! empty( $current_group->is_member ) ) :
+	$show_css = apply_filters( 'bp_rbe_new_topic_info_css', bp_is_group_forum() && ! bp_action_variables() && bp_loggedin_user_id() && ! empty( $current_group->is_member ) );
+
+	if ( $show_css ) :
 ?>
 	<style type="text/css">
 		#rbe-toggle { display:none; }
@@ -1404,10 +1408,10 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
  * @since 1.0-beta2
  */
 function bp_rbe_get_group_member_info( $user_id = false, $group_id = false ) {
-	global $bp, $wpdb;
-
 	if ( ! $user_id || ! $group_id )
 		return false;
+
+	global $bp, $wpdb;
 
 	$sql = $wpdb->prepare( "SELECT * FROM {$bp->groups->table_name_members} WHERE user_id = %d AND group_id = %d", $user_id, $group_id );
 
