@@ -1,6 +1,6 @@
 <?php
 /**
- * bbPress-BuddyPress Group Email Subscription Reply By Email Extension.
+ * bbPress Reply By Email Extension.
  *
  * Allows BP group members to reply to bbPress forum posts via email.
  *
@@ -13,7 +13,11 @@
  *
  * Your Group Email setting must be set to "All Mail" to reply to bbP posts.
  *
- * This does *not* handle posting new topics via email at the moment.
+ * Can also post new topics via email in both BuddyPress groups and to
+ * regular bbPress forums.
+ *
+ * @todo Re-enable ability to reply to regular bbPress topics (forums not attached
+ *       to BuddyPress). Need to fix post link bug in email.
  *
  * @package BP_Reply_By_Email
  * @subpackage Classes
@@ -23,9 +27,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Adds RBE support to the bbPress plugin for BuddyPress Groups.
- *
- * Allows group members to reply to bbPress forum posts via email.
+ * Adds RBE support to the bbPress plugin.
  *
  * Extends the abstract {@link BP_Reply_By_Email_Extension} class, which
  * helps do a lot of the dirty work!
@@ -159,7 +161,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 				break;
 
 			// check to see if component matches our secondary listener as defined in the
-			// bbp_listener() method
+			// BP_Reply_By_Email::bbp_listener() method
 			case 'bbpress' :
 					$querystring = "{$this->secondary_item_id_param}={$listener->item_id}";
 
