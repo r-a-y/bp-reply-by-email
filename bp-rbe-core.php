@@ -98,7 +98,7 @@ class BP_Reply_By_Email {
 		add_action( 'bp_activity_after_save',                   array( &$this, 'activity_listener' ),    9 );
 		add_action( 'messages_message_after_save',              array( &$this, 'message_listener' ) );
 		add_action( 'bb_new_post',                              array( &$this, 'group_forum_listener' ), 9 );
-		add_action( 'bbp_pre_notify_subscribers',               array( &$this, 'bbp_listener' ),         10, 2 );
+		//add_action( 'bbp_pre_notify_subscribers',               array( &$this, 'bbp_listener' ),         10, 2 );
 
 		// These hooks are helpers for $this->group_forum_listener()
 		add_filter( 'bp_rbe_groups_new_group_forum_post_args',  array( &$this, 'get_temporary_variables' ) );
