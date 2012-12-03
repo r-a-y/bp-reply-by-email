@@ -77,7 +77,7 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 	public function post_by_email( $connection, $i, $headers, $params, $body, $user_id ) {
 		global $bp;
 
-		$comment_id = $params[$this->secondary_item_id_param];
+		$comment_id = ! empty( $params[$this->secondary_item_id_param] ) ? $params[$this->secondary_item_id_param] : false;
 
 		// this means that the current email is a BP Doc reply
 		// let's proceed!
