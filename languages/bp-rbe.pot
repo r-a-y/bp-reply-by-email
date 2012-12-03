@@ -1,0 +1,678 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: BuddyPress Reply By Email v1.0-beta1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2012-10-22 09:17:56+0000\n"
+"Last-Translator: none\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-Language: English\n"
+"X-Poedit-Country: UNITED STATES\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;\n"
+"X-Poedit-Basepath: ../\n"
+"X-Poedit-Bookmarks: \n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Textdomain-Support: yes"
+
+#: bp-rbe-core.php:140
+#@ bp-rbe
+msgid "BuddyPress Reply By Email cannot initialize.  Please navigate to \"BuddyPress > Reply By Email\" to fill in the required fields and address the webhost warnings."
+msgstr ""
+
+#: bp-rbe-core.php:208
+#: includes/bp-rbe-classes.php:738
+#: includes/bp-rbe-functions.php:792
+#@ bp-rbe
+msgid "--- Reply ABOVE THIS LINE to add a comment ---"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:63
+#@ bp-rbe
+msgid "BuddyPress Reply By Email"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:63
+#@ bp-rbe
+msgid "BP Reply By Email"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:89
+#@ bp-rbe
+msgid "Settings"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:234
+#, php-format
+#@ bp-rbe
+msgid "Error: Unable to connect to inbox - %s"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:253
+#@ bp-rbe
+msgid "Error: <strong>Address tag</strong> must only be one character."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:256
+#@ bp-rbe
+msgid "Error: <strong>Port</strong> must be numeric."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:259
+#@ bp-rbe
+msgid "Error: <strong>Key</strong> must only contain letters and / or numbers."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:262
+#@ bp-rbe
+msgid "Error: <strong>Keep Alive Connection</strong> value must be less than 30."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:278
+#@ bp-rbe
+msgid "BP Reply By Email Settings"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:291
+#@ bp-rbe
+msgid "Please enter the IMAP settings for your email account.  Fields marked with * are required."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:298
+#@ bp-rbe
+msgid "GMail / Google Apps Mail"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:299
+#, php-format
+#@ bp-rbe
+msgid "Using GMail? (This will override the Server Name, Port and Address Tag fields on save.) Also make sure to <a href=\"%s\" target=\"_blank\">enable IMAP in GMail</a>."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:305
+#@ bp-rbe
+msgid "Mail Server *"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:311
+#@ bp-rbe
+msgid "Port *"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:318
+#@ bp-rbe
+msgid "Address Tag Separator *"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:319
+#, php-format
+#@ bp-rbe
+msgid "Example: test@gmail.com is my email address, I can also receive email that is sent to test+anything@gmail.com.  The address tag separator for GMail is \"+\".  For other email providers, <a href=\"%s\" target=\"_blank\">view this page</a>."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:326
+#@ bp-rbe
+msgid "Username *"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:327
+#@ bp-rbe
+msgid "For GMail users, enter your <strong>full email address</strong> as your username."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:334
+#@ bp-rbe
+msgid "Password *"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:340
+#@ bp-rbe
+msgid "Email Address"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:341
+#@ bp-rbe
+msgid "If your username is <strong>not</strong> the same as your email address, please fill in this field as well."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:346
+#@ bp-rbe
+msgid "Other Settings"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:352
+#@ bp-rbe
+msgid "Key *"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:353
+#@ bp-rbe
+msgid "This key is used to verify incoming emails before anything is posted to BuddyPress.  By default, a key is randomly generated for you.  You should rarely have to change your key.  However, if you want to change it, please type in an alphanumeric key of your choosing."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:359
+#@ bp-rbe
+msgid "Keep Alive Connection *"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:360
+#, php-format
+#@ bp-rbe
+msgid "The length in minutes to stay connected to your inbox. Due to <a href=\"%s\" target=\"_blank\">RFC 2177 protocol</a>, this value cannot be larger than 29. If this value is changed, this will take effect on the next scheduled update."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:367
+#@ bp-rbe
+msgid "Save Changes"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:375
+#@ bp-rbe
+msgid "If you're a fan of this plugin, support further development with a donation!"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:379
+#@ bp-rbe
+msgid "Need Help?"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:381
+#, php-format
+#@ bp-rbe
+msgid "<a href=\"%s\">Check out the BP Reply By Email wiki</a> for articles, FAQs and more information."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:412
+#@ bp-rbe
+msgid "Settings updated successfully!"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:425
+#@ bp-rbe
+msgid "IMAP extension for PHP is <strong>disabled</strong>.  This plugin will not run without it.  Please contact your webhost to enable this."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:428
+#, php-format
+#@ bp-rbe
+msgid "PHP Safe Mode is <strong>on</strong>.  This is not a dealbreaker, but this means you cannot set the Keep Alive Connection value larger than %d minutes."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:431
+#@ bp-rbe
+msgid "Webhost Warnings"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:450
+#@ bp-rbe
+msgid "Schedule Info"
+msgstr ""
+
+#: includes/bp-rbe-admin.php:454
+#, php-format
+#@ bp-rbe
+msgid "<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously. The next scheduled stop and restart is <strong>%s</strong>."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:456
+#, php-format
+#@ bp-rbe
+msgid "<strong>Reply By Email</strong> is currently <span>NOT CONNECTED</span>. The next scheduled inbox check is <strong>%s</strong>."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:461
+#, php-format
+#@ bp-rbe
+msgid "What this means is a user will need to visit your website after %s in order for the plugin to check your inbox again. This is a limitation of Wordpress' scheduling API."
+msgstr ""
+
+#: includes/bp-rbe-admin.php:465
+#, php-format
+#@ bp-rbe
+msgid "<a href=\"%s\">View this article</a> for a potential solution."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:258
+#@ bp-rbe
+msgid "error - BP doc parent comment was deleted before this could be posted."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:263
+#@ bp-rbe
+msgid "error - BP doc parent comment was marked as spam before this could be posted."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:268
+#@ bp-rbe
+msgid "error - BP doc parent comment was unapproved before this could be posted."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:273
+#@ bp-rbe
+msgid "error - BP doc's comment settings changed to 'no-one'"
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:278
+#@ bp-rbe
+msgid "error - this BP doc's comment setting is set to admins and mods only"
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:283
+#@ bp-rbe
+msgid "error - user is not a member of the group"
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:288
+#@ bp-rbe
+msgid "notice - user is banned from group. BP doc comment not posted."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:293
+#@ bp-rbe
+msgid "error - BP doc comment failed to post"
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:314
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your comment to the group document:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the parent comment you were replying to no longer exists.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:327
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your comment to the group document:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the parent comment you were replying to was marked as spam.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:340
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your comment to the group document:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the parent comment you were replying was unapproved.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:353
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your comment to the group document:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the comment setting for this group document recently changed to \"No One\".\n"
+"This means that no other comments can be posted for the group document in question.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:367
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your comment to the group document:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the comment setting for this group document recently changed to \"Admin and moderators only\".\n"
+"Since you are not a group administrator or a group moderator, this means your comment could be posted.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:381
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your comment to the group document:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because you are no longer a member of this group.  To comment on this group document, please rejoin the group.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:394
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your comment to the group document:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted due to an error.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-extend-bpdocs.php:526
+#: includes/bp-rbe-functions.php:1036
+#@ bp-rbe
+msgid "via email"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:420
+#, php-format
+#@ bp-rbe
+msgid "%s posted a new activity comment via email:"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:437
+#@ buddypress
+msgid "View Discussion"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:751
+#@ bp-rbe
+msgid "error - no address tag could be found"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:756
+#@ bp-rbe
+msgid "error - no user ID could be found"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:760
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"You tried to use the email address - %s - to reply by email.  Unfortunately, we could not find this email address in our system.\n"
+"\n"
+"This can happen in a couple of different ways:\n"
+"* You have configured your email client to reply with a custom \"From:\" email address.\n"
+"* You read email addressed to more than one account inside of a single Inbox.\n"
+"\n"
+"Make sure that, when replying by email, your \"From:\" email address is the same as the address you've registered at %s.\n"
+"\n"
+"If you have any questions, please let us know."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:774
+#@ bp-rbe
+msgid "notice - user is marked as a spammer.  reply not posted!"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:779
+#@ bp-rbe
+msgid "error - no parameters were found"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:784
+#@ bp-rbe
+msgid "error - body message for reply was empty"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:786
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your reply could not be posted because we could not find the \"%s\" marker in the body of your email.\n"
+"\n"
+"In the future, please make sure you reply *above* this line for your comment to be posted on the site.\n"
+"\n"
+"If you have any questions, please let us know."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:799
+#@ bp-rbe
+msgid "error - root activity update was deleted before this could be posted"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:801
+#: includes/bp-rbe-functions.php:816
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your reply:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the activity entry you were replying to no longer exists.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:814
+#@ bp-rbe
+msgid "error - root or parent activity update was deleted before this could be posted"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:831
+#@ bp-rbe
+msgid "error - user is not a member of the group. forum reply not posted."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:833
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your forum reply:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because you are no longer a member of this group.  To comment on the forum thread, please rejoin the group.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:846
+#@ bp-rbe
+msgid "notice - user is banned from group. forum reply not posted."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:851
+#@ bp-rbe
+msgid "error - body message for new forum topic was empty"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:853
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"We could not post your new forum topic by email because we could not find any text in the body of the email.\n"
+"\n"
+"In the future, please make sure to type something in your email! :)\n"
+"\n"
+"If you have any questions, please let us know."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:864
+#@ bp-rbe
+msgid "error - forum topic was deleted before reply could be posted"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:866
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your forum reply:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the forum topic you were replying to no longer exists.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:879
+#@ bp-rbe
+msgid "error - forum topic failed to be created"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:882
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your forum topic titled \"%s\" could not be posted due to an error.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:894
+#@ bp-rbe
+msgid "error - user is not a part of the existing PM conversation"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:899
+#@ bp-rbe
+msgid "error - private message thread was deleted by all parties before this could be posted"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:901
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your private message reply:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted because the private message thread you were replying to no longer exists.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:914
+#@ bp-rbe
+msgid "error - private message failed to post"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:915
+#, php-format
+#@ bp-rbe
+msgid ""
+"Hi there,\n"
+"\n"
+"Your reply:\n"
+"\n"
+"\"%s\"\n"
+"\n"
+"Could not be posted due to an error.\n"
+"\n"
+"We apologize for any inconvenience this may have caused."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:937
+#, php-format
+#@ bp-rbe
+msgid "Message #%d: %s"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:946
+#, php-format
+#@ bp-rbe
+msgid "[%s] Your Reply By Email message could not be posted"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1076
+#@ bp-rbe
+msgid "Post New Topics via Email"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1078
+#@ bp-rbe
+msgid "You can post new topics to this group from the comfort of your email inbox."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1078
+#@ bp-rbe
+msgid "Find out how!"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1081
+#, php-format
+#@ bp-rbe
+msgid "Send an email to <strong><a href=\"%s\">%s</strong></a> and a new forum topic will be posted in %s."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1084
+#, php-format
+#@ bp-rbe
+msgid "Compose a new email from the same email address you registered with &ndash; %s"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1085
+#@ bp-rbe
+msgid "Put the address above in the \"To:\" field of the email."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1086
+#@ bp-rbe
+msgid "The email subject will become the topic title."
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1090
+#@ bp-rbe
+msgid "<strong>Note:</strong> The email address above is unique to you and this group. Do not share this email address with anyone else! (Each group member will have their own unique email address.)"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1117
+#, php-format
+#@ bp-rbe
+msgid "Every %s minutes"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1262
+#, php-format
+#@ bp-rbe
+msgid "%s replied to the forum topic %s in the group %s via email:"
+msgstr ""
+
+#: includes/bp-rbe-functions.php:1360
+#, php-format
+#@ bp-rbe
+msgid "%s started the forum topic %s in the group %s via email:"
+msgstr ""
+
