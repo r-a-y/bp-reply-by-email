@@ -18,6 +18,11 @@ This plugin was developed for the [CUNY Academic Commons](http://commons.gc.cuny
 * [IMAP module enabled in PHP](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server)
 * An email address that supports IMAP and [address tags](https://en.wikipedia.org/wiki/Email_address#Address_tags)
 
+#### Server Requirements
+* IMAP module (required) (with OpenSSL recommended)
+* Safe mode off (recommended)
+* A VPS or dedicated server (recommended) ([see notes about shared hosts here](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server))
+
 #### Getting Started
 * [Quick Setup with GMail](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail)
 * [Frequently Asked Questions](https://github.com/r-a-y/bp-reply-by-email/wiki/Frequently-Asked-Questions)
@@ -33,3 +38,4 @@ This plugin was developed for the [CUNY Academic Commons](http://commons.gc.cuny
 
 * Jim Wigginton - for his `Crypt_AES` class from the [PHP Secure Communications Library](http://phpseclib.sourceforge.net/). Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
 * Jevon Wright - for his [html2text](https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php) functions from the [IAML Modelling Platform](http://openiaml.org/).  Licensed under the [Eclipse Public License v1.0](http://www.eclipse.org/legal/epl-v10.html).
+* Dan Roscoe - for his [PHP-Tail](https://github.com/ruscoe/PHP-Tail) library. Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
