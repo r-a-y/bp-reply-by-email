@@ -1272,7 +1272,7 @@ function bp_rbe_groups_new_group_forum_post( $args = '' ) {
 
 	// do a direct bbPress DB call
 	if ( isset( $bbdb ) ) {
-		$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = {$topic_id}" ) );
+		$topic = $bbdb->get_row( $bbdb->prepare( "SELECT * FROM {$bbdb->topics} WHERE topic_id = %d", $topic_id ) );
 	}
 
 	// if the topic was deleted, stop now!

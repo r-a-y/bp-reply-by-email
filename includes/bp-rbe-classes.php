@@ -180,7 +180,7 @@ class BP_Reply_By_Email_IMAP {
 						bp_rbe_log( 'Message #' . $i . ': this is an activity reply, checking if parent activities still exist' );
 
 						// Check to see if the root activity ID and the parent activity ID exist before posting
-						$activity_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$bp->activity->table_name} WHERE id IN ( {$a}, {$p} );" ) );
+						$activity_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$bp->activity->table_name} WHERE id IN ( %d, %d )", $a, $p ) );
 
 						// If $a = $p, this means that we're replying to a top-level activity update
 						// So check if activity count is 1
