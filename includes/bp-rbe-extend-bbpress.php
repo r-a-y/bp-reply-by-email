@@ -214,8 +214,15 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		/* current email is a bbPress group reply, let's proceed! */
 
-		// let RBE know that we're in the process of rendering a bbP group forum reply
-		bp_rbe_log( 'Message #' . $i . ': this is a bbPress group forum reply' );
+		// let RBE know that we're in the process of rendering a bbP reply
+		// BuddyPress group forum reply
+		if ( ! empty( $params[$this->item_id_param] ) ) {
+			bp_rbe_log( 'Message #' . $i . ': this is a bbPress group forum reply' );
+
+		// bbPress
+		} else {
+			bp_rbe_log( 'Message #' . $i . ': this is a bbPress forum reply' );
+		}
 
 		// locally cache topic ID - referenced in extend_activity_listener() method
 		$bp->rbe->temp->topic_id  = $topic_id;
