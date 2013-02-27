@@ -196,8 +196,10 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// reset globals
 		global $bp;
 
-		if ( empty( $bp->rbe->temp ) )
-			$bp->rbe = $bp->rbe->temp = new stdClass;
+		if ( empty( $bp->rbe->temp ) ) {
+			$bp->rbe       = new stdClass;
+			$bp->rbe->temp = new stdClass;
+		}
 
 		// get topic ID
 		$topic_id = ! empty( $params[$this->secondary_item_id_param] ) ? $params[$this->secondary_item_id_param] : false;
