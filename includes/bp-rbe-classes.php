@@ -68,6 +68,7 @@ class BP_Reply_By_Email_IMAP {
 		$connect = $this->connect();
 
 		if ( ! $connect ) {
+			delete_site_transient( 'bp_rbe_lock' );
 			return false;
 		}
 
@@ -490,12 +491,25 @@ class BP_Reply_By_Email_IMAP {
 			return false;
 		}
 
+		// check if we're already attemtping to connect
+		// another precaution
+		if ( (int) get_site_transient( 'bp_rbe_lock' ) == 1 ) {
+			bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
+			return false;
+		}
+
 		// decode the password
 		$password = bp_rbe_decode( array( 'string' => $bp_rbe->settings['password'], 'key' => wp_salt() ) );
+
+		// add lock marker before connecting
+		// transient expires after 60 second timeout, which should be enough time to
+		// connect to the IMAP server
+		set_site_transient( 'bp_rbe_lock', true, 60 );
 
 		// Let's open the IMAP stream!
 		$this->connection = @imap_open( $this->get_mailbox(), $bp_rbe->settings['username'], $password );
 
+		// couldn't connect :(
 		if ( $this->connection === false ) {
 			bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
 			return false;

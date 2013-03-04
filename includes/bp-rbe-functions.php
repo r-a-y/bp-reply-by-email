@@ -74,6 +74,9 @@ function bp_rbe_cleanup() {
 	// clear RBE's connected marker
 	bp_delete_option( 'bp_rbe_is_connected' );
 
+	// clear connecting lock if available
+	delete_site_transient( 'bp_rbe_lock' );
+
 	// update RBE's spawn cron so we spawn cron on the next user visit
 	bp_update_option( 'bp_rbe_spawn_cron', 1 );
 }
