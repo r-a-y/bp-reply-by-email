@@ -192,7 +192,7 @@ class BP_Reply_By_Email {
 					$querystring = apply_filters( 'bp_rbe_extend_querystring', $querystring, $listener );
 				break;
 			}
-			
+
 			// last chance to disable the querystring with this filter!
 			$querystring = apply_filters( 'bp_rbe_querystring', $querystring, $listener, $args );
 
