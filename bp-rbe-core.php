@@ -107,6 +107,9 @@ class BP_Reply_By_Email {
 
 		// Filter wp_mail(); use our listener object for component checks
 		add_filter( 'wp_mail',                                  array( &$this, 'wp_mail_filter' ) );
+
+		// WP Better Emails support
+		add_filter( 'wpbe_html_body',                           array( &$this, 'move_rbe_marker' ) );
 	}
 
 	/**
@@ -398,6 +401,42 @@ class BP_Reply_By_Email {
 		}
 
 		return $retval;
+	}
+
+	/**
+	 * WP Better Emails Support.
+	 *
+	 * WP Better Emails gives admins the ability to wrap the plain-text content
+	 * around a HTML template.
+	 *
+	 * This interferes with the positioning of RBE's marker and how RBE parses the
+	 * reply. So what we do in this method is to reposition the RBE marker to the
+	 * beginning of the HTML body.
+	 *
+	 * This allows RBE to parse replies the way it was intended.
+	 *
+	 * @param str $html The full HTML email content from WPBE
+	 * @return str Modified HTML content
+	 */
+	public function move_rbe_marker( $html ) {
+		$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
+
+		// if our RBE marker isn't in this email, then this isn't a RBE email!
+		// so stop!
+		if ( strpos( $html, $reply_line ) === false ) {
+			return $html;
+		}
+
+		// remove the marker temporarily
+		$html = str_replace( $reply_line . '<br />
+<br />', '', $html );
+
+		// add some CSS styling
+		// 3rd party devs can filter this
+		$style = apply_filters( 'bp_rbe_reply_marker_css', "color:#333; font-size:12px; font-family:arial,san-serif;" );
+
+		// add back the marker at the top of the HTML email and centered
+		return str_replace( '<body>', '<body><center><span style="' . esc_attr( $style ) . '">' . $reply_line . '</span></center><br />', $html );
 	}
 }
 
