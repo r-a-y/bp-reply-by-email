@@ -515,27 +515,34 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_category' );
 			//bbp_add_error( 'bbp_edit_topic_forum_category', __( '<strong>ERROR</strong>: This forum is a category. No topics can be created in this forum.', 'bbpress' ) );
 			return;
-		}
 
-		// Forum is closed and user cannot access
-		if ( bbp_is_forum_closed( $forum_id ) && ! user_can( $topic_author, 'edit_forum' ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_closed' );
-			//bbp_add_error( 'bbp_edit_topic_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new topics.', 'bbpress' ) );
-			return;
-		}
+		// Forum is not a category
+		} else {
 
-		// Forum is private and user cannot access
-		if ( bbp_is_forum_private( $forum_id ) && ! user_can( $topic_author, 'read_private_forums' ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_private' );
-			//bbp_add_error( 'bbp_edit_topic_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
-			return;
-		}
+			// Forum is closed and user cannot access
+			if ( bbp_is_forum_closed( $forum_id ) && ! user_can( $topic_author, 'edit_forum' ) ) {
+				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_closed' );
+				//bbp_add_error( 'bbp_edit_topic_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new topics.', 'bbpress' ) );
+				return;
+			}
 
-		// Forum is hidden and user cannot access
-		if ( bbp_is_forum_hidden( $forum_id ) && ! user_can( $topic_author, 'read_hidden_forums' ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_hidden' );
-			//bbp_add_error( 'bbp_edit_topic_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
-			return;
+			// Forum is private and user cannot access
+			if ( bbp_is_forum_private( $forum_id ) ) {
+				if ( ! user_can( $topic_author, 'read_private_forums' ) ) {
+					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_private' );
+					//bbp_add_error( 'bbp_edit_topic_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
+					return;
+				}
+			}
+
+			// Forum is hidden and user cannot access
+			if ( bbp_is_forum_hidden( $forum_id ) ) {
+				if ( ! user_can( $topic_author, 'read_hidden_forums' ) ) {
+					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_hidden' );
+					//bbp_add_error( 'bbp_edit_topic_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
+					return;
+				}
+			}
 		}
 
 		/** UNFILTERED HTML **********************************************/
