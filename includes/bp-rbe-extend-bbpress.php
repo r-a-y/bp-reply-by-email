@@ -354,7 +354,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// Reply posted!
 		if ( ! is_wp_error( $reply_id ) ) {
 			// more internal logging
-			bp_rbe_log( 'Message #' . $i . ': bbPress group forum reply successfully posted!' );
+			bp_rbe_log( 'Message #' . $i . ': bbPress reply successfully posted!' );
 
 		// Problem posting
 		} else {
