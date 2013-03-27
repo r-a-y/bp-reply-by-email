@@ -377,21 +377,38 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			// Trash the reply
 			wp_trash_post( $reply_id );
 
-			// Get pre_trashed_replies for topic
-			$pre_trashed_replies = get_post_meta( $topic_id, '_bbp_pre_trashed_replies', true );
+			// Only add to pre-trashed array if topic is trashed
+			if ( bbp_is_topic_trash( $topic_id ) ) {
 
-			// Add this reply to the end of the existing replies
-			$pre_trashed_replies[] = $reply_id;
+				// Get pre_trashed_replies for topic
+				$pre_trashed_replies = get_post_meta( $topic_id, '_bbp_pre_trashed_replies', true );
 
-			// Update the pre_trashed_reply post meta
-			update_post_meta( $topic_id, '_bbp_pre_trashed_replies', $pre_trashed_replies );
-		}
+				// Add this reply to the end of the existing replies
+				$pre_trashed_replies[] = $reply_id;
+
+				// Update the pre_trashed_reply post meta
+				update_post_meta( $topic_id, '_bbp_pre_trashed_replies', $pre_trashed_replies );
+			}
 
 		// Spam Check /////////////////////////////////////////////////////
 
 		// If reply or topic are spam, officially spam this reply
-		if ( bbp_is_topic_spam( $topic_id ) || ( $reply_data['post_status'] == bbp_get_spam_status_id() ) )
+		} elseif ( bbp_is_topic_spam( $topic_id ) || ( $reply_data['post_status'] == bbp_get_spam_status_id() ) ) {
 			add_post_meta( $reply_id, '_bbp_spam_meta_status', bbp_get_public_status_id() );
+
+			// Only add to pre-spammed array if topic is spam
+			if ( bbp_is_topic_spam( $topic_id ) ) {
+
+				// Get pre_spammed_replies for topic
+				$pre_spammed_replies = get_post_meta( $topic_id, '_bbp_pre_spammed_replies', true );
+
+				// Add this reply to the end of the existing replies
+				$pre_spammed_replies[] = $reply_id;
+
+				// Update the pre_spammed_replies post meta
+				update_post_meta( $topic_id, '_bbp_pre_spammed_replies', $pre_spammed_replies );
+			}
+		}
 
 		// Reply By Email /////////////////////////////////////////////////
 
