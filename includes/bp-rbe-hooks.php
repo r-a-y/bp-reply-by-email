@@ -17,7 +17,6 @@ if ( bp_rbe_is_required_completed() ) :
 	add_action( 'bp_rbe_schedule',                  'bp_rbe_check_imap_inbox' );
 
 	add_action( 'init',                             'bp_rbe_cron' );
-	add_action( 'admin_init',                       'bp_rbe_cron' );
 
 	// html email to plain-text
 	add_filter( 'bp_rbe_parse_html_email',          'bp_rbe_html_to_plaintext' );
