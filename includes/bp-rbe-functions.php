@@ -820,7 +820,9 @@ Your reply could not be posted because we could not find the "%s" marker in the 
 
 In the future, please make sure you reply *above* this line for your comment to be posted on the site.
 
-If you have any questions, please let us know.', 'bp-rbe' ), __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ) );
+For reference, the subject line of your reply was "%s".
+
+If you have any questions, please let us know.', 'bp-rbe' ), __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'Subject' ) );
 
 			break;
 
