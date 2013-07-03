@@ -1006,7 +1006,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		if ( bp_is_group() ) {
 			global $bp;
 
-			$bp->rbe = $bp->rbe->temp = new stdClass;
+			if ( empty( $bp->rbe ) && empty( $bp->rbe->temp ) ) {
+				$bp->rbe = new stdClass;
+				$bp->rbe->temp = new stdClass;
+			}
+
 			$bp->rbe->temp->topic_id = $topic_id;
 		}
 	}
