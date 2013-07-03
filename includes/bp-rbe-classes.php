@@ -133,18 +133,31 @@ class BP_Reply_By_Email_IMAP {
 						wp_cache_flush();
 					}
 
-					$user_id = email_exists( $email );
+					// get userdata by email
+					$user = get_user_by( 'email', $email );
 
-					if ( !$user_id ) {
+					if ( !$user ) {
 						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_user_id' );
 						continue;
 					}
+
+					$user_id = $user->ID;
 
 					bp_rbe_log( 'Message #' . $i . ': user id successfully parsed - user id is - ' . $user_id );
 
 					// Spammer check ***********************************************
 
-					$is_spammer = ( version_compare( BP_VERSION, '1.6' ) >= 0 ) ? bp_is_user_spammer( $user_id ) : bp_core_is_user_spammer( $user_id );
+					$is_spammer = false;
+
+					// Multisite spammer check
+					if ( ! empty( $user->spam ) ) {
+						$is_spammer = true;
+					}
+
+					// Single site spammer check
+					if ( 1 == $user->user_status ) {
+						$is_spammer = true;
+					}
 
 					if ( $is_spammer ) {
 						do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'user_is_spammer' );
@@ -418,6 +431,7 @@ class BP_Reply_By_Email_IMAP {
 					unset( $headers );
 					unset( $qs );
 					unset( $email );
+					unset( $user );
 					unset( $user_id );
 					unset( $params );
 					unset( $body );
@@ -1025,7 +1039,7 @@ abstract class BP_Reply_By_Email_Extension {
 	/**
 	 * Holds our custom variables.
 	 *
-	 * These variables are stored in a protected array that is magically 
+	 * These variables are stored in a protected array that is magically
 	 * updated using PHP 5.2+ methods.
 	 *
 	 * @see BP_Reply_By_Email::bootstrap() This is where $data is defined
