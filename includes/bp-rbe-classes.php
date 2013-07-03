@@ -129,7 +129,7 @@ class BP_Reply_By_Email_IMAP {
 					// why? b/c the default object cache is only meant for single page loads and
 					// since RBE runs in the background, we need to flush the object cache so WP
 					// will do a direct DB query for the next data fetch
-					if ( ! bp_rbe_is_external_object_cache_used() {
+					if ( ! bp_rbe_is_external_object_cache_used() ) {
 						wp_cache_flush();
 					}
 

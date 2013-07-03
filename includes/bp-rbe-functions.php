@@ -401,7 +401,7 @@ function bp_rbe_is_external_object_cache_used() {
 	global $_wp_using_ext_object_cache;
 
 	// this means the default object cache is being used
-	if ( empty( $_wp_using_ext_object_cache ) {
+	if ( empty( $_wp_using_ext_object_cache ) ) {
 		return false;
 	}
 
