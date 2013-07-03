@@ -123,6 +123,16 @@ class BP_Reply_By_Email_IMAP {
 					$email = self::address_parser( $headers, 'From' );
 					bp_rbe_log( 'User email address is ' . $email );
 
+					// flush object cache if necessary
+					//
+					// we only flush the cache if the default object cache is in use
+					// why? b/c the default object cache is only meant for single page loads and
+					// since RBE runs in the background, we need to flush the object cache so WP
+					// will do a direct DB query for the next data fetch
+					if ( ! bp_rbe_is_external_object_cache_used() {
+						wp_cache_flush();
+					}
+
 					$user_id = email_exists( $email );
 
 					if ( !$user_id ) {
