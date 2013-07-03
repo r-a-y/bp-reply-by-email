@@ -110,6 +110,9 @@ class BP_Reply_By_Email {
 
 		// WP Better Emails support
 		add_filter( 'wpbe_html_body',                           array( &$this, 'move_rbe_marker' ) );
+
+		// Do not show non-RBE notice in certain emails
+		add_filter( 'bp_rbe_show_non_rbe_notice',               array( &$this, 'disable_non_rbe_notice' ), 10, 2 );
 	}
 
 	/**
@@ -159,8 +162,20 @@ class BP_Reply_By_Email {
 
 		// if our 'listener' object hasn't initialized, stop now!
 		// @todo make this easier to extend in 3rd-party plugins
-		if ( empty( $this->listener ) )
+		if ( empty( $this->listener ) ) {
+			// since this isn't a RBE email, add a line above each email noting that
+			// this isn't a RBE email and that you should not reply to this
+			//
+			// can be disabled with the 'bp_rbe_show_non_rbe_notice' filter
+			if ( true === (bool) apply_filters( 'bp_rbe_show_non_rbe_notice', true, $args ) ) {
+
+				$notice = __( '--- Replying to this email will not send a message directly to the recipient or group ---', 'bp-rbe' );
+
+				$args['message'] = "{$notice}\n\n" . $args['message'];
+			}
+
 			return $args;
+		}
 
 		$listener = $this->listener;
 
@@ -437,6 +452,38 @@ class BP_Reply_By_Email {
 
 		// add back the marker at the top of the HTML email and centered
 		return str_replace( '<body>', '<body><center><span style="' . esc_attr( $style ) . '">' . $reply_line . '</span></center><br />', $html );
+	}
+
+	/**
+	 * For non-RBE emails, we now add a line above each message denoting that the
+	 * email is not one you can reply to.
+	 *
+	 * However, there are instances where we do not want to add this line.
+	 *
+	 * This method disables this line when:
+	 *  - An email is sent from the admin area
+	 *  - An activation email is sent
+	 *
+	 * @since 1.0-RC2
+	 *
+	 * @param bool $retval Should we disable the non-RBE notice?
+	 * @param array $args Email args passed by the 'wp_mail' filter
+	 * @return bool
+	 */
+	public function disable_non_rbe_notice( $retval, $args ) {
+		// don't do this in the admin area
+		if ( is_admin() ) {
+			return false;
+		}
+
+		// do not add the notice to activation emails
+		// check the subject line and look for the activation subject text
+		if ( strpos( $args['subject'], __( 'Activate Your Account', 'buddypress' ) ) !== false ||
+			strpos( $args['subject'], __( 'Activate %s', 'buddypress' ) ) !== false ) {
+				return false;
+		}
+
+		return $retval;
 	}
 }
 
