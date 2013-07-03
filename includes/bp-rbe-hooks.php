@@ -60,9 +60,6 @@ if ( bp_rbe_is_required_completed() ) :
 	add_action( 'bp_rbe_imap_no_match',             'bp_rbe_imap_log_no_matches', 10, 4 );
 	add_action( 'bp_rbe_log_already_connected',     'bp_rbe_failsafe' );
 
-	// clear user cache on failure
-	add_action( 'bp_rbe_imap_no_match',             'bp_rbe_clear_user_cache',    10, 4 );
-
 	// outright delete the emails that are marked for deletion once we're done.
 	add_action( 'bp_rbe_imap_after_loop',           'imap_expunge' );
 

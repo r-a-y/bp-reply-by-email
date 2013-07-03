@@ -534,32 +534,6 @@ function bp_rbe_log_last_activity( $args ) {
 }
 
 /**
- * Clear user cache when no match is found.
- *
- * @since 1.0-RC1
- *
- * @param resource $imap The current IMAP connection
- * @param int $i The current message number
- * @param array $headers The email headers
- * @param sring $type The type of error
- */
-function bp_rbe_clear_user_cache( $imap, $i, $headers, $type ) {
-	switch ( $type ) {
-		case 'no_user_id' :
-			$email = BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' );
-			wp_cache_delete( $email, 'useremail' );
-
-			break;
-		case 'user_is_spammer' :
-			$user_id = email_exists( BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' ) );
-
-			wp_cache_delete( $user_id, 'users' );
-			break;
-
-	}
-}
-
-/**
  * Removes end of line (EOL) and a given character from content.
  * Used to remove the trailing ">" character from email replies. Wish Basecamp did this!
  *
