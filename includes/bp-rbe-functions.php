@@ -891,6 +891,21 @@ If you have any questions, please let us know.', 'bp-rbe' );
 
 			break;
 
+		case 'forum_reply_exists' :
+			$log     = __( 'error - forum reply already exists in topic', 'bp-rbe' );
+
+			$message = sprintf( __( 'Hi there,
+
+Your forum reply:
+
+"%s"
+
+Could not be posted because you have already posted the same message in the forum topic you were attempting to reply to.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+
+			break;
+
 		case 'forum_reply_fail' :
 			$log     = __( 'error - forum topic was deleted before reply could be posted', 'bp-rbe' );
 

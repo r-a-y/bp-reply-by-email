@@ -259,6 +259,13 @@ class BP_Reply_By_Email_IMAP {
 								continue;
 							}
 
+							// Don't allow reply flooding
+							// Only available in 1.6+
+							if ( function_exists( 'bp_forums_reply_exists' ) && bp_forums_reply_exists( $body, $t, $user_id ) ) {
+								do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'forum_reply_exists' );
+								continue;
+							}
+
 							/* okay, we should be good to post now! */
 
 							$forum_post_id = bp_rbe_groups_new_group_forum_post( array(
