@@ -735,8 +735,16 @@ function bp_rbe_remove_email_client_signature( $content ) {
 				// iterate!
 				++$i;
 
-				// strip from the beginning of the sig
-				$content = substr( $content, 0, strrpos( $content, $lines[$i] ) );
+				// find position of marker
+				$marker = strrpos( $content, $lines[$i] );
+				
+				// if marker matches integer 0, remove the line preceding this one
+				if ( $marker === 0 ) {
+					$marker = strrpos( $content, $lines[$i-1] );
+				}
+
+				// get body until beginning of the sig
+				$content = substr( $content, 0, $marker );
 
 			}
 
