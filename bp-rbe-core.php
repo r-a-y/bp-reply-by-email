@@ -439,15 +439,17 @@ class BP_Reply_By_Email {
 	public function move_rbe_marker( $html ) {
 		$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
 
+		// try to find the reply line in the email
+		$pos = strpos( $html, $reply_line );
+
 		// if our RBE marker isn't in this email, then this isn't a RBE email!
 		// so stop!
-		if ( strpos( $html, $reply_line ) === false ) {
+		if ( $pos === false ) {
 			return $html;
 		}
 
 		// remove the marker temporarily
-		$html = str_replace( $reply_line . '<br />
-<br />', '', $html );
+		$html = substr_replace( $html, '', $pos, strlen( $reply_line ) + 8 );
 
 		// add some CSS styling
 		// 3rd party devs can filter this
