@@ -234,6 +234,9 @@ class BP_Reply_By_Email {
 
 		endif;
 
+		// clear listener after parsing to prevent cached values
+		$this->listener = false;
+
 		return $args;
 	}
 
@@ -486,5 +489,3 @@ class BP_Reply_By_Email {
 		return $retval;
 	}
 }
-
-?>
