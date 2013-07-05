@@ -437,6 +437,11 @@ class BP_Reply_By_Email {
 	 * @return str Modified HTML content
 	 */
 	public function move_rbe_marker( $html ) {
+		// if non-RBE email, stop now!
+		if ( strpos( $html, __( '--- Replying to this email will not send a message directly to the recipient or group ---', 'bp-rbe' ) ) !== false ) {
+			return $html;
+		}
+
 		$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
 
 		// try to find the reply line in the email
