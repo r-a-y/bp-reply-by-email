@@ -16,6 +16,7 @@
 		"GPL-2.0+"
 	],
 	"require" : {
+		"composer/installers" : "~1",
 		"wpackagist/buddypress" : "@stable"
 	},
 	"minimum-stability" : "stable",
