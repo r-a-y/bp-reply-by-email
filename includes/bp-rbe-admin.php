@@ -43,6 +43,14 @@ class BP_Reply_By_Email_Admin {
 
 		// add extra action links for our plugin
 		add_filter( 'plugin_action_links',  array( &$this, 'add_plugin_action_links' ), 10, 2 );
+
+		// include github updater only if CBOX isn't installed
+		// or if CBOX is installed and expert mode is on
+		if ( ! function_exists( 'cbox' ) ||
+			( function_exists( 'cbox' ) && defined( 'CBOX_OVERRIDE_PLUGINS' ) && constant( 'CBOX_OVERRIDE_PLUGINS' ) === true )
+		) {
+			$this->github_updater();
+		}
 	}
 
 	/**
@@ -91,6 +99,29 @@ class BP_Reply_By_Email_Admin {
 		$links[] = '<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=V9AUZCMECZEQJ" target="_blank">Donate!</a>';
 
 		return $links;
+	}
+
+	/**
+	 * Checks a JSON file to see if our Github repo should be updated.
+	 *
+	 * Uses the Plugin Update Checker library by Janis Elsts.
+	 * Licensed under the GPL.  Slightly modified by me for better Github support.
+	 *
+	 * @since 1.0-RC2
+	 * @link https://github.com/YahnisElsts/plugin-update-checker
+	 */
+	function github_updater() {
+		if ( ! class_exists( 'PluginUpdateChecker' ) ) {
+			require( BP_RBE_DIR . '/includes/class.plugin-update-checker.php' );
+		}
+
+		$github_updater = new PluginUpdateChecker(
+			// JSON file that gets updated when we release a new version of RBE
+			'https://raw.github.com/gist/610fe45a0c5ed6344be5',
+			constant( 'BP_RBE_DIR' ) . '/loader.php',
+			$this->get_plugin_basename()
+		);
+
 	}
 
 	/**
