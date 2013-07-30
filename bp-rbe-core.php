@@ -451,7 +451,7 @@ class BP_Reply_By_Email {
 		}
 
 		// remove the marker temporarily
-		$html = substr_replace( $html, '', $pos, strlen( $reply_line ) + 8 );
+		$html = substr_replace( $html, '', $pos, strlen( $reply_line ) + 13 );
 
 		// add some CSS styling
 		// 3rd party devs can filter this
