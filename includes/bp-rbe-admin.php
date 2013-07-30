@@ -73,11 +73,9 @@ class BP_Reply_By_Email_Admin {
 	 * @param string $file A plugin's loader base filename
 	 */
 	function add_plugin_action_links( $links, $file ) {
-		$plugin_basename = plugin_basename(__FILE__);
-		$plugin_basedir	 = substr( $plugin_basename, 0, strpos( $plugin_basename, '/' ) );
 
 		// Do not do anything for other plugins
-		if ( $plugin_basedir . '/loader.php' != $file )
+		if ( $this->get_plugin_basename() . '/loader.php' != $file )
 			return $links;
 
 		$path = 'admin.php?page=bp-rbe';
@@ -571,6 +569,22 @@ class BP_Reply_By_Email_Admin {
 			esc_attr_e( $val );
 		else
 			return esc_attr( $val );
+	}
+
+	/**
+	 * Gets RBE's plugin basename.
+	 *
+	 * The reason for this extra method is because we're using {@link plugin_basename()}
+	 * from a subdirectory.  So we need to remove everything but the first directory.
+	 *
+	 * @since 1.0-RC2
+	 *
+	 * @return string
+	 */
+	public function get_plugin_basename() {
+		$plugin_basename = plugin_basename(__FILE__);
+
+		return substr( $plugin_basename, 0, strpos( $plugin_basename, '/' ) );
 	}
 }
 
