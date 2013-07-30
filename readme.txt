@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 3.4.x, BuddyPress 1.6.1
+Tested up to: WordPress 3.5.x, BuddyPress 1.8
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -48,11 +48,17 @@ If you already have the plugin activated, but you choose to upgrade the plugin m
 Also check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by-email/wiki) for more information!
 
 
+= Translations =
+
+Italian - [htrex](https://github.com/htrex)
+
+
 == Special Thanks ==
 
 * Jim Wigginton - for his `Crypt_AES` class from the [PHP Secure Communications Library](http://phpseclib.sourceforge.net/). Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
 * Jevon Wright - for his [html2text](https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php) functions from the [IAML Modelling Platform](http://openiaml.org/).  Licensed under the [Eclipse Public License v1.0](http://www.eclipse.org/legal/epl-v10.html).
 * Dan Roscoe - for his [PHP-Tail](https://github.com/ruscoe/PHP-Tail) library. Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
+* Janis Elsts - for his [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) library. Licensed under the [GPL License](http://www.gnu.org/licenses/gpl.html).
 
 
 == Screenshots ==
@@ -64,6 +70,16 @@ Also check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by
 
 == Changelog ==
 
+= 1.0-RC2 =
+* Feature: Support auto-updating the plugin through GitHub.  Uses the [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) library by Janis Elsts.
+* Feature: Preliminary support for [WP Better Emails](http://wordpress.org/extend/plugins/wp-better-emails/).
+* Fix: Flush default object cache before attempting to fetch userdata during inbox checks.
+* Enhancement: Introduce locking mechanism when connecting to the IMAP server to prevent multiple connections to the inbox.
+* Enhancement: For non-RBE emails, add a line above each email message stating that you should not reply to this email.
+* Enhancement: Add further methods to block auto-replies.
+* Enhancement: Add email subject line to "no body" bounce-back email.
+* Enhancement: Minor tweaks to email signature stripping.
+
 = 1.0-RC1 =
 * Feature: BuddyPress Docs support with BuddyPress groups (requires [BP Group Email Subscription Plugin](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/))
 * Feature: Preliminary bbPress 2.2 support - can reply to group forum emails [BP Group Email Subscription Plugin](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/)) and posting new topics via email.  Does not support replying to general bbPress forum emails (those not attached to BuddyPress) as there are some bbPress bugs that need to be fixed.
@@ -74,6 +90,7 @@ Also check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by
 * Enhancement: Add an extension API
 * Enhancement: Add failsafe if RBE is stuck during inbox checks
 * Enhancement: Update 'last_activity' meta when posting via email for user / group
+* Translation: Italian translation provided by [htrex](https://github.com/htrex)
 
 = 1.0-beta =
 * Initial public release
