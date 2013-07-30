@@ -604,7 +604,11 @@ class BP_Reply_By_Email_IMAP {
 	}
 
 	/**
-	 * Grabs and parses an email message's header and returns an array with each header item.
+	 * Grabs and parses an email message's header and returns an array with each
+	 * header item.
+	 *
+	 * Also checks email headers for auto-replies and returns boolean false if an
+	 * auto-reply is detected.
 	 *
 	 * @uses imap_fetchheader() Grabs full, raw unmodified email header
 	 * @param resource $imap The current IMAP connection
@@ -690,7 +694,26 @@ class BP_Reply_By_Email_IMAP {
 			return false;
 		}
 
-		// @todo Perhaps implement more auto-reply checks from this:
+		// Envelope Sender check
+		// See http://qmail.3va.net/qdp/bounce.html
+		// See http://wiki.dovecot.org/LDA/Sieve
+		if ( ! empty( $headers['Return-Path'] ) ) {
+			$return_path = strtolower( self::address_parser( $headers, 'Return-Path' ) );
+
+			if ( strpos( $return_path, 'mailer-daemon' ) === 0 ||
+				strpos( $return_path, 'owner-' ) === 0 ||
+				empty( $return_path )
+			) {
+
+				bp_rbe_log( 'Message #' . $i . ': error - this is a mailer-daemon message of some sort, so stop now!' );
+				return false;
+			}
+		}
+
+		// @todo Perhaps implement more auto-reply checks from these links:
+		// https://github.com/opennorth/multi_mail/wiki/Detecting-autoresponders
+		// http://www.hackvalue.nl/en/article/19/the%20art%20of%20autoresponders%20(part%202)
+		// http://stackoverflow.com/questions/6317714/apache-camel-mail-to-identify-auto-generated-messages/6383675#6383675
 		// http://wiki.exim.org/EximAutoReply#Router-1
 
 		// Want to do more checks? Here's the filter!
