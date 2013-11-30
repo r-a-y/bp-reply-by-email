@@ -390,24 +390,6 @@ function bp_rbe_tail( $filename, $lines_to_display ) {
 
 }
 
-/**
- * Determine whether a 3rd-party object cache is being used.
- *
- * @since 1.0-RC2
- *
- * @return bool
- */
-function bp_rbe_is_external_object_cache_used() {
-	global $_wp_using_ext_object_cache;
-
-	// this means the default object cache is being used
-	if ( empty( $_wp_using_ext_object_cache ) ) {
-		return false;
-	}
-
-	return true;
-}
-
 /** Hook-related ********************************************************/
 
 /**
