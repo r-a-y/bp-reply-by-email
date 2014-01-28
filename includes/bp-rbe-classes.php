@@ -939,14 +939,12 @@ class BP_Reply_By_Email_IMAP {
 	 * @return mixed Either the address tag on success or false on failure
 	 */
 	public static function get_address_tag( $address ) {
-		global $bp_rbe;
-
 		// $address might already be false, so let's return false right away
 		if ( !$address )
 			return false;
 
 		$at  = strpos( $address, '@' );
-		$tag = strpos( $address, $bp_rbe->settings['tag'] );
+		$tag = strpos( $address, bp_rbe_get_setting( 'tag' ) );
 
 		if ( $at === false || $tag === false )
 			return false;

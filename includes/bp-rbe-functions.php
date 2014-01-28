@@ -38,6 +38,24 @@ function bp_rbe_is_required_completed( $settings = false ) {
 }
 
 /**
+ * Get an individual setting from RBE's settings array.
+ *
+ * @since 1.0-RC4
+ *
+ * @param string $setting The setting parameter.
+ * @return string|bool
+ */
+function bp_rbe_get_setting( $setting = '' ) {
+	if ( empty( $setting ) || ! is_string( $setting ) ) {
+		return false;
+	}
+
+	global $bp_rbe;
+
+	return isset( $bp_rbe->settings[$setting] ) ? $bp_rbe->settings[$setting] : false;
+}
+
+/**
  * Check to see if we're connected to the IMAP inbox.
  *
  * To check if we're connected, a DB entry is updated in {@link BP_Reply_By_Email_IMAP::connect()}
@@ -95,8 +113,6 @@ function bp_rbe_cleanup() {
  * @todo Remove safe mode support as safe mode is being deprecated in PHP 5.3+.
  */
 function bp_rbe_get_execution_time( $value = 'seconds' ) {
-	global $bp_rbe;
-
 	// if webhost has enabled safe mode, we cannot set the time limit, so
 	// we have to accommodate their max execution time
 	if ( ini_get( 'safe_mode' ) ) :
@@ -104,18 +120,20 @@ function bp_rbe_get_execution_time( $value = 'seconds' ) {
 		// value is in seconds
 		$time = ini_get( 'max_execution_time' );
 
-		if ( $value == 'minutes' )
+		if ( $value == 'minutes' ) {
 			$time = floor( ini_get( 'max_execution_time' ) / 60 );
+		}
 
 		// apply a filter just in case someone wants to override this!
 		$time = apply_filters( 'bp_rbe_safe_mode_execution_time', $time );
 
 	else :
 		// if keepalive setting exists, use it; otherwise, set default keepalive to 15 minutes
-		$time = !empty( $bp_rbe->settings['keepalive'] ) ? $bp_rbe->settings['keepalive'] : 15;
+		$time = bp_rbe_get_setting( 'keepalive' ) ? bp_rbe_get_setting( 'keepalive' ) : 15;
 
-		if ( $value == 'seconds' )
+		if ( $value == 'seconds' ) {
 			$time = $time * 60;
+		}
 	endif;
 
 	return $time;
@@ -131,13 +149,11 @@ function bp_rbe_get_execution_time( $value = 'seconds' ) {
  * @todo Add subdomain addressing support in a future release
  */
 function bp_rbe_inject_qs_in_email( $qs ) {
-	global $bp_rbe;
-
-	$email	= $bp_rbe->settings['email'];
+	$email	= bp_rbe_get_setting( 'email' );
 	$at_pos	= strpos( $email, '@' );
 
 	// Address tag + $qs
-	$tag_qs	= $bp_rbe->settings['tag'] . $qs;
+	$tag_qs	= bp_rbe_get_setting( 'tag' ) . $qs;
 
 	return apply_filters( 'bp_rbe_inject_qs_in_email', substr_replace( $email, $tag_qs, $at_pos, 0 ), $tag_qs );
 }
@@ -158,10 +174,10 @@ function bp_rbe_encode( $args = array() ) {
 	global $bp_rbe;
 
 	$defaults = array (
- 		'string' => false,                    // the content we want to encode
- 		'key'    => $bp_rbe->settings['key'], // the key used to aid in encryption; defaults to the key set in the admin area
- 		'param'  => false,                    // the string we want to prepend to the key; handy to set different keys
- 		'mode'   => 'aes',                    // mode of encryption; defaults to 'aes'
+ 		'string' => false,                       // the content we want to encode
+ 		'key'    => bp_rbe_get_setting( 'key' ), // the key used to aid in encryption; defaults to the key set in the admin area
+ 		'param'  => false,                       // the string we want to prepend to the key; handy to set different keys
+ 		'mode'   => 'aes',                       // mode of encryption; defaults to 'aes'
 	);
 
 	$args = wp_parse_args( $args, $defaults );
@@ -212,10 +228,10 @@ function bp_rbe_decode( $args = array() ) {
 	global $bp_rbe;
 
 	$defaults = array (
- 		'string' => false,                    // the encoded string we want to dencode
- 		'key'    => $bp_rbe->settings['key'], // the key used to aid in encryption; defaults to the key set in the admin area
- 		'param'  => false,                    // the string we want to prepend to the key; handy to set different keys
- 		'mode'   => 'aes',                    // mode of decryption; defaults to 'aes'
+ 		'string' => false,                       // the encoded string we want to dencode
+ 		'key'    => bp_rbe_get_setting( 'key' ), // the key used to aid in encryption; defaults to the key set in the admin area
+ 		'param'  => false,                       // the string we want to prepend to the key; handy to set different keys
+ 		'mode'   => 'aes',                       // mode of decryption; defaults to 'aes'
 	);
 
 	$args = wp_parse_args( $args, $defaults );
