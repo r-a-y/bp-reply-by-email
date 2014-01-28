@@ -225,8 +225,6 @@ function bp_rbe_encode( $args = array() ) {
  * @since 1.0-beta
  */
 function bp_rbe_decode( $args = array() ) {
-	global $bp_rbe;
-
 	$defaults = array (
  		'string' => false,                       // the encoded string we want to dencode
  		'key'    => bp_rbe_get_setting( 'key' ), // the key used to aid in encryption; defaults to the key set in the admin area
