@@ -10,6 +10,133 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
+ * Sets up an IMAP connection.
+ *
+ * Instantiate the class with the static init() method, which will return the
+ * the IMAP resource on success.
+ *
+ * Note: You will need to manually close the connection yourself with
+ * {@link imap_close()}.
+ *
+ * @since 1.0-RC4
+ */
+class BP_Reply_By_Email_Connect {
+	/**
+	 * Static initializer.
+	 *
+	 * Returns IMAP resource on success using the connect() method.
+	 *
+	 * For parameters, see constructor.
+	 *
+	 * @return resource|bool The IMAP resource on success. Boolean false on failure.
+	 */
+	public static function init( $args = array(), $connection = false ) {
+		$instance = new self( $args, $connection );
+
+		return $instance->connect();
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param array $args {
+	 *     An array of arguments.
+	 *
+	 *     @type string $host The server name. (eg. imap.gmail.com)
+	 *     @type int $port The port number used by the server name.
+	 *     @type string $username The username used to login to the server.
+	 *     @type string $password The password used to login to the server.
+	 *     @type int $retries How many times to try reconnection on failure.
+	 *                        Defaults to 1.
+	 *     @type bool $reconnect Are we attempting a reconnection? Defaults to false.
+	 * }
+	 * @param resource $connection The IMAP resource if attempting a reconnection.
+	 * @return resource|bool The IMAP resource on success. Boolean false on failure.
+	 */
+	public function __construct( $args = array(), $connection = false ) {
+
+		$defaults = array (
+	 		'host'      => bp_rbe_get_setting( 'servername' ),
+	 		'port'      => bp_rbe_get_setting( 'port' ),
+	 		'username'  => bp_rbe_get_setting( 'username' ),
+	 		'password'  => bp_rbe_get_setting( 'password' ) ? bp_rbe_decode( array( 'string' => bp_rbe_get_setting( 'password' ), 'key' => wp_salt() ) ) : false,
+	 		'retries'   => 1,
+	 		'reconnect' => false
+		);
+
+		$this->args       = wp_parse_args( $args, $defaults );
+		$this->connection = $connection;
+	}
+
+	/**
+	 * Connect to an IMAP inbox.
+	 *
+	 * @return resource|bool The IMAP resource on success. Boolean false on failure.
+	 */
+	protected function connect() {
+		// stop if IMAP module does not exist
+		if ( ! function_exists( 'imap_open' ) ) {
+			return false;
+		}
+
+		$mailbox = $this->get_mailbox();
+
+		//
+		if ( $this->is_reconnection() ) {
+			// if PHP is 5.2+, use extra parameter to only try connecting once
+			if ( ! empty( $this->args['retries'] ) && version_compare( PHP_VERSION, '5.2.0') >= 0 ) {
+				$resource = imap_reopen( $this->connection, $mailbox, 0, (int) $this->args['retries'] );
+
+			// PHP is older, so use the default retry value of 3
+			} else {
+				$resource = imap_reopen( $this->connection, $mailbox );
+			}
+
+		} else {
+			// if PHP is 5.2+, use extra parameter to only try connecting once
+			if ( ! empty( $this->args['retries'] ) && version_compare( PHP_VERSION, '5.2.0') >= 0 ) {
+				$resource = imap_open( $mailbox, $this->args['username'], $this->args['password'], 0, (int) $this->args['retries'] );
+
+			// PHP is older, so use the default retry value of 3
+			} else {
+				$resource = imap_open( $mailbox, $this->args['username'], $this->args['password'] );
+			}
+
+		}
+
+		return $resource;
+	}
+
+	/**
+	 * Get the mailbox we want to connect to.
+	 *
+	 * This, basically, returns the first parameter of {@link imap_open()}, which
+	 * is also the second parameter of {@link imap_reopen()}.
+	 *
+	 * @return string
+	 */
+	protected function get_mailbox() {
+		$ssl = self::is_ssl( $this->args['port'] ) ? '/ssl' : '';
+
+		// Need to readjust this before public release
+		// In the meantime, let's add a filter!
+		$mailbox = '{' . $this->args['host'] . ':' . $this->args['port'] . '/imap' . $ssl . '}INBOX';
+
+		return apply_filters( 'bp_rbe_mailbox', $mailbox );
+
+	}
+
+	/**
+	 * Whether we should attempt a reconnection.
+	 *
+	 * @return bool
+	 */
+	protected function is_reconnection() {
+		return ( ! empty( $this->args['reconnect'] ) && is_resource( $this->connection ) );
+	}
+}
+
+/**
  * Handles checking an IMAP inbox and posting items to BuddyPress.
  *
  * @package BP_Reply_By_Email
@@ -461,7 +588,7 @@ class BP_Reply_By_Email_IMAP {
 				bp_rbe_log( '-- IMAP connection is down, attempting to reconnect... --' );
 
 				// attempt to reconnect
-				$reopen = imap_reopen( $this->connection, $this->get_mailbox() );
+				$reopen = BP_Reply_By_Email_Connect::init( array( 'reconnect' => true ), $this->connection );
 
 				if ( $reopen ) {
 					bp_rbe_log( '-- Reconnection successful! --' );
@@ -506,8 +633,6 @@ class BP_Reply_By_Email_IMAP {
 	 * @return bool
 	 */
 	private function connect() {
-		global $bp_rbe;
-
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
 
 		// if our DB marker says we're already connected, stop now!
@@ -524,16 +649,13 @@ class BP_Reply_By_Email_IMAP {
 			return false;
 		}
 
-		// decode the password
-		$password = bp_rbe_decode( array( 'string' => $bp_rbe->settings['password'], 'key' => wp_salt() ) );
-
 		// add lock marker before connecting
 		// transient expires after 60 second timeout, which should be enough time to
 		// connect to the IMAP server
 		set_site_transient( 'bp_rbe_lock', true, 60 );
 
 		// Let's open the IMAP stream!
-		$this->connection = @imap_open( $this->get_mailbox(), $bp_rbe->settings['username'], $password );
+		$this->connection = BP_Reply_By_Email_Connect::init();
 
 		// couldn't connect :(
 		if ( $this->connection === false ) {
@@ -579,28 +701,6 @@ class BP_Reply_By_Email_IMAP {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Get the mailbox we want to connect to.
-	 *
-	 * This, basically, returns the first parameter of {@link imap_open()}, which
-	 * is also the second parameter of {@link imap_reopen()}.
-	 *
-	 * @return string
-	 */
-	public function get_mailbox() {
-		global $bp_rbe;
-
-		// This needs some testing...
-		$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
-
-		// Need to readjust this before public release
-		// In the meantime, let's add a filter!
-		$mailbox = '{' . $bp_rbe->settings['servername'] . ':' . $bp_rbe->settings['port'] . '/imap' . $ssl . '}INBOX';
-		$mailbox = apply_filters( 'bp_rbe_mailbox', $mailbox );
-
-		return $mailbox;
 	}
 
 	/**
