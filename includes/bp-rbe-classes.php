@@ -127,6 +127,43 @@ class BP_Reply_By_Email_Connect {
 	}
 
 	/**
+	 * Should we enable SSL for the IMAP connection?
+	 *
+	 * Check to see if both the OpenSSL and IMAP modules are loaded.  Next, see if
+	 * the port is explictly 993.
+	 *
+	 * @param int $port The port number used for the IMAP connection.
+	 * @return bool
+	 */
+	public static function is_ssl( $port = 0 ) {
+		$modules = get_loaded_extensions();
+
+		if ( ! in_array( 'openssl', $modules ) ) {
+			return false;
+		}
+
+		if ( ! in_array( 'imap', $modules ) ) {
+			return false;
+		}
+
+		if ( empty( $port ) ) {
+			return false;
+		}
+
+		// port 993 is the standard port for SSL connections
+		// so we do a hardcoded check for it for now
+		if ( $port === 993 ) {
+			$retval = true;
+		} else {
+			$retval = false;
+		}
+
+		// if your SSL port is not the standard 993, override this with the
+		// 'bp_rbe_is_imap_ssl' filter
+		return apply_filters( 'bp_rbe_is_imap_ssl', $retval, $port );
+	}
+
+	/**
 	 * Whether we should attempt a reconnection.
 	 *
 	 * @return bool

@@ -280,24 +280,15 @@ function hex2bin( $text ) {
 endif;
 
 /**
- * Is IMAP SSL support enabled?
+ * Should we enable SSL for the IMAP connection?
  *
- * Check to see if both the OpenSSL and IMAP modules are loaded.
+ * Wrapper function for {@link BP_Reply_By_Email_Connect::is_ssl()}.
  *
- * @uses get_loaded_extensions() Gets names of all PHP modules that are compiled and loaded.
  * @return bool
  * @since 1.0-beta
  */
 function bp_rbe_is_imap_ssl() {
-	$modules = get_loaded_extensions();
-
-	if ( ! in_array( 'openssl', $modules ) )
-		return false;
-
-	if ( ! in_array( 'imap', $modules ) )
-		return false;
-
-	return true;
+	return BP_Reply_By_Email_Connect::is_ssl( bp_rbe_get_setting( 'port' ) );
 }
 
 /**
