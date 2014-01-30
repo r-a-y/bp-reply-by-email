@@ -573,8 +573,8 @@ class BP_Reply_By_Email_Admin {
 				</select>
 
 			<?php
-				if ( $desc ) {
-					echo '<p class="description">' . $desc . '</p>';
+				if ( $r['desc'] ) {
+					echo '<p class="description">' . $r['desc'] . '</p>';
 				}
 
 				break;
