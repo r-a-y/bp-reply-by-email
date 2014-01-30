@@ -56,6 +56,26 @@ function bp_rbe_get_setting( $setting = '' ) {
 }
 
 /**
+ * Whether RBE is in inbound mode.
+ *
+ * Previous to 1.0-RC4, BP RBE only supported IMAP to check an inbox and post
+ * items to BuddyPress.  Now, RBE will also support inbound email.
+ *
+ * Inbound email mode means BP emails are sent to an external service that
+ * parses the email content and will post back the parsed content to the site.
+ * RBE will then used the parsed content to post the content to BuddyPress.
+ *
+ * Inbound email will be the default mode going forward.
+ *
+ * @since 1.0-RC4
+ *
+ * @return bool
+ */
+function bp_rbe_is_inbound() {
+	return (bool) bp_rbe_get_setting( 'inbound_domain' );
+}
+
+/**
  * Check to see if we're connected to the IMAP inbox.
  *
  * To check if we're connected, a DB entry is updated in {@link BP_Reply_By_Email_IMAP::connect()}
