@@ -512,32 +512,33 @@ class BP_Reply_By_Email_Admin {
 			'labelfor'  => true,      // should <label> be used?
 			'name'      => '',        // the input name of the field
 			'desc'      => '',        // used to describe a checkbox, radio or option value
-			'size'      => 'regular', // text field size - small
+			'size'      => 'regular', // text field size - small,
+			'value'     => '',        // pass a value to use as the default value
 			'options'   => array()    // options for checkbox, radio, select - not used currently
 		);
 
 		$r = wp_parse_args( $args, $defaults );
-		extract( $r, EXTR_SKIP );
 
-		echo '<tr valign="top" class="' . $this->field( $name, true, false ). '">';
+		echo '<tr class="' . $this->field( $r['name'], true, false ). '">';
 
-		if ( $labelfor )
-			echo '<th scope="row"><label for="' . $this->field( $name, true, false ) . '">' . $labelname . '</label></th>';
-		else
-			echo '<th scope="row">' . $labelname . '</th>';
+		if ( $r['labelfor'] ) {
+			echo '<th scope="row"><label for="' . $this->field( $r['name'], true, false ) . '">' . $r['labelname'] . '</label></th>';
+		} else {
+			echo '<th scope="row">' . $r['labelname'] . '</th>';
+		}
 
 		echo '<td>';
 
-		switch ( $type ) {
+		switch ( $r['type'] ) {
 			case 'checkbox' :
 			?>
 				<fieldset>
-					<legend class="screen-reader-text"><span><?php echo $labelname; ?></span></legend>
+					<legend class="screen-reader-text"><span><?php echo $r['labelname']; ?></span></legend>
 
-					<label for="<?php $this->field( $name, true ) ?>">
-						<input type="checkbox" name="<?php $this->field( $name ) ?>" id="<?php $this->field( $name, true ) ?>" value="1" <?php if ( !empty( $this->settings[$name] ) ) checked( $this->settings[$name], 1 ); ?> />
+					<label for="<?php $this->field( $r['name'], true ) ?>">
+						<input type="checkbox" name="<?php $this->field( $r['name'] ) ?>" id="<?php $this->field( $r['name'], true ) ?>" value="1" <?php if ( ! empty( $this->settings[$r['name']] ) ) checked( $this->settings[$r['name']], 1 ); ?> />
 
-						<?php echo $desc; ?>
+						<?php echo $r['desc']; ?>
 				</label>
 				<br />
 				</fieldset>
@@ -546,16 +547,18 @@ class BP_Reply_By_Email_Admin {
 
 			case 'text' :
 			case 'password' :
-				$value = $this->get_option( $name, false );
+				$value = $this->get_option( $r['name'], false );
 
 				if ( $type == 'password' ) {
 					$value = bp_rbe_decode( array( 'string' => $value, 'key' => wp_salt() ) );
 				}
 			?>
-				<input class="<?php echo $size; ?>-text" value="<?php echo $value; ?>" name="<?php $this->field( $name ) ?>" id="<?php $this->field( $name, true ) ?>" type="<?php echo $type; ?>" />
+				<input class="<?php echo $r['size']; ?>-text" value="<?php echo $r['value']; ?>" name="<?php $this->field( $r['name'] ) ?>" id="<?php $this->field( $r['name'], true ) ?>" type="<?php echo $r['type']; ?>" />
 			<?php
-				if ( $desc )
-					echo '<span class="description">' . $desc . '</span>';
+				if ( $r['desc'] ) {
+					echo '<p class="description">' . $r['desc'] . '</p>';
+				}
+
 			break;
 		}
 
