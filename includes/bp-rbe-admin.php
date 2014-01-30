@@ -18,31 +18,38 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class BP_Reply_By_Email_Admin {
 
-	var $name;
-	var $settings;
+	/**
+	 * Internal name.
+	 * @var string
+	 */
+	protected $name = 'bp-rbe';
+
+	/**
+	 * Settings from database.
+	 * @var array
+	 */
+	protected $settings;
 
 	/**
 	 * Constructor.
 	 */
-	function __construct() {
-		$this->name = 'bp-rbe';
-
-		add_action( 'admin_init', array( &$this, 'init' ) );
-		add_action( 'admin_menu', array( &$this, 'setup_admin' ) );
+	public function __construct() {
+		add_action( 'admin_init', array( $this, 'admin_init' ) );
+		add_action( 'admin_menu', array( $this, 'setup_admin' ) );
 	}
 
 	/**
 	 * Setup our items when a user is in the WP backend.
 	 */
-	function init() {
+	public function admin_init() {
 		// grab our settings when we're in the admin area only
 		$this->settings = bp_get_option( $this->name );
 
 		// handles niceties like nonces and form submission
-		register_setting( $this->name, $this->name, array( &$this, 'validate' ) );
+		register_setting( $this->name, $this->name, array( $this, 'validate' ) );
 
 		// add extra action links for our plugin
-		add_filter( 'plugin_action_links',  array( &$this, 'add_plugin_action_links' ), 10, 2 );
+		add_filter( 'plugin_action_links',  array( $this, 'add_plugin_action_links' ), 10, 2 );
 
 		// include github updater only if CBOX isn't installed
 		// or if CBOX is installed and expert mode is on
@@ -56,7 +63,7 @@ class BP_Reply_By_Email_Admin {
 	/**
 	 * Setup our admin settings page and hooks
 	 */
-	function setup_admin() {
+	public function setup_admin() {
 
 		// Temporary workaround for the fact that WP's settings API doesn't work with MS
 		if ( bp_core_do_network_admin() ) {
@@ -68,10 +75,10 @@ class BP_Reply_By_Email_Admin {
 			$parent = 'bp-general-settings';
 		}
 
-		$page = add_submenu_page( $parent, __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'BP Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( &$this, 'load' ) );
+		$page = add_submenu_page( $parent, __( 'BuddyPress Reply By Email', 'bp-rbe' ), __( 'BP Reply By Email', 'bp-rbe' ), 'manage_options', 'bp-rbe', array( $this, 'load' ) );
 
-		add_action( "admin_head-{$page}",   array( &$this, 'head' ) );
-		add_action( "admin_footer-{$page}", array( &$this, 'footer' ) );
+		add_action( "admin_head-{$page}",   array( $this, 'head' ) );
+		add_action( "admin_footer-{$page}", array( $this, 'footer' ) );
 	}
 
 	/**
@@ -80,7 +87,7 @@ class BP_Reply_By_Email_Admin {
 	 * @param array $links Plugin action links
 	 * @param string $file A plugin's loader base filename
 	 */
-	function add_plugin_action_links( $links, $file ) {
+	public function add_plugin_action_links( $links, $file ) {
 
 		// Do not do anything for other plugins
 		if ( $this->get_plugin_basename() . '/loader.php' != $file )
@@ -110,7 +117,7 @@ class BP_Reply_By_Email_Admin {
 	 * @since 1.0-RC2
 	 * @link https://github.com/YahnisElsts/plugin-update-checker
 	 */
-	function github_updater() {
+	protected function github_updater() {
 		if ( ! class_exists( 'PluginUpdateChecker' ) ) {
 			require( BP_RBE_DIR . '/includes/class.plugin-update-checker.php' );
 		}
@@ -127,7 +134,7 @@ class BP_Reply_By_Email_Admin {
 	/**
 	 * Inline CSS hooked to head of our settings page
 	 */
-	function head() {
+	public function head() {
 	?>
 		<style type="text/css">
 			p.connected span, p.not-connected span {font-weight:bold;}
@@ -140,7 +147,7 @@ class BP_Reply_By_Email_Admin {
 	/**
 	 * JS hooked to footer of our settings page
 	 */
-	function footer() {
+	public function footer() {
 	?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
@@ -178,7 +185,7 @@ class BP_Reply_By_Email_Admin {
 	 * @param array $input The submitted values from the form
 	 * @return array $output The sanitized and validated values from the form ready to be inserted into the DB
 	 */
-	function validate( $input ) {
+	public function validate( $input ) {
 		$output = array();
 
 		$username = wp_filter_nohtml_kses( $input['username'] );
@@ -299,7 +306,7 @@ class BP_Reply_By_Email_Admin {
 	/**
 	 * Output the admin page.
 	 */
-	function load() {
+	public function load() {
 	?>
 		<div class="wrap">
 			<?php screen_icon('edit-comments'); ?>
@@ -424,7 +431,7 @@ class BP_Reply_By_Email_Admin {
 	 *
 	 * Lightly modified from Jeremy Clark's observations - {@link http://old.nabble.com/Re%3A-Settings-API%3A-Showing-errors-if-validation-fails-p26834868.html}
 	 */
-	function display_errors() {
+	protected function display_errors() {
 		$option = $this->settings;
 
 		// output error message(s)
@@ -447,7 +454,7 @@ class BP_Reply_By_Email_Admin {
 	 *
 	 * If certain conditions for the webhost are not met, these warnings will be displayed on the admin page.
 	 */
-	function webhost_warnings() {
+	protected function webhost_warnings() {
 		$warnings = array();
 
 		if ( !function_exists( 'imap_open' ) )
@@ -467,7 +474,7 @@ class BP_Reply_By_Email_Admin {
 	/**
 	 * Outputs next scheduled run of the (pseudo) cron.
 	 */
-	function schedule() {
+	protected function schedule() {
 
 		// only show the following if required fields are filled in correctly
 		if ( bp_rbe_is_required_completed() ) :
@@ -505,7 +512,7 @@ class BP_Reply_By_Email_Admin {
 	 *
 	 * @param array $args Arguments for the field
 	 */
-	function render_field( $args = '' ) {
+	protected function render_field( $args = '' ) {
 		$defaults = array(
 			'type'      => 'text',    // text, password, checkbox, radio, dropdown
 			'labelname' => '',        // the label for the field
@@ -601,7 +608,7 @@ class BP_Reply_By_Email_Admin {
 	 * @param bool $echo Are we echoing or returning?
 	 * @return mixed Either echo or returns a string
 	 */
-	function field( $name, $id = false, $echo = true ) {
+	protected function field( $name, $id = false, $echo = true ) {
 		$name = $id ? "{$this->name}-{$name}" : "{$this->name}[$name]";
 
 		if( $echo )
@@ -620,7 +627,7 @@ class BP_Reply_By_Email_Admin {
 	 * @param bool $echo Are we echoing or returning?
 	 * @return mixed Either echo or returns a string
 	 */
-	function get_option( $name, $echo = true ) {
+	protected function get_option( $name, $echo = true ) {
 		$val = '';
 
 		if( is_array( $this->settings ) && isset( $this->settings[$name] ) )
