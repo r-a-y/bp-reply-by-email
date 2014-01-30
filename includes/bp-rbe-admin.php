@@ -514,7 +514,8 @@ class BP_Reply_By_Email_Admin {
 			'desc'      => '',        // used to describe a checkbox, radio or option value
 			'size'      => 'regular', // text field size - small,
 			'value'     => '',        // pass a value to use as the default value
-			'options'   => array()    // options for checkbox, radio, select - not used currently
+			'options'   => array(),   // options for checkbox, radio, select - not used currently
+			'default'   => '',        // currently used to set default value for select dropdowns
 		);
 
 		$r = wp_parse_args( $args, $defaults );
@@ -543,7 +544,33 @@ class BP_Reply_By_Email_Admin {
 				<br />
 				</fieldset>
 			<?php
-			break;
+				break;
+
+			case 'select' :
+			?>
+
+				<select id="<?php $this->field( $r['name'], true ) ?>" name="<?php $this->field( $r['name'] ) ?>">
+					<?php
+						$selected = false;
+						foreach ( $r['options'] as $key => $option ) {
+							echo '<option value="' . $key .'"';
+							
+							if ( ! $selected && ( $this->settings[$name] == $key || $default == $key ) ) {
+								echo ' selected="selected"';
+								$selected = true;
+							}
+
+							echo '>' . $option . '</option>';
+						}
+					?>
+				</select>
+
+			<?php
+				if ( $desc ) {
+					echo '<p class="description">' . $desc . '</p>';
+				}
+
+				break;
 
 			case 'text' :
 			case 'password' :
@@ -559,7 +586,7 @@ class BP_Reply_By_Email_Admin {
 					echo '<p class="description">' . $r['desc'] . '</p>';
 				}
 
-			break;
+				break;
 		}
 
 		echo '</td>';
