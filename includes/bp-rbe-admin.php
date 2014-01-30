@@ -555,7 +555,7 @@ class BP_Reply_By_Email_Admin {
 						foreach ( $r['options'] as $key => $option ) {
 							echo '<option value="' . $key .'"';
 							
-							if ( ! $selected && ( $this->settings[$name] == $key || $default == $key ) ) {
+							if ( ! $selected && ( $this->settings[$name] == $key || $r['default'] == $key ) ) {
 								echo ' selected="selected"';
 								$selected = true;
 							}
@@ -580,7 +580,7 @@ class BP_Reply_By_Email_Admin {
 					$value = bp_rbe_decode( array( 'string' => $value, 'key' => wp_salt() ) );
 				}
 			?>
-				<input class="<?php echo $r['size']; ?>-text" value="<?php echo $r['value']; ?>" name="<?php $this->field( $r['name'] ) ?>" id="<?php $this->field( $r['name'], true ) ?>" type="<?php echo $r['type']; ?>" />
+				<input class="<?php echo $r['size']; ?>-text" value="<?php echo $value; ?>" name="<?php $this->field( $r['name'] ) ?>" id="<?php $this->field( $r['name'], true ) ?>" type="<?php echo $r['type']; ?>" />
 			<?php
 				if ( $r['desc'] ) {
 					echo '<p class="description">' . $r['desc'] . '</p>';
