@@ -150,14 +150,28 @@ class BP_Reply_By_Email_Admin {
 	public function footer() {
 	?>
 		<script type="text/javascript">
-		jQuery(document).ready(function($) {
+		jQuery(function($) {
+			var mode  = $( '#bp-rbe-mode' );
+			var gmail = $( '#bp-rbe-gmail' );
 
-			// hide fields if gmail setting is checked
-			var gmail = $( '#bp-rbe-gmail:checked' ).val();
-
+			// hide gmail username description by default
 			$( '.bp-rbe-username span' ).hide();
 
-			if ( gmail == 1 ) {
+			// mode - hide fields based on selection
+			if ( mode.find('option:selected').val() == 'imap' ) {
+				$( 'div.inbound-options, span.inbound-options' ).hide();
+			} else {
+				$( 'div.imap-options, span.imap-options' ).hide();
+			}
+
+			// mode - toggle fields based on selection
+			mode.change(function() {
+				$( 'div.inbound-options, span.inbound-options' ).toggle();
+				$( 'div.imap-options, span.imap-options' ).toggle();
+			});
+
+			// gmail - hide fields based on gmail selection
+			if ( gmail.filter(':checked').val() == 1 ) {
 				$( 'tr.bp-rbe-servername' ).hide();
 				$( 'tr.bp-rbe-port' ).hide();
 				$( 'tr.bp-rbe-tag' ).hide();
@@ -165,8 +179,8 @@ class BP_Reply_By_Email_Admin {
 				$( '.bp-rbe-username span' ).show();
 			}
 
-			// toggle fields based on gmail setting
-			$( '#bp-rbe-gmail' ).change(function(){
+			// gmail - toggle fields based on selection
+			gmail.change(function(){
 				$( 'tr.bp-rbe-servername' ).toggle();
 				$( 'tr.bp-rbe-port' ).toggle();
 				$( 'tr.bp-rbe-tag' ).toggle();
@@ -180,41 +194,64 @@ class BP_Reply_By_Email_Admin {
 
 	/**
 	 * Validate and sanitize our options before saving to the DB.
-	 * Callback from register_setting().
+	 *
+	 * Callback from {@link register_setting()}.
 	 *
 	 * @param array $input The submitted values from the form
-	 * @return array $output The sanitized and validated values from the form ready to be inserted into the DB
+	 * @return array $output The validated values to be inserted into the DB
 	 */
 	public function validate( $input ) {
+		$messages = false;
+
 		$output = array();
 
+		// check if key is alphanumeric
+		if ( ctype_alnum( $input['key'] ) ) {
+			$output['key'] = $input['key'];
+		}
+
+		/** INBOUND-related ***************************************************/
+		$output['mode'] = wp_filter_nohtml_kses( $input['mode'] );
+
+		$inbound_domain = wp_filter_nohtml_kses( $input['inbound-domain'] );
+
+		if ( ! empty( $inbound_domain ) ) {
+			$output['inbound-domain'] = $inbound_domain;
+		}
+
+		/** IMAP-related ******************************************************/
 		$username = wp_filter_nohtml_kses( $input['username'] );
 		$password = wp_filter_nohtml_kses( $input['password'] );
 
 		if ( $email = is_email( $input['email'] ) ) {
 			$output['email'] = $email;
 
-			if ( $input['gmail'] == 1 )
+			if ( $input['gmail'] == 1 ) {
 				$output['username'] = $email;
+			}
 		}
 
-		if ( !empty( $username ) ) {
+		if ( ! empty( $username ) ) {
 			$output['username'] = $username;
 
-			if ( is_email( $username ) )
+			if ( is_email( $username ) ) {
 				$output['email'] = $username;
+			}
 		}
 
-		if ( !empty( $password ) )
+		if ( ! empty( $password ) ) {
 			$output['password'] = $password;
+		}
 
 		// check if port is numeric
-		if ( is_numeric( $input['port'] ) )
+		if ( is_numeric( $input['port'] ) ) {
 			$output['port']     = $input['port'];
+		}
 
 		// check if address tag is one character
-		if ( strlen( $input['tag'] ) == 1 )
+		if ( strlen( $input['tag'] ) == 1 ) {
 			$output['tag']      = $input['tag'];
+		}
 
 		// override certain settings if "gmail" setting is true
 		if ( ! empty( $input['gmail'] ) && $input['gmail'] == 1 ) {
@@ -222,30 +259,26 @@ class BP_Reply_By_Email_Admin {
 			$output['port']	      = 993;
 			$output['tag']	      = '+';
 			$output['gmail']      = 1;
-		}
+
 		// use alternate server settings as defined by the user
-		else {
+		} else {
 			$output['servername'] = wp_filter_nohtml_kses( $input['servername'] );
 			$output['port']	      = absint( $input['port'] );
 			$output['tag']	      = wp_filter_nohtml_kses( $input['tag'] );
-			$output['gmail']      = 0;		
+			$output['gmail']      = 0;
 		}
 
-		// check if key is alphanumeric
-		if ( ctype_alnum( $input['key'] ) )
-			$output['key']       = $input['key'];
-
-		if ( is_numeric( $input['keepalive'] ) && $input['keepalive'] < 30 )
+		if ( is_numeric( $input['keepalive'] ) && $input['keepalive'] < 30 ) {
 			$output['keepalive'] = $input['keepalive'];
+		}
 
 		// keepalive for safe mode will never exceed the execution time
-		if ( ini_get( 'safe_mode' ) )
+		if ( ini_get( 'safe_mode' ) ) {
 			$output['keepalive'] = $input['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
-
-		$messages = false;
+		}
 
 		// do a quick imap check if we have valid credentials to check
-		if ( ! empty( $output['servername'] ) && ! empty( $output['port'] ) && ! empty( $output['username'] ) && !empty( $output['password'] ) ) {
+		if ( $output['mode'] == 'imap' && ! empty( $output['servername'] ) && ! empty( $output['port'] ) && ! empty( $output['username'] ) && ! empty( $output['password'] ) ) {
 			if ( function_exists( 'imap_open' ) ) {
 				$imap = BP_Reply_By_Email_Connect::init( array (
 			 		'host'     => $output['servername'],
@@ -270,25 +303,33 @@ class BP_Reply_By_Email_Admin {
 		}
 
 		// encode the password
-		if ( !empty( $password ) )
+		if ( ! empty( $password ) ) {
 			$output['password'] = bp_rbe_encode( array( 'string' => $password, 'key' => wp_salt() ) );
+		}
+
+		/**********************************************************************/
 
 		/* error time! */
 
-		if ( strlen( $input['tag'] ) > 1 && !$output['tag'] )
+		if ( strlen( $input['tag'] ) > 1 && ! $output['tag'] ) {
 			$messages['tag_error']       = __( 'Error: <strong>Address tag</strong> must only be one character.', 'bp-rbe' );
+		}
 
-		if ( !empty( $input['port'] ) && !is_numeric( $input['port'] ) && !$output['port'] )
+		if ( ! empty( $input['port'] ) && ! is_numeric( $input['port'] ) && ! $output['port'] ) {
 			$messages['port_error']      = __( 'Error: <strong>Port</strong> must be numeric.', 'bp-rbe' );
+		}
 
-		if ( !empty( $input['key'] ) && !$output['key'] )
+		if ( ! empty( $input['key'] ) && ! $output['key'] ) {
 			$messages['key_error']       = __( 'Error: <strong>Key</strong> must only contain letters and / or numbers.', 'bp-rbe' );
+		}
 
-		if ( !empty( $input['keepalive'] ) && !is_numeric( $input['keepalive'] ) && !$output['keepalive'] )
+		if ( ! empty( $input['keepalive'] ) && ! is_numeric( $input['keepalive'] ) && ! $output['keepalive'] ) {
 			$messages['keepalive_error'] = __( 'Error: <strong>Keep Alive Connection</strong> value must be less than 30.', 'bp-rbe' );
+		}
 
-		if ( is_array( $messages ) )
-			 $output['messages'] = $messages;
+		if ( is_array( $messages ) ) {
+			$output['messages'] = $messages;
+		}
 
 		return $output;
 	}
@@ -310,64 +351,103 @@ class BP_Reply_By_Email_Admin {
 			<form action="options.php" method="post">
 				<?php settings_fields( $this->name ); ?>
 
-				<?php $this->schedule(); ?>
-
-				<h3>Email Server Settings</h3>
-
-				<p><?php _e( 'Please enter the IMAP settings for your email account.  Fields marked with * are required.', 'bp-rbe' ) ?></p>
+				<h3><?php _e( 'Operating Mode', 'bp-rbe' ); ?></h3>
 
 				<table class="form-table">
-					<?php $this->render_field(
-						array(
-							'type'      => 'checkbox',
-							'name'      => 'gmail',
-							'labelname' => __( 'GMail / Google Apps Mail', 'bp-rbe' ),
-							'desc'      => sprintf( __( 'Using GMail? (This will override the Server Name, Port and Address Tag fields on save.) Also make sure to <a href="%s" target="_blank">enable IMAP in GMail</a>.', 'bp-rbe' ), 'http://mail.google.com/support/bin/answer.py?answer=77695' )
-						) ) ?>
 
 					<?php $this->render_field(
 						array(
-							'name'      => 'servername',
-							'labelname' => __( 'Mail Server *', 'bp-rbe' )
-						) ) ?>
-
-					<?php $this->render_field(
-						array(
-							'name'      => 'port',
-							'labelname' => __( 'Port *', 'bp-rbe' ),
-							'size'      => 'small'
-						) ) ?>
-
-					<?php $this->render_field(
-						array(
-							'name'      => 'tag',
-							'labelname' => __( 'Address Tag Separator *', 'bp-rbe' ),
-							'desc'      => sprintf( __( 'Example: test@gmail.com is my email address, I can also receive email that is sent to test+anything@gmail.com.  The address tag separator for GMail is "+".  For other email providers, <a href="%s" target="_blank">view this page</a>.', 'bp-rbe' ), 'http://en.wikipedia.org/wiki/Email_address#Address_tags' ),
-							'size'      => 'small'
-						) ) ?>
-
-					<?php $this->render_field(
-						array(
-							'name'      => 'username',
-							'labelname' => __( 'Username *', 'bp-rbe' ),
-							'desc'      => __( 'For GMail users, enter your <strong>full email address</strong> as your username.', 'bp-rbe' )
-						) ) ?>
-
-					<?php $this->render_field(
-						array(
-							'type'	    => 'password',
-							'name'	    => 'password',
-							'labelname' => __( 'Password *', 'bp-rbe' )
-						) ) ?>
-
-					<?php $this->render_field(
-						array(
-							'name'	    => 'email',
-							'labelname' => __( 'Email Address', 'bp-rbe' ),
-							'desc'      => __( 'If your username is <strong>not</strong> the same as your email address, please fill in this field as well.', 'bp-rbe' )
+							'type'      => 'select',
+							'name'      => 'mode',
+							'labelname' => __( 'Mode', 'bp-rbe' ),
+							'desc'      => '<span class="inbound-options">' . __( "Inbound email processing means RBE will route replied emails to a third-party inbound email service that you have configured and set up.  The service will receive the inbound emails and do all the necessary email parsing.  Once done, the parsed content will be sent back to the site where RBE will verify this content and post the content on success.", 'bp-rbe' ) . '</span>
+									<span class="imap-options">' . __( "IMAP mode connects to an IMAP email server, which then checks the inbox for a specified interval and posts the content to your site on success.  Can be server-intensive.  Only recommended for VPS or dedicated servers.", 'bp-rbe' ) . '</span>',
+							'options'   => array(
+								'inbound' => __( 'Inbound Email', 'bp-rbe' ),
+								'imap'    => __( 'IMAP', 'bp-rbe' )
+							),
+							'default'   => bp_rbe_is_inbound() ? 'inbound' : 'imap'
 						) ) ?>
 
 				</table>
+
+				<div class="inbound-options">
+					<table class="form-table">
+					<?php $this->render_field( array(
+							'name'      => 'inbound-domain',
+							'labelname' => __( 'Inbound Domain *', 'bp-rbe' ),
+							'desc'      => __( 'The domain you have configured for RBE email to be sent and parsed.  Make sure you have set up your domain properly with the inbound service you are using. (eg. reply.yourdomain.com)', 'bp-rbe' )
+						) );
+					?>
+					</table>
+				</div>
+
+				<div class="imap-options">
+
+					<?php
+						if ( ! bp_rbe_is_inbound() ) {
+							$this->schedule();
+						}
+					?>
+
+					<h3><?php _e( 'Email Server Settings', 'bp-rbe' ); ?></h3>
+
+					<p><?php _e( 'Please enter the IMAP settings for your email account.  Fields marked with * are required.', 'bp-rbe' ) ?></p>
+
+					<table class="form-table">
+
+						<?php $this->render_field(
+							array(
+								'type'      => 'checkbox',
+								'name'      => 'gmail',
+								'labelname' => __( 'GMail / Google Apps Mail', 'bp-rbe' ),
+								'desc'      => sprintf( __( 'Using GMail? (This will override the Server Name, Port and Address Tag fields on save.) Also make sure to <a href="%s" target="_blank">enable IMAP in GMail</a>.', 'bp-rbe' ), 'http://mail.google.com/support/bin/answer.py?answer=77695' )
+							) ) ?>
+
+						<?php $this->render_field(
+							array(
+								'name'      => 'servername',
+								'labelname' => __( 'Mail Server *', 'bp-rbe' )
+							) ) ?>
+
+						<?php $this->render_field(
+							array(
+								'name'      => 'port',
+								'labelname' => __( 'Port *', 'bp-rbe' ),
+								'size'      => 'small'
+							) ) ?>
+
+						<?php $this->render_field(
+							array(
+								'name'      => 'tag',
+								'labelname' => __( 'Address Tag Separator *', 'bp-rbe' ),
+								'desc'      => sprintf( __( 'Example: test@gmail.com is my email address, I can also receive email that is sent to test+anything@gmail.com.  The address tag separator for GMail is "+".  For other email providers, <a href="%s" target="_blank">view this page</a>.', 'bp-rbe' ), 'http://en.wikipedia.org/wiki/Email_address#Address_tags' ),
+								'size'      => 'small'
+							) ) ?>
+
+						<?php $this->render_field(
+							array(
+								'name'      => 'username',
+								'labelname' => __( 'Username *', 'bp-rbe' ),
+								'desc'      => __( 'For GMail users, enter your <strong>full email address</strong> as your username.', 'bp-rbe' )
+							) ) ?>
+
+						<?php $this->render_field(
+							array(
+								'type'	    => 'password',
+								'name'	    => 'password',
+								'labelname' => __( 'Password *', 'bp-rbe' )
+							) ) ?>
+
+						<?php $this->render_field(
+							array(
+								'name'	    => 'email',
+								'labelname' => __( 'Email Address', 'bp-rbe' ),
+								'desc'      => __( 'If your username is <strong>not</strong> the same as your email address, please fill in this field as well.', 'bp-rbe' )
+							) ) ?>
+
+					</table>
+				</div><!-- #imap-options -->
 
 				<h3><?php _e( 'Other Settings', 'bp-rbe' ) ?></h3>
 
@@ -378,7 +458,10 @@ class BP_Reply_By_Email_Admin {
 							'labelname' => __( 'Key *', 'bp-rbe' ),
 							'desc'      => __( 'This key is used to verify incoming emails before anything is posted to BuddyPress.  By default, a key is randomly generated for you.  You should rarely have to change your key.  However, if you want to change it, please type in an alphanumeric key of your choosing.', 'bp-rbe' )
 						) ) ?>
+				</table>
 
+				<div class="imap-options">
+					<table class="form-table">
 					<?php $this->render_field(
 						array(
 							'name'      => 'keepalive',
@@ -386,7 +469,8 @@ class BP_Reply_By_Email_Admin {
 							'desc'      => sprintf( __( 'The length in minutes to stay connected to your inbox. Due to <a href="%s" target="_blank">RFC 2177 protocol</a>, this value cannot be larger than 29. If this value is changed, this will take effect on the next scheduled update.', 'bp-rbe' ), 'http://tools.ietf.org/html/rfc2177#page-2' ),
 							'size'      => 'small'
 						) ) ?>
-				</table>
+					</table>
+				</div>
 
 				<table class="form-table">
 					<tr><td>
@@ -403,7 +487,7 @@ class BP_Reply_By_Email_Admin {
 			</form>
 
 			<h3><?php _e( 'Need Help?', 'bp-rbe' ); ?></h3>
-			
+
 			<p><?php printf( __( '<a href="%s">Check out the BP Reply By Email wiki</a> for articles, FAQs and more information.', 'bp-rbe' ), 'https://github.com/r-a-y/bp-reply-by-email/wiki/' ); ?></p>
 
 		</div>
@@ -553,7 +637,7 @@ class BP_Reply_By_Email_Admin {
 						$selected = false;
 						foreach ( $r['options'] as $key => $option ) {
 							echo '<option value="' . $key .'"';
-							
+
 							if ( ! $selected && ( $this->settings[$r['name']] == $key || $r['default'] == $key ) ) {
 								echo ' selected="selected"';
 								$selected = true;
