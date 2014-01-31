@@ -247,31 +247,21 @@ class BP_Reply_By_Email_Admin {
 		// do a quick imap check if we have valid credentials to check
 		if ( ! empty( $output['servername'] ) && ! empty( $output['port'] ) && ! empty( $output['username'] ) && !empty( $output['password'] ) ) {
 			if ( function_exists( 'imap_open' ) ) {
-				// @todo extrapolate BP_Reply_By_Email::connect()/close() into a separate class to prevent duplicating code
-				$ssl = bp_rbe_is_imap_ssl() ? '/ssl' : '';
-
-				// Need to readjust this before public release
-				// In the meantime, let's add a filter!
-				$hostname = '{' . $output['servername'] . ':' . $output['port'] . '/imap' . $ssl . '}INBOX';
-				$hostname = apply_filters( 'bp_rbe_hostname', $hostname );
-
-				// if PHP is 5.2+, use extra parameter to only try connecting once
-				if ( version_compare( PHP_VERSION, '5.2.0') >= 0 ) {
-					$imap = @imap_open( $hostname, $output['username'], $output['password'], 0, 1 );
-				}
-				// PHP is older, so use the default retry value of 3
-				else {
-					$imap = @imap_open( $hostname, $output['username'], $output['password'] );
-				}
+				$imap = BP_Reply_By_Email_Connect::init( array (
+			 		'host'     => $output['servername'],
+			 		'port'     => $output['port'],
+			 		'username' => $output['username'],
+			 		'password' => $output['password'],
+				) );
 
 				// if connection failed, add an error
 				if ( $imap === false ) {
 					$errors = imap_errors();
 					$messages['connect_error'] = sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), $errors[0] );
 					$output['connect'] = 0;
-				}
+
 				// connection was successful, now close our temporary connection
-				else {
+				} else {
 					// this tells bp_rbe_is_required_completed() that we're good to go!
 					$output['connect'] = 1;
 					imap_close( $imap );
