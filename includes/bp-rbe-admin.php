@@ -507,7 +507,9 @@ class BP_Reply_By_Email_Admin {
 	}
 
 	/**
-	 * Renders the output of a form field in the admin area. I like this better than add_settings_field() so sue me!
+	 * Renders the output of a form field in the admin area.
+	 *
+	 * I like this better than {@link add_settings_field()} so sue me!
 	 * Uses {@link BP_Reply_By_Email_Admin::field()} and {@link BP_Reply_By_Email_Admin::get_option()}.
 	 *
 	 * @param array $args Arguments for the field
@@ -562,7 +564,7 @@ class BP_Reply_By_Email_Admin {
 						foreach ( $r['options'] as $key => $option ) {
 							echo '<option value="' . $key .'"';
 							
-							if ( ! $selected && ( $this->settings[$name] == $key || $r['default'] == $key ) ) {
+							if ( ! $selected && ( $this->settings[$r['name']] == $key || $r['default'] == $key ) ) {
 								echo ' selected="selected"';
 								$selected = true;
 							}
@@ -583,7 +585,7 @@ class BP_Reply_By_Email_Admin {
 			case 'password' :
 				$value = $this->get_option( $r['name'], false );
 
-				if ( $type == 'password' ) {
+				if ( $r['type'] == 'password' ) {
 					$value = bp_rbe_decode( array( 'string' => $value, 'key' => wp_salt() ) );
 				}
 			?>
