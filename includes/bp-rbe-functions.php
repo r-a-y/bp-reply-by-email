@@ -85,7 +85,7 @@ function bp_rbe_get_setting( $setting = '' ) {
  * @return bool
  */
 function bp_rbe_is_inbound() {
-	return (bool) bp_rbe_get_setting( 'inbound_domain' );
+	return (bool) bp_rbe_get_setting( 'inbound-domain' );
 }
 
 /**
