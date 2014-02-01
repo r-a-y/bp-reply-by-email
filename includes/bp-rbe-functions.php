@@ -204,8 +204,6 @@ function bp_rbe_inject_qs_in_email( $qs ) {
  * @since 1.0-beta
  */
 function bp_rbe_encode( $args = array() ) {
-	global $bp_rbe;
-
 	$defaults = array (
  		'string' => false,                       // the content we want to encode
  		'key'    => bp_rbe_get_setting( 'key' ), // the key used to aid in encryption; defaults to the key set in the admin area
