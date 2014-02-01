@@ -21,18 +21,31 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function bp_rbe_is_required_completed( $settings = false ) {
 	global $bp_rbe;
 
-	$settings = !$settings ? $bp_rbe->settings : $settings;
+	$settings = ! $settings ? $bp_rbe->settings : $settings;
 
-	// also check if the IMAP extension is enabled
-	if ( !is_array( $settings ) || !function_exists( 'imap_open' ) )
+	if ( ! is_array( $settings ) ) {
 		return false;
+	}
 
-	$required_key = array( 'servername', 'port', 'tag', 'username', 'password', 'key', 'keepalive', 'connect' );
+	// inbound mode requirements
+	if( isset( $settings['mode'] ) && $settings['mode'] == 'inbound' ) {
+		$required_key = array( 'inbound-domain', 'key' );
 
-	foreach ( $required_key as $required ) :
-		if ( empty( $settings[$required] ) )
+	// imap mode requirements
+	} else {
+		// check if the IMAP extension is enabled
+		if ( ! function_exists( 'imap_open' ) ) {
 			return false;
-	endforeach;
+		}
+
+		$required_key = array( 'servername', 'port', 'tag', 'username', 'password', 'key', 'keepalive', 'connect' );
+	}
+
+	foreach ( $required_key as $required ) {
+		if ( empty( $settings[$required] ) ) {
+			return false;
+		}
+	}
 
 	return true;
 }
