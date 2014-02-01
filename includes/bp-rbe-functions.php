@@ -173,22 +173,38 @@ function bp_rbe_get_execution_time( $value = 'seconds' ) {
 }
 
 /**
- * Injects address tag into the IMAP email address.
+ * Injects querystring into an email address.
  *
- * eg. test@gmail.com -> test+whatever@gmail.com
+ * For IMAP mode, the constructed email address will look like this:
+ *  test@gmail.com -> test+THEQUERYSTRING@gmail.com
  *
- * @param string $param The parameters we want to add to an email address.
+ * For inbound mode, the constructed email address will look like this:
+ *  THEQUERYSTRING@reply.yourdomain.com
+ *
  * @since 1.0-beta
- * @todo Add subdomain addressing support in a future release
+ *
+ * @param string $qs The querystring we want to add to an email address.
+ * @returns string
  */
 function bp_rbe_inject_qs_in_email( $qs ) {
-	$email	= bp_rbe_get_setting( 'email' );
-	$at_pos	= strpos( $email, '@' );
+	// inbound mode uses subdomain addressing
+	// eg. whatever@reply.yourdomain.com
+	if ( bp_rbe_is_inbound() ) {
+		$retval = $qs . '@' . bp_rbe_get_setting( 'inbound-domain' );
+	
+	// imap mode uses address tags
+	// eg. test+whatever@gmail.com
+	} else {
+		$email	= bp_rbe_get_setting( 'email' );
+		$at_pos	= strpos( $email, '@' );
 
-	// Address tag + $qs
-	$tag_qs	= bp_rbe_get_setting( 'tag' ) . $qs;
+		// Address tag + $qs
+		$qs = bp_rbe_get_setting( 'tag' ) . $qs;
 
-	return apply_filters( 'bp_rbe_inject_qs_in_email', substr_replace( $email, $tag_qs, $at_pos, 0 ), $tag_qs );
+		$retval = substr_replace( $email, $qs, $at_pos, 0 );
+	}
+
+	return apply_filters( 'bp_rbe_inject_qs_in_email', $retval, $qs );
 }
 
 /**
