@@ -327,15 +327,22 @@ function hex2bin( $text ) {
 endif;
 
 /**
- * Should we enable SSL for the IMAP connection?
+ * Should we enable SSL for the IMAP connection??
  *
- * Wrapper function for {@link BP_Reply_By_Email_Connect::is_ssl()}.
+ * Check to see if both the OpenSSL and IMAP modules are loaded.  Next, see if
+ * the port is explictly 993.
  *
- * @return bool
  * @since 1.0-beta
+ *
+ * @param int $port The port number for the IMAP server
+ * @return bool
  */
-function bp_rbe_is_imap_ssl() {
-	return BP_Reply_By_Email_Connect::is_ssl( bp_rbe_get_setting( 'port' ) );
+function bp_rbe_is_imap_ssl( $port = 0 ) {
+	if ( empty( $port ) ) {
+		$port = bp_rbe_get_setting( 'port' );
+	}
+
+	return BP_Reply_By_Email_Connect::is_ssl( (int) $port );
 }
 
 /**
