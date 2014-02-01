@@ -53,7 +53,7 @@ function bp_rbe_is_required_completed( $settings = false ) {
 /**
  * Get an individual setting from RBE's settings array.
  *
- * @since 1.0-RC4
+ * @since 1.0-RC3
  *
  * @param string $setting The setting parameter.
  * @return string|bool
@@ -71,7 +71,7 @@ function bp_rbe_get_setting( $setting = '' ) {
 /**
  * Whether RBE is in inbound mode.
  *
- * Previous to 1.0-RC4, BP RBE only supported IMAP to check an inbox and post
+ * Previous to 1.0-RC3, BP RBE only supported IMAP to check an inbox and post
  * items to BuddyPress.  Now, RBE will also support inbound email.
  *
  * Inbound email mode means BP emails are sent to an external service that
@@ -80,7 +80,7 @@ function bp_rbe_get_setting( $setting = '' ) {
  *
  * Inbound email will be the default mode going forward.
  *
- * @since 1.0-RC4
+ * @since 1.0-RC3
  *
  * @return bool
  */

@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Note: You will need to manually close the connection yourself with
  * {@link imap_close()}.
  *
- * @since 1.0-RC4
+ * @since 1.0-RC3
  */
 class BP_Reply_By_Email_Connect {
 	/**
