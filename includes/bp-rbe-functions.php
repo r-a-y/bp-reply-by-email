@@ -1150,8 +1150,10 @@ function bp_rbe_new_topic_info_css() {
 ?>
 	<style type="text/css">
 		#rbe-toggle { display:none; }
-		#rbe-message { background: #FFF9DB; border: 1px solid #FFE8C4; padding:1em; }
-		#rbe-message ul { list-style-type:disc; margin:1em 1.5em; }
+		#rbe-header, #new-post #rbe-message {margin-bottom: 1em;}
+		#rbe-message { background: #FFFFE0; border: 1px solid #E6DB55; border-radius:3px; padding:1em; }
+		#rbe-message ul { margin:1em 1.5em; }
+		#rbe-message li {list-style-type:disc;}
 	</style>
 <?php
 	endif;
@@ -1173,9 +1175,11 @@ function bp_rbe_new_topic_info() {
 	if ( empty( $group->is_member ) )
 		return;
 ?>
-	<h4><?php _e( 'Post New Topics via Email', 'bp-rbe' ) ?></h4>
+	<div id="rbe-header">
+		<h4><?php _e( 'Post New Topics via Email', 'bp-rbe' ) ?></h4>
 
-	<p><?php _e( 'You can post new topics to this group from the comfort of your email inbox.', 'bp-rbe' ) ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></p>
+		<p><?php _e( 'You can post new topics to this group from the comfort of your email inbox.', 'bp-rbe' ) ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></p>
+	</div>
 
 	<div id="rbe-message">
 		<h5><?php printf( __( 'Send an email to <strong><a href="%s">%s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto: " . bp_get_current_group_name() . " <" . bp_rbe_groups_get_encoded_email_address(). ">", bp_rbe_groups_get_encoded_email_address(), bp_get_current_group_name() ); ?></h5>
