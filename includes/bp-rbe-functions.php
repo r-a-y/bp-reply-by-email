@@ -191,7 +191,7 @@ function bp_rbe_inject_qs_in_email( $qs ) {
 	// eg. whatever@reply.yourdomain.com
 	if ( bp_rbe_is_inbound() ) {
 		$retval = $qs . '@' . bp_rbe_get_setting( 'inbound-domain' );
-	
+
 	// imap mode uses address tags
 	// eg. test+whatever@gmail.com
 	} else {
@@ -778,7 +778,7 @@ function bp_rbe_remove_email_client_signature( $content ) {
 
 				// find position of marker
 				$marker = strrpos( $content, $lines[$i] );
-				
+
 				// if marker matches integer 0, remove the line preceding this one
 				if ( $marker === 0 ) {
 					$marker = strrpos( $content, $lines[$i-1] );
