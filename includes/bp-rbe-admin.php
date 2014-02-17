@@ -630,15 +630,15 @@ class BP_Reply_By_Email_Admin {
 				break;
 
 			case 'select' :
+				$selected = array_key_exists( $this->settings[$r['name']], $r['options'] ) ? $this->settings[$r['name']] : $r['default'];
 			?>
 
 				<select id="<?php $this->field( $r['name'], true ) ?>" name="<?php $this->field( $r['name'] ) ?>">
 					<?php
-						$selected = false;
 						foreach ( $r['options'] as $key => $option ) {
 							echo '<option value="' . $key .'"';
 
-							if ( ! $selected && ( $this->settings[$r['name']] == $key || $r['default'] == $key ) ) {
+							if ( $selected == $key ) {
 								echo ' selected="selected"';
 								$selected = true;
 							}
