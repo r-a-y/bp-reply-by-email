@@ -1144,7 +1144,7 @@ function bp_rbe_alter_forum_post_timestamp( $timestamp ) {
 function bp_rbe_new_topic_info_css() {
 	$current_group = groups_get_current_group();
 
-	$show_css = apply_filters( 'bp_rbe_new_topic_info_css', bp_is_group_forum() && ! bp_action_variables() && bp_loggedin_user_id() && ! empty( $current_group->is_member ) );
+	$show_css = apply_filters( 'bp_rbe_new_topic_info_css', bp_is_single_item() && bp_is_groups_component() && bp_is_current_action( 'forum' ) && ! bp_action_variables() && bp_loggedin_user_id() && ! empty( $current_group->is_member ) );
 
 	if ( $show_css ) :
 ?>
