@@ -640,7 +640,6 @@ class BP_Reply_By_Email_Admin {
 
 							if ( $selected == $key ) {
 								echo ' selected="selected"';
-								$selected = true;
 							}
 
 							echo '>' . $option . '</option>';
