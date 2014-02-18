@@ -551,7 +551,7 @@ class BP_Reply_By_Email_Admin {
 	protected function schedule() {
 
 		// only show the following if required fields are filled in correctly
-		if ( bp_rbe_is_required_completed() ) :
+		if ( bp_rbe_is_required_completed() && ! bp_rbe_is_inbound() ) :
 			$next         = wp_next_scheduled( 'bp_rbe_schedule' );
 			$is_connected = bp_rbe_is_connected();
 
