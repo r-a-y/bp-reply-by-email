@@ -527,8 +527,8 @@ function bp_rbe_log_last_activity( $args ) {
 	if ( empty( $user_id ) )
 		return;
 
-	// update 'last_activity' user meta entry
-	bp_update_user_meta( $user_id, 'last_activity', bp_core_current_time() );
+	// update user's last activity
+	bp_update_user_last_activity( $user_id );
 
 	// now update 'last_activity' group meta entry if applicable
 	if ( ! empty( $args['type'] ) ) {
@@ -1553,4 +1553,30 @@ function bp_rbe_groups_encoded_email_address( $user_id = false, $group_id = fals
 		return bp_rbe_inject_qs_in_email( $querystring . '-new' );
 	}
 
-?>
+/** Abstraction *********************************************************/
+
+if ( ! function_exists( 'bp_update_user_last_activity' ) ) :
+/**
+ * Update a user's last activity.
+ *
+ * Abstraction function for BuddyPress installs less than 1.9.0.
+ */
+function bp_update_user_last_activity( $user_id = 0, $time = '' ) {
+	// Fall back on current user
+	if ( empty( $user_id ) ) {
+		$user_id = bp_loggedin_user_id();
+	}
+
+	// Bail if the user id is 0, as there's nothing to update
+	if ( empty( $user_id ) ) {
+		return false;
+	}
+
+	// Fall back on current time
+	if ( empty( $time ) ) {
+		$time = bp_core_current_time();
+	}
+
+	return bp_update_user_meta( $user_id, 'last_activity', $time );
+}
+endif;
