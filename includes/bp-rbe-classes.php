@@ -46,6 +46,9 @@ class BP_Reply_By_Email_Connect {
 	 *     @type int $port The port number used by the server name.
 	 *     @type string $username The username used to login to the server.
 	 *     @type string $password The password used to login to the server.
+	 *     @type bool $validatecert Whether to validate certificates from TLS/
+	 *                              SSL server. Defaults to true.
+	 *     @type string $mailbox The mailbox to open. Defaults to 'INBOX'.
 	 *     @type int $retries How many times to try reconnection on failure.
 	 *                        Defaults to 1.
 	 *     @type bool $reconnect Are we attempting a reconnection? Defaults to false.
@@ -54,17 +57,17 @@ class BP_Reply_By_Email_Connect {
 	 * @return resource|bool The IMAP resource on success. Boolean false on failure.
 	 */
 	public function __construct( $args = array(), $connection = false ) {
+		$this->args = wp_parse_args( $args, array (
+	 		'host'         => bp_rbe_get_setting( 'servername' ),
+	 		'port'         => bp_rbe_get_setting( 'port' ),
+	 		'username'     => bp_rbe_get_setting( 'username' ),
+	 		'password'     => bp_rbe_get_setting( 'password' ) ? bp_rbe_decode( array( 'string' => bp_rbe_get_setting( 'password' ), 'key' => wp_salt() ) ) : false,
+	 		'validatecert' => true, // @todo change this to an admin setting later
+	 		'mailbox'      => 'INBOX',
+	 		'retries'      => 1,
+	 		'reconnect'    => false
+		) );
 
-		$defaults = array (
-	 		'host'      => bp_rbe_get_setting( 'servername' ),
-	 		'port'      => bp_rbe_get_setting( 'port' ),
-	 		'username'  => bp_rbe_get_setting( 'username' ),
-	 		'password'  => bp_rbe_get_setting( 'password' ) ? bp_rbe_decode( array( 'string' => bp_rbe_get_setting( 'password' ), 'key' => wp_salt() ) ) : false,
-	 		'retries'   => 1,
-	 		'reconnect' => false
-		);
-
-		$this->args       = wp_parse_args( $args, $defaults );
 		$this->connection = $connection;
 	}
 
@@ -118,12 +121,13 @@ class BP_Reply_By_Email_Connect {
 	protected function get_mailbox() {
 		$ssl = self::is_ssl( $this->args['port'] ) ? '/ssl' : '';
 
+		$validate_cert = (bool) $this->args['validatecert'] === true ? '' : '/novalidate-cert';
+
 		// Need to readjust this before public release
 		// In the meantime, let's add a filter!
-		$mailbox = '{' . $this->args['host'] . ':' . $this->args['port'] . '/imap' . $ssl . '}INBOX';
+		$mailbox = '{' . $this->args['host'] . ':' . $this->args['port'] . '/imap' . $ssl . $validate_cert . '}' . $this->args['mailbox'];
 
 		return apply_filters( 'bp_rbe_mailbox', $mailbox );
-
 	}
 
 	/**
