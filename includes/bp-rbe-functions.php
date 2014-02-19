@@ -801,18 +801,32 @@ function bp_rbe_remove_email_client_signature( $content ) {
 }
 
 /**
- * Logs no match errors during IMAP inbox checks and also sends a failure
- * message back to the original sender for feedback purposes.
+ * Logs no match errors during RBE parsing.
+ *
+ * Also sends a failure message back to the original sender for feedback
+ * purposes if enabled.
+ *
+ * @since 1.0-RC3
  *
  * @uses bp_rbe_log() Logs error messages in a custom log
- * @param resource $imap The current IMAP connection
+ * @param object $parser The WP_Error object.
+ * @param array $data {
+ *     An array of arguments.
+ *
+ *     @type array $headers Email headers.
+ *     @type string $to_email The 'To' email address.
+ *     @type string $from_email The 'From' email address.
+ *     @type string $content The email body content.
+ *     @type string $subject The email subject line.
+ *     @type bool $is_html Whether the email content is HTML or not.
+ * }
  * @param int $i The current message number
- * @param array $headers The email headers
- * @param sring $type The type of error
- * @since 1.0-beta
+ * @param resource|bool $imap The IMAP connection if passed. Boolean false if not.
  */
-function bp_rbe_imap_log_no_matches( $imap, $i, $headers, $type ) {
+function bp_rbe_log_no_matches( $parser, $data, $i, $imap ) {
 	$log = $message = false;
+
+	$type = is_wp_error( $parser ) ? $parser->get_error_code() : false;
 
 	// log messages based on the type
 	switch ( $type ) {
@@ -839,7 +853,7 @@ This can happen in a couple of different ways:
 
 Make sure that, when replying by email, your "From:" email address is the same as the address you\'ve registered at %s.
 
-If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' ), $sitename );
+If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_header( $data['headers'], 'From' ), $sitename );
 			break;
 
 		case 'user_is_spammer' :
@@ -861,9 +875,11 @@ Your reply could not be posted because we could not find the "%s" marker in the 
 
 In the future, please make sure you reply *above* this line for your comment to be posted on the site.
 
-For reference, the subject line of your reply was "%s".
+For reference, your entire reply was:
 
-If you have any questions, please let us know.', 'bp-rbe' ), __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'Subject' ) );
+"%s".
+
+If you have any questions, please let us know.', 'bp-rbe' ), __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ), $data['content'] );
 
 			break;
 
@@ -880,7 +896,7 @@ Your reply:
 
 Could not be posted because the activity entry you were replying to no longer exists.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 			break;
 
@@ -895,7 +911,7 @@ Your reply:
 
 Could not be posted because the activity entry you were replying to no longer exists.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 			break;
 
@@ -912,7 +928,7 @@ Your forum reply:
 
 Could not be posted because you are no longer a member of this group.  To comment on the forum thread, please rejoin the group.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 			break;
 
@@ -945,7 +961,7 @@ Your forum reply:
 
 Could not be posted because you have already posted the same message in the forum topic you were attempting to reply to.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 			break;
 
@@ -960,7 +976,7 @@ Your forum reply:
 
 Could not be posted because the forum topic you were replying to no longer exists.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 			break;
 
@@ -972,7 +988,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 Your forum topic titled "%s" could not be posted due to an error.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::address_parser( $headers, 'Subject' ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), $data['subject'] );
 
 			break;
 
@@ -995,7 +1011,7 @@ Your private message reply:
 
 Could not be posted because the private message thread you were replying to no longer exists.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 			break;
 
@@ -1009,26 +1025,27 @@ Your reply:
 
 Could not be posted due to an error.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 			break;
 
 		// 3rd-party plugins can filter the two variables below to add their own logs and email messages.
 		default :
-			$log     = apply_filters( 'bp_rbe_extend_log_no_match', $log, $type, $headers, $i, $imap );
-			$message = apply_filters( 'bp_rbe_extend_log_no_match_email_message', $message, $type, $headers, $i, $imap );
+			$log     = apply_filters( 'bp_rbe_extend_log_no_match', $log, $type, $data['headers'], $i, $imap );
+			$message = apply_filters( 'bp_rbe_extend_log_no_match_email_message', $message, $type, $data['headers'], $i, $imap );
 
 			break;
 	}
 
 	// internal logging
-	if ( $log )
+	if ( $log ) {
 		bp_rbe_log( sprintf( __( 'Message #%d: %s', 'bp-rbe' ), $i, $log ) );
+	}
 
 	// failure message to author
 	// if you want to turn off failure messages, use the filter below
 	if ( apply_filters( 'bp_rbe_enable_failure_message', true ) && $message ) {
-		$to = BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' );
+		$to = BP_Reply_By_Email_Parser::get_header( $data['headers'], 'From' );
 
 		if ( ! empty( $to ) ) {
 			global $bp_rbe;

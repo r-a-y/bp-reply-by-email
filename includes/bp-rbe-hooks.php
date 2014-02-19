@@ -37,16 +37,21 @@ if ( bp_rbe_is_required_completed() ) :
 		 * If you're not using Gmail, you might want to remove the following actions and do your own thing.
 		 * (eg. move the email to another folder instead of marking emails for deletion).
 		 */
-		add_action( 'bp_rbe_imap_no_match',         'imap_delete',                99, 2 );
-		add_action( 'bp_rbe_imap_loop',             'imap_delete',                99, 2 );
-
-		// log error messages
-		add_action( 'bp_rbe_imap_no_match',         'bp_rbe_imap_log_no_matches', 10, 4 );
-		add_action( 'bp_rbe_log_already_connected', 'bp_rbe_failsafe' );
+		add_action( 'bp_rbe_imap_loop',             'imap_delete', 99, 2 );
 
 		// outright delete the emails that are marked for deletion once we're done.
 		add_action( 'bp_rbe_imap_after_loop',       'imap_expunge' );
+
+		// failsafe
+		add_action( 'bp_rbe_log_already_connected', 'bp_rbe_failsafe' );
+
+	// inbound mode
+	} else {
+		add_action( 'wp_loaded',                'bp_rbe_inbound_catch_callback', 0 );
 	}
+
+	// log no matches
+	add_action( 'bp_rbe_no_match',                  'bp_rbe_log_no_matches', 10, 4 );
 
 	// html email to plain-text
 	add_filter( 'bp_rbe_parse_html_email',          'bp_rbe_html_to_plaintext' );

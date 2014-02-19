@@ -113,6 +113,9 @@ class BP_Reply_By_Email {
 
 		// Do not show non-RBE notice in certain emails
 		add_filter( 'bp_rbe_show_non_rbe_notice',               array( &$this, 'disable_non_rbe_notice' ), 10, 2 );
+
+		// Post after parsing is validated
+		add_filter( 'bp_rbe_parse_completed',                   array( $this, 'post' ), 10, 3 );
 	}
 
 	/**
@@ -370,6 +373,140 @@ class BP_Reply_By_Email {
 
 		$this->listener->component = 'bbpress';
 		$this->listener->item_id   = $topic_id;
+	}
+
+	/**
+	 * Post by email routine.
+	 *
+	 * Validates the parsed data and posts the various BuddyPress content.
+	 *
+	 * @since 1.0-RC3
+	 *
+	 * @param bool $retval True by default.
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
+	 * @param array $params Parsed paramaters from the email address querystring.
+	 *   See {@link BP_Reply_By_Email_Parser::get_parameters()}.
+	 * @return array|object Array of the parsed item on success. WP_Error object
+	 *  on failure.
+	 */
+	public function post( $retval, $data, $params ) {
+		global $bp, $wpdb;
+
+		// Activity reply
+		if ( ! empty( $params['a'] ) ) {
+			bp_rbe_log( 'Message #' . $data['i'] . ': this is an activity reply, checking if parent activities still exist' );
+
+			// Check to see if the root activity ID and the parent activity ID exist before posting
+			$activity_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$bp->activity->table_name} WHERE id IN ( %d, %d )", $params['a'], $params['p'] ) );
+
+			// If $a = $p, this means that we're replying to a top-level activity update
+			// So check if activity count is 1
+			if ( $params['a'] == $params['p'] && $activity_count != 1 ) {
+				//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'root_activity_deleted' );
+				return new WP_Error( 'root_activity_deleted' );
+
+			// If we're here, this means we're replying to an activity comment
+			// If count != 2, this means either the super admin or activity author has deleted one of the update(s)
+			} elseif ( $params['a'] != $params['p'] && $activity_count != 2 ) {
+				//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'root_or_parent_activity_deleted' );
+				return new WP_Error( 'root_or_parent_activity_deleted' );
+			}
+
+			/* Let's start posting! */
+			// Add our filter to override the activity action in bp_activity_new_comment()
+			bp_rbe_activity_comment_action_filter( $data['user_id'] );
+
+			$comment_id = bp_activity_new_comment(
+				 array(
+					'content'     => $data['content'],
+					'user_id'     => $data['user_id'],
+					'activity_id' => $params['a'], // ID of the root activity item
+					'parent_id'   => $params['p']  // ID of the parent comment
+				)
+			);
+
+			if ( ! $comment_id ) {
+				//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'activity_comment_fail' );
+				return new WP_Error( 'activity_comment_fail' );
+			}
+
+			// special hook for RBE activity items
+			// might want to do something like add some activity meta
+			do_action( 'bp_rbe_new_activity', array(
+				'activity_id'       => $comment_id,
+				'type'              => 'activity_comment',
+				'user_id'           => $data['user_id'],
+				'item_id'           => $params['a'],
+				'secondary_item_id' => $params['p'],
+				'content'           => $data['content']
+			) );
+
+			bp_rbe_log( 'Message #' . $data['i'] . ': activity comment successfully posted!' );
+
+			// remove the filter after posting
+			remove_filter( 'bp_activity_comment_action', 'bp_rbe_activity_comment_action' );
+			
+			// return array of item on success
+			return array( 'activity_comment_id' => $comment_id );
+
+		// Private message reply
+		} elseif ( ! empty( $params['m'] ) ) {
+			if ( bp_is_active( $bp->messages->id ) ) {
+				bp_rbe_log( 'Message #' . $data['i'] . ': this is a private message reply' );
+
+				// see if the PM thread still exists
+				if ( messages_is_valid_thread( $params['m'] ) ) {
+
+					// see if the user is in the PM conversation
+					$has_access = messages_check_thread_access( $params['m'], $data['user_id'] );
+
+					if ( ! $has_access ) {
+						//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_not_in_thread' );
+						return new WP_Error( 'private_message_not_in_thread' );
+					}
+
+					// post the PM!
+					$message_id = messages_new_message (
+						array(
+							'thread_id' => $params['m'],
+							'sender_id' => $data['user_id'],
+							'content'   => $data['content']
+						)
+					);
+
+					if ( ! $message_id ) {
+						//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_fail' );
+						return new WP_Error( 'private_message_fail' );
+					}
+
+					// special hook for RBE parsed PMs
+					do_action( 'bp_rbe_new_pm_reply', array(
+						'thread_id' => $params['m'],
+						'sender_id' => $data['user_id'],
+						'content'   => $data['content']
+					) );
+
+					bp_rbe_log( 'Message #' . $data['i'] . ': PM reply successfully posted!' );
+
+					// return array of item on success
+					return array( 'message_id' => $message_id );
+
+				// the PM thread doesn't exist anymore
+				} else {
+					//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_thread_deleted' );
+					return new WP_Error( 'private_message_thread_deleted' );
+				}
+			}
+		}
 	}
 
 	/**
