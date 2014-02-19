@@ -63,6 +63,10 @@ class BP_Reply_By_Email {
 		require( BP_RBE_DIR . '/includes/bp-rbe-classes.php' );
 		require( BP_RBE_DIR . '/includes/bp-rbe-functions.php' );
 		require( BP_RBE_DIR . '/includes/bp-rbe-hooks.php' );
+
+		if ( class_exists( 'BP_Forums_Component' ) ) {
+			require( BP_RBE_DIR . '/includes/bp-rbe-legacy-forums.php' );
+		}
 	}
 
 	/**
