@@ -174,23 +174,26 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	/**
 	 * Post by email handler.
 	 *
-	 * During the RBE inbox loop, detect our custom variables defined in the
-	 * bootstrap() method and do our own checks and posting mechanisms.
-	 *
-	 * For devs analyzing this class, this method is *required* to be extended.
-	 *
 	 * For bbPress, the logic in this method is the same as {@link bbp_new_reply_handler()}.
 	 * It's duplicated because bbPress doesn't utilize hooks for verifying replies.
 	 *
-	 * @param resource $connection The current IMAP connection. Chances are you won't need to use this, unless you're doing something fancy!
-	 * @param int $i The current message number in the inbox loop
-	 * @param array $headers The email headers
-	 * @param array $params Holds an array of params used by RBE. Also holds the params registered in this extension from the bootstrap() method.
-	 * @param string $body The reply contents
-	 * @param int $user_id The user ID
+	 * @param bool $retval True by default.
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
+	 * @param array $params Parsed paramaters from the email address querystring.
+	 *   See {@link BP_Reply_By_Email_Parser::get_parameters()}.
+	 * @return array|object Array of the parsed item on success. WP_Error object
+	 *  on failure.
 	 */
-	public function post_by_email( $connection, $i, $headers, $params, $body, $user_id ) {
-
+	public function post( $retval, $data, $params ) {
 		/** SETUP DATA ***************************************************/
 
 		// reset globals
@@ -201,6 +204,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			$bp->rbe->temp = new stdClass;
 		}
 
+		$i       = $data['i'];
+		$user_id = $data['user_id'];
+
 		// get topic ID
 		$topic_id = ! empty( $params[$this->secondary_item_id_param] ) ? $params[$this->secondary_item_id_param] : false;
 
@@ -208,10 +214,10 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		if ( empty( $topic_id ) ) {
 			// if current email is a bbPress new group topic, parse it
 			if ( ! empty( $params[$this->forum_id_param] ) ) {
-				$this->post_new_topic_by_email( $connection, $i, $headers, $params, $body, $user_id );
+				$retval = $this->post_new_topic( $data, $params );
 			}
 
-			return;
+			return $retval;
 		}
 
 		/* current email is a bbPress group reply, let's proceed! */
@@ -246,14 +252,14 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 			// user is not a member of the group anymore
 			if ( empty( $group_member_data ) ) {
-				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_not_group_member' );
-				return;
+				//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_not_group_member' );
+				return new WP_Error( 'user_not_group_member', '', $data );
 			}
 
 			// user is banned from group
 			if ( (int) $group_member_data->is_banned == 1 ) {
-				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_banned_from_group' );
-				return;
+				//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_banned_from_group' );
+				return new WP_Error( 'user_banned_from_group', '', $data );
 			}
 
 			// override groups_get_current_group() with our cached group ID
@@ -271,8 +277,8 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// User cannot create replies
 		if ( ! user_can( $reply_author, 'publish_replies' ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_permissions' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_permissions' );
+			return new WP_Error( 'bbp_reply_permissions', '', $data );
 		}
 
 		/** UNFILTERED HTML **********************************************/
@@ -289,15 +295,15 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		$reply_title = sprintf( __( 'Reply To: Topic ID %d', 'bp-rbe' ), $topic_id );
 
 		// Filter and sanitize
-		$reply_content = apply_filters( 'bbp_new_reply_pre_content', $body );
+		$reply_content = apply_filters( 'bbp_new_reply_pre_content', $data['content'] );
 
 		/** REPLY MODERATION *********************************************/
 
 		// Reply Flooding
 		if ( ! bbp_check_for_flood( $anonymous_data, $reply_author ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_flood' );
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_flood' );
 			//bbp_add_error( 'bbp_reply_flood', __( '<strong>ERROR</strong>: Slow down; you move too fast.', 'bbpress' ) );
-			return;
+			return new WP_Error( 'bbp_reply_flood', '', $data );
 		}
 
 		// Reply Duplicate
@@ -308,14 +314,14 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			'post_parent'    => $topic_id,
 			'anonymous_data' => $anonymous_data
 		 ) ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_duplicate' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_duplicate' );
+			return new WP_Error( 'bbp_reply_duplicate', '', $data );
 		}
 
 		// Reply Blacklist
 		if ( ! bbp_check_for_blacklist( $anonymous_data, $reply_author, $reply_title, $reply_content ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_blacklist' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_blacklist' );
+			return new WP_Error( 'bbp_reply_blacklist', '', $data );
 		}
 
 		// Reply Status
@@ -358,8 +364,8 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// Problem posting
 		} else {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_error' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_error' );
+			return new WP_Error( 'bbp_reply_error', '', $data );
 		}
 
 		/** AFTER POSTING ************************************************/
@@ -431,6 +437,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		do_action( 'bbp_new_reply',                          $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author );
 		do_action( 'bbp_new_reply_post_extras',              $reply_id );
 
+		return array( 'bbp_reply_id' => $reply_id );
 	}
 
 	/**
@@ -441,18 +448,29 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 *
 	 * @todo No fancy support for topic tags, subscriptions yet. Will probably need shortcodes.
 	 *
-	 * @param resource $connection The current IMAP connection. Chances are you won't need to use this, unless you're doing something fancy!
-	 * @param int $i The current message number in the inbox loop
-	 * @param array $headers The email headers
-	 * @param array $params Holds an array of params used by RBE. Also holds the params registered in this extension from the bootstrap() method.
-	 * @param string $body The new topic contents
-	 * @param int $user_id The user ID
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
+	 * @param array $params Parsed paramaters from the email address querystring.
+	 *   See {@link BP_Reply_By_Email_Parser::get_parameters()}.
+	 * @return array|object Array of the parsed item on success. WP_Error object
+	 *  on failure.
 	 */
-	private function post_new_topic_by_email( $connection, $i, $headers, $params, $body, $topic_author ) {
+	private function post_new_topic( $data, $params ) {
+	//private function post_new_topic( $connection, $i, $headers, $params, $body, $topic_author ) {
 
 		/** SETUP DATA ***************************************************/
 
-		$forum_id = $params[$this->forum_id_param];
+		$i            = $data['i'];
+		$topic_author = $data['user_id'];
+		$forum_id     = $params[$this->forum_id_param];
 
 		/* current email is a bbPress new topic, let's proceed! */
 
@@ -484,14 +502,14 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 			// user is not a member of the group anymore
 			if ( empty( $group_member_data ) ) {
-				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_not_group_member' );
-				return;
+				//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_not_group_member' );
+				return new WP_Error( 'user_not_group_member', '', $data );
 			}
 
 			// user is banned from group
 			if ( (int) $group_member_data->is_banned == 1 ) {
-				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_banned_from_group' );
-				return;
+				//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'user_banned_from_group' );
+				return new WP_Error( 'user_banned_from_group', '', $data );
 			}
 
 			// override groups_get_current_group() with our cached group ID
@@ -506,41 +524,41 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// User cannot create topics
 		if ( ! user_can( $topic_author, 'publish_topics' ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_permissions' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_permissions' );
+			return new WP_Error( 'bbp_topic_permissions', '', $data );
 		}
 
 		// Forum is a category
 		if ( bbp_is_forum_category( $forum_id ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_category' );
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_category' );
 			//bbp_add_error( 'bbp_edit_topic_forum_category', __( '<strong>ERROR</strong>: This forum is a category. No topics can be created in this forum.', 'bbpress' ) );
-			return;
+			return new WP_Error( 'bbp_edit_topic_forum_category', '', $data );
 
 		// Forum is not a category
 		} else {
 
 			// Forum is closed and user cannot access
 			if ( bbp_is_forum_closed( $forum_id ) && ! user_can( $topic_author, 'edit_forum' ) ) {
-				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_closed' );
+				//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_closed' );
 				//bbp_add_error( 'bbp_edit_topic_forum_closed', __( '<strong>ERROR</strong>: This forum has been closed to new topics.', 'bbpress' ) );
-				return;
+				return new WP_Error( 'bbp_edit_topic_forum_closed', '', $data );
 			}
 
 			// Forum is private and user cannot access
 			if ( bbp_is_forum_private( $forum_id ) ) {
 				if ( ! user_can( $topic_author, 'read_private_forums' ) ) {
-					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_private' );
+					//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_private' );
 					//bbp_add_error( 'bbp_edit_topic_forum_private', __( '<strong>ERROR</strong>: This forum is private and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
-					return;
+					return new WP_Error( 'bbp_edit_topic_forum_private', '', $data );
 				}
 			}
 
 			// Forum is hidden and user cannot access
 			if ( bbp_is_forum_hidden( $forum_id ) ) {
 				if ( ! user_can( $topic_author, 'read_hidden_forums' ) ) {
-					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_hidden' );
+					//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_edit_topic_forum_hidden' );
 					//bbp_add_error( 'bbp_edit_topic_forum_hidden', __( '<strong>ERROR</strong>: This forum is hidden and you do not have the capability to read or create new topics in it.', 'bbpress' ) );
-					return;
+					return new WP_Error( 'bbp_edit_topic_forum_hidden', '', $data );
 				}
 			}
 		}
@@ -555,15 +573,15 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		/** TOPIC DATA ***************************************************/
 
-		$topic_content = BP_Reply_By_Email_IMAP::body_parser( $connection, $i, false );
-		$topic_title   = BP_Reply_By_Email_IMAP::address_parser( $headers, 'Subject' );
+		$topic_content = $data['content'];
+		$topic_title   = $data['subject'];
 
 		bp_rbe_log( 'Message #' . $i . ': body contents - ' . $topic_content );
 		bp_rbe_log( 'Subject - ' . $topic_title );
 
 		if ( empty( $topic_content ) || empty( $topic_title ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_new_forum_topic_empty' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_new_forum_topic_empty' );
+			return new WP_Error( 'bbp_new_forum_topic_empty', '', $data );
 		}
 
 		// Filter and sanitize
@@ -592,9 +610,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// Post Flooding
 		if ( ! bbp_check_for_flood( $anonymous_data, $topic_author ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_flood' );
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_flood' );
 			//bbp_add_error( 'bbp_reply_flood', __( '<strong>ERROR</strong>: Slow down; you move too fast.', 'bbpress' ) );
-			return;
+			return new WP_Error( 'bbp_topic_flood', '', $data );
 		}
 
 		// Topic Duplicate
@@ -604,14 +622,14 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			'post_content'   => $topic_content,
 			'anonymous_data' => $anonymous_data
 		 ) ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_duplicate' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_duplicate' );
+			return new WP_Error( 'bbp_topic_duplicate', '', $data );
 		}
 
 		// Topic Blacklist
 		if ( ! bbp_check_for_blacklist( $anonymous_data, $topic_author, $topic_title, $topic_content ) ) {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_blacklist' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_blacklist' );
+			return new WP_Error( 'bbp_topic_blacklist', '', $data );
 		}
 
 		// Topic Status
@@ -651,8 +669,8 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// Problem posting
 		} else {
-			do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_error' );
-			return;
+			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_error' );
+			return new WP_Error( 'bbp_topic_error', '', $data );
 		}
 
 		/** AFTER POSTING ************************************************/
@@ -699,6 +717,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		do_action( 'bbp_new_topic',             $topic_id, $forum_id, $anonymous_data, $topic_author );
 		do_action( 'bbp_new_topic_post_extras', $topic_id );
 
+		return array( 'bbp_topic_id' => $topic_id );
 	}
 
 	/**
@@ -706,12 +725,21 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 *
 	 * @param mixed $log
 	 * @param string $type Type of error message
-	 * @param array $headers The email headers
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
 	 * @param int $i The message number from the inbox loop
 	 * @param resource $connection The current IMAP connection. Chances are you probably don't have to do anything with this!
-	 * @return mixed Could be a string or boolean false.
+	 * @return string|bool Could be a string or boolean false.
 	 */
-	public function internal_rbe_log( $log, $type, $headers, $i, $connection ) {
+	public function internal_rbe_log( $log, $type, $data, $i, $connection ) {
 		switch( $type ) {
 			/** REPLIES *****************************************************/
 
@@ -767,6 +795,11 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 				break;
 
+			case 'bbp_new_forum_topic_empty' :
+				$log = __( "error - bbPress new topic failed. no body content.", 'bp-rbe' );
+
+				break;
+
 			case 'bbp_topic_flood' :
 				$log = __( "error - bbPress new topic failed. user is flooding!", 'bp-rbe' );
 
@@ -796,12 +829,21 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 *
 	 * @param mixed $message
 	 * @param string $type Type of error message
-	 * @param array $headers The email headers
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
 	 * @param int $i The message number from the inbox loop
 	 * @param resource $connection The current IMAP connection. Chances are you probably don't have to do anything with this!
-	 * @return mixed Could be a string or boolean false.
+	 * @return string|bool Could be a string or boolean false.
 	 */
-	public function failure_message_to_sender( $message, $type, $headers, $i, $imap ) {
+	public function failure_message_to_sender( $message, $type, $data, $i, $imap ) {
 		switch( $type ) {
 			/** REPLIES *****************************************************/
 
@@ -814,7 +856,7 @@ Your reply to the forum topic:
 
 Could not be posted because it appears that you do not have the ability to post replies.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -827,7 +869,7 @@ Your reply to the forum topic:
 
 Could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -840,7 +882,7 @@ Your reply to the forum topic:
 
 Could not be posted because it appears you have already made the same reply.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -853,7 +895,7 @@ Your reply to the forum topic:
 
 Could not be posted because the content of your message was automatically marked as spam.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -866,7 +908,7 @@ Your reply to the forum topic:
 
 Could not be posted due to an error.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -881,7 +923,7 @@ Your new forum topic:
 
 Could not be posted because it appears that you do not have the ability to post topics.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -894,7 +936,7 @@ Your new forum topic:
 
 Could not be posted because the forum you are trying to post in is a forum category.  Forum categories cannot contain topics.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -907,7 +949,7 @@ Your new forum topic:
 
 Could not be posted because the forum you are trying to post in is closed and no new topics can be created there.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -921,7 +963,7 @@ Your new forum topic:
 
 Could not be posted because it appears that you do not have access to that forum.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -934,7 +976,7 @@ Your new forum topic:
 
 Could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -947,7 +989,7 @@ Your new forum topic:
 
 Could not be posted because it appears you already created this topic before.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -960,7 +1002,7 @@ Your new forum topic:
 
 Could not be posted because the content of your message was automatically marked as spam.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -973,7 +1015,7 @@ Your new forum topic:
 
 Could not be posted due to an error.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i, false ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 

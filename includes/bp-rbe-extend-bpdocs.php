@@ -62,22 +62,32 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 	}
 
 	/**
-	 * During the RBE inbox loop, detect our custom variables defined in the bootstrap() method
-	 * and do our own checks and posting mechanisms.
+	 * Post by email handler.
 	 *
-	 * For plugin devs analyzing this class, this method is *required* to be extended.
+	 * Validate data and post on success.
 	 *
-	 * @param resource $connection The current IMAP connection. Chances are you won't need to use this, unless you're doing something fancy!
-	 * @param int $i The current message number in the inbox loop
-	 * @param array $headers The email headers
-	 * @param array $params Holds an array of params used by RBE. Also holds the params registered in this extension from the bootstrap() method.
-	 * @param string $body The reply contents
-	 * @param int $user_id The user ID
+	 * @param bool $retval True by default.
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
+	 * @param array $params Parsed paramaters from the email address querystring.
+	 *   See {@link BP_Reply_By_Email_Parser::get_parameters()}.
+	 * @return array|object Array of the parsed item on success. WP_Error object
+	 *  on failure.
 	 */
-	public function post_by_email( $connection, $i, $headers, $params, $body, $user_id ) {
+	public function post( $retval, $data, $params ) {
 		global $bp;
 
 		$comment_id = ! empty( $params[$this->secondary_item_id_param] ) ? $params[$this->secondary_item_id_param] : false;
+
+		$i = $data['i'];
 
 		// this means that the current email is a BP Doc reply
 		// let's proceed!
@@ -95,31 +105,30 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 			// parent comment doesn't exist or was deleted
 			if ( empty( $comment ) ) {
-				// when a condition for posting isn't met, use the 'bp_rbe_imap_no_match' do_action hook
-				// use the fourth parameter to leave a short description of the unmet condition
+				// when a condition for posting isn't met, return a WP_Error object.
 				// next, log it under the internal_rbe_log()_method
 				// and optionally, prep a failure message under the failure_message_to_sender() method
-				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_deleted' );
-				return;
+				//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_deleted' );
+				return new WP_Error( 'bp_doc_parent_comment_deleted', '', $data );
 			}
 
 			// parent comment status checks
 			switch ( $comment->comment_approved ) {
 				case 'spam' :
-					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_spam' );
-					return;
+					//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_spam' );
+					return new WP_Error( 'bp_doc_parent_comment_spam', '', $data );
 
 					break;
 
 				case 'trash' :
-					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_deleted' );
-					return;
+					//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_deleted' );
+					return new WP_Error( 'bp_doc_parent_comment_deleted', '', $data );
 
 					break;
 
 				case '0' :
-					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_unapproved' );
-					return;
+					//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_parent_comment_unapproved' );
+					return new WP_Error( 'bp_doc_parent_comment_unapproved', '', $data );
 
 					break;
 			}
@@ -144,15 +153,15 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 				// this means that the comment settings for the doc recently switched to 'no-one'
 				case 'no-one' :
-					do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_comment_change_to_noone' );
-					return;
+					//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_comment_change_to_noone' );
+					return new WP_Error( 'bp_doc_comment_change_to_noone', '', $data );
 
 					break;
 
 				// if the doc only allows group admins and mods to comment, return false for regular group members
 				case 'admins-mods' :
 					// get the email address of the replier
-					$user_email = BP_Reply_By_Email_IMAP::address_parser( $headers, 'From' );
+					$user_email = BP_Reply_By_Email_Parser::get_header( $data['headers'], 'From' );
 
 					// get an array of group admin / mod email addresses
 					// note: email addresses are set as key, not value
@@ -160,8 +169,8 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 					// if the replier's email address does not match a group admin or mod, stop now!
 					if ( ! isset( $admin_mod_emails[$user_email] ) ) {
-						do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_user_not_admin_mod' );
-						return;
+						//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_user_not_admin_mod' );
+						return new WP_Error( 'bp_doc_user_not_admin_mod', '', $data );
 					}
 
 					break;
@@ -170,13 +179,13 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 				// the group and not banned
 				case 'group-members' :
 					if( ! groups_is_user_member( $user_id, $group_id ) ) {
-						do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_user_not_member' );
-						return;
+						//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_user_not_member' );
+						return new WP_Error( 'bp_doc_user_not_member', '', $data );
 					}
 
 					if ( groups_is_user_banned( $user_id, $group_id ) ) {
-						do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_user_banned' );
-						return;
+						//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_user_banned' );
+						return new WP_Error( 'bp_doc_user_banned', '', $data );
 					}
 
 					break;
@@ -236,23 +245,35 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 				// remove the filter after posting
 				remove_filter( 'bp_docs_comment_activity_action', array( $this, 'comment_activity_action' ) );
 
+				return array( 'bp_doc_comment_id' => $new_comment_id );
+
 			} else {
-				do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_new_comment_fail' );
+				//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bp_doc_new_comment_fail' );
+				return new WP_Error( 'bp_doc_new_comment_fail', '', $data );
 			}
 		}
 	}
 
 	/**
-	 * Log our extension's error messages during the post_by_email() method.
+	 * Log our extension's error messages during the post() method.
 	 *
 	 * @param mixed $log
 	 * @param string $type Type of error message
-	 * @param array $headers The email headers
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
 	 * @param int $i The message number from the inbox loop
 	 * @param resource $connection The current IMAP connection. Chances are you probably don't have to do anything with this!
-	 * @return mixed Could be a string or boolean false.
+	 * @return string|bool Could be a string or boolean false.
 	 */
-	public function internal_rbe_log( $log, $type, $headers, $i, $connection ) {
+	public function internal_rbe_log( $log, $type, $data, $i, $connection ) {
 		switch( $type ) {
 			case 'bp_doc_parent_comment_deleted' :
 				$log = __( "error - BP doc parent comment was deleted before this could be posted.", 'bp-rbe' );
@@ -303,12 +324,21 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 *
 	 * @param mixed $message
 	 * @param string $type Type of error message
-	 * @param array $headers The email headers
+	 * @param array $data {
+	 *     An array of arguments.
+	 *
+	 *     @type array $headers Email headers.
+	 *     @type string $content The email body content.
+	 *     @type string $subject The email subject line.
+	 *     @type int $user_id The user ID who sent the email.
+	 *     @type bool $is_html Whether the email content is HTML or not.
+	 *     @type int $i The email message number.
+	 * }
 	 * @param int $i The message number from the inbox loop
 	 * @param resource $connection The current IMAP connection. Chances are you probably don't have to do anything with this!
-	 * @return mixed Could be a string or boolean false.
+	 * @return string|bool Could be a string or boolean false.
 	 */
-	public function failure_message_to_sender( $message, $type, $headers, $i, $imap ) {
+	public function failure_message_to_sender( $message, $type, $data, $i, $imap ) {
 		switch( $type ) {
 			case 'bp_doc_parent_comment_deleted' :
 				$message = sprintf( __( 'Hi there,
@@ -319,7 +349,7 @@ Your comment to the group document:
 
 Could not be posted because the parent comment you were replying to no longer exists.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -332,7 +362,7 @@ Your comment to the group document:
 
 Could not be posted because the parent comment you were replying to was marked as spam.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -345,7 +375,7 @@ Your comment to the group document:
 
 Could not be posted because the parent comment you were replying was unapproved.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -359,7 +389,7 @@ Your comment to the group document:
 Could not be posted because the comment setting for this group document recently changed to "No One".
 This means that no other comments can be posted for the group document in question.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -373,7 +403,7 @@ Your comment to the group document:
 Could not be posted because the comment setting for this group document recently changed to "Admin and moderators only".
 Since you are not a group administrator or a group moderator, this means your comment could be posted.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -386,7 +416,7 @@ Your comment to the group document:
 
 Could not be posted because you are no longer a member of this group.  To comment on this group document, please rejoin the group.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
@@ -399,7 +429,7 @@ Your comment to the group document:
 
 Could not be posted due to an error.
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_IMAP::body_parser( $imap, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
