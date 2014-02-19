@@ -1039,8 +1039,8 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 		// 3rd-party plugins can filter the two variables below to add their own logs and email messages.
 		default :
-			$log     = apply_filters( 'bp_rbe_extend_log_no_match', $log, $type, $data['headers'], $i, $imap );
-			$message = apply_filters( 'bp_rbe_extend_log_no_match_email_message', $message, $type, $data['headers'], $i, $imap );
+			$log     = apply_filters( 'bp_rbe_extend_log_no_match', $log, $type, $data, $i, $imap );
+			$message = apply_filters( 'bp_rbe_extend_log_no_match_email_message', $message, $type, $data, $i, $imap );
 
 			break;
 	}
