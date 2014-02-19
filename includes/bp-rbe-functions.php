@@ -452,6 +452,14 @@ function bp_rbe_tail( $filename, $lines_to_display ) {
 /** Hook-related ********************************************************/
 
 /**
+ * Inbound POST callback catcher.
+ *
+ * @since 1.0-RC3
+ */
+function bp_rbe_inbound_catch_callback() {
+}
+
+/**
  * Overrides an activity comment's action string.
  *
  * BP doesn't pass the $user_id in the "bp_activity_comment_action" filter.
