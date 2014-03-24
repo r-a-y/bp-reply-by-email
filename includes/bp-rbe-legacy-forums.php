@@ -53,7 +53,7 @@ function bp_rbe_legacy_forums_post( $retval, $data, $params ) {
 
 			// Don't allow reply flooding
 			// Only available in 1.6+
-			if ( function_exists( 'bp_forums_reply_exists' ) && bp_forums_reply_exists( $data['content'], $params['t'], $data['user_id'] ) ) {
+			if ( function_exists( 'bp_forums_reply_exists' ) && bp_forums_reply_exists( esc_sql( $data['content'] ), $params['t'], $data['user_id'] ) ) {
 				//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'forum_reply_exists' );
 				return new WP_Error( 'forum_reply_exists' );
 			}
