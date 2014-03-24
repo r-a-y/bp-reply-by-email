@@ -599,7 +599,8 @@ class BP_Reply_By_Email {
 		$style = apply_filters( 'bp_rbe_reply_marker_css', "color:#333; font-size:12px; font-family:arial,san-serif;" );
 
 		// add back the marker at the top of the HTML email and centered
-		return str_replace( '<body>', '<body><center><span style="' . esc_attr( $style ) . '">' . $reply_line . '</span></center><br />', $html );
+		$body_close_pos = strpos( $html, '>', strpos( $html, '<body' ) );
+		return substr_replace( $html, '<center><span style="' . $style . '">' . $reply_line . '</span></center>', $body_close_pos + 1, 0 );
 	}
 
 	/**
