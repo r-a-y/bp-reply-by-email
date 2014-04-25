@@ -281,9 +281,10 @@ class BP_Reply_By_Email_IMAP {
 					self::$html = false;
 
 					$content = self::body_parser( $this->connection, $i );
+					$headers = $this->get_mail_headers( $this->connection, $i );
 
 					$data = array(
-						'headers'    => $this->get_mail_headers( $this->connection, $i ),
+						'headers'    => $headers,
 						'to_email'   => BP_Reply_By_Email_Parser::get_header( $headers, 'To' ),
 						'from_email' => BP_Reply_By_Email_Parser::get_header( $headers, 'From' ),
 						'content'    => $content,
@@ -303,7 +304,7 @@ class BP_Reply_By_Email_IMAP {
 					do_action( 'bp_rbe_imap_loop', $this->connection, $i );
 
 					// unset some variables at the end of the loop
-					unset( $content, $data );
+					unset( $content, $headers, $data, $parser );
 				}
 
 				// do something after the loop
