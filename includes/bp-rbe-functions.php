@@ -56,14 +56,34 @@ function bp_rbe_is_required_completed( $settings = false ) {
  * @since 1.0-RC3
  *
  * @param string $setting The setting parameter.
+ * @param array $args {
+ *     Misc settings.
+ *     @type bool $refetch Whether to refetch RBE's settings. Handy when you
+ *           need to ensure the settings are updated. Defaults to false.
+ * }
  * @return string|bool
  */
-function bp_rbe_get_setting( $setting = '' ) {
+function bp_rbe_get_setting( $setting = '', $args = array() ) {
 	if ( empty( $setting ) || ! is_string( $setting ) ) {
 		return false;
 	}
 
+	$r = wp_parse_args( $args, array(
+		'refetch' => false,
+	) );
+
 	global $bp_rbe;
+
+	// refetches RBE options
+	if ( true === $r['refetch'] ) {
+		// flush cache if necessary
+		if ( ! wp_using_ext_object_cache() ) {
+			wp_cache_flush();
+		}
+
+		// refetch option
+		$bp_rbe->settings = bp_get_option( 'bp-rbe' );
+	}
 
 	return isset( $bp_rbe->settings[$setting] ) ? $bp_rbe->settings[$setting] : false;
 }
