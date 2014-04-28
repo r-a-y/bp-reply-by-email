@@ -725,9 +725,7 @@ class BP_Reply_By_Email_Admin {
 	 * @return string
 	 */
 	public function get_plugin_basename() {
-		$plugin_basename = plugin_basename(__FILE__);
-
-		return substr( $plugin_basename, 0, strpos( $plugin_basename, '/' ) );
+		return plugin_basename( constant( 'BP_RBE_DIR' ) );
 	}
 }
 
