@@ -205,14 +205,14 @@ class BP_Reply_By_Email_Admin {
 
 		$output = array();
 
+		$output['mode'] = wp_filter_nohtml_kses( $input['mode'] );
+
 		// check if key is alphanumeric
 		if ( ctype_alnum( $input['key'] ) ) {
 			$output['key'] = $input['key'];
 		}
 
 		/** INBOUND-related ***************************************************/
-		$output['mode'] = wp_filter_nohtml_kses( $input['mode'] );
-
 		$inbound_domain = wp_filter_nohtml_kses( $input['inbound-domain'] );
 
 		if ( ! empty( $inbound_domain ) ) {
