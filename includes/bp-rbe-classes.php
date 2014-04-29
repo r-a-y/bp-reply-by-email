@@ -319,7 +319,9 @@ class BP_Reply_By_Email_IMAP {
 				} else {
 					bp_rbe_log( '--- Error - invalid connection during manual termination ---' );
 				}
-				return;
+
+				remove_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
+				exit();
 			}
 
 			// Give IMAP server a break
@@ -339,7 +341,7 @@ class BP_Reply_By_Email_IMAP {
 				// add lock marker before connecting
 				// transient expires after 60 second timeout, which should be enough time to
 				// connect to the IMAP server
-				set_site_transient( 'bp_rbe_lock', true, 60 );
+				set_site_transient( 'bp_rbe_lock', 1, 60 );
 
 				// attempt to reconnect
 				$reopen = BP_Reply_By_Email_Connect::init( array( 'reconnect' => true ), $this->connection );
@@ -361,18 +363,6 @@ class BP_Reply_By_Email_IMAP {
 
 		if ( $this->close() ) {
 			bp_rbe_log( '--- Closing current connection automatically ---' );
-
-			// clear our scheduled hook to prevent wryly cron irregularity
-			// see https://github.com/r-a-y/bp-reply-by-email/issues/5
-			wp_clear_scheduled_hook( 'bp_rbe_schedule' );
-
-			// since we clear our scheduled hook, it would take two page hits:
-			// the first to reschedule the task and the second to run our task
-
-			// so let's create a marker so we can spawn cron manually on the first page hit
-			// @see bp_rbe_cron()
-			bp_update_option( 'bp_rbe_spawn_cron', 1 );
-
 		} else {
 			bp_rbe_log( '--- Invalid connection during close time ---' );
 		}
@@ -405,7 +395,7 @@ class BP_Reply_By_Email_IMAP {
 		// add lock marker before connecting
 		// transient expires after 60 second timeout, which should be enough time to
 		// connect to the IMAP server
-		set_site_transient( 'bp_rbe_lock', true, 60 );
+		set_site_transient( 'bp_rbe_lock', 1, 60 );
 
 		// Let's open the IMAP stream!
 		$this->connection = BP_Reply_By_Email_Connect::init();
@@ -416,8 +406,9 @@ class BP_Reply_By_Email_IMAP {
 			return false;
 		}
 
-		// add an entry in the DB to say that we're connected so we can access this info on other pages
-		bp_update_option( 'bp_rbe_is_connected', true );
+		// add an entry in the DB to say that we're connected
+		// add 15 second leeway to expiration time to account for any overlaps
+		set_site_transient( 'bp_rbe_is_connected', 1, bp_rbe_get_execution_time() + 15 );
 
 		bp_rbe_log( '--- Connection successful! ---' );
 
@@ -435,7 +426,7 @@ class BP_Reply_By_Email_IMAP {
 
 		if ( $this->is_connected()  ) {
 			@imap_close( $this->connection );
-			bp_update_option( 'bp_rbe_is_connected', 0 );
+			delete_site_transient( 'bp_rbe_is_connected' );
 			return true;
 		}
 

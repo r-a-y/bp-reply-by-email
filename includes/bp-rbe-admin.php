@@ -552,31 +552,20 @@ class BP_Reply_By_Email_Admin {
 
 		// only show the following if required fields are filled in correctly
 		if ( bp_rbe_is_required_completed() && ! bp_rbe_is_inbound() ) :
-			$next         = wp_next_scheduled( 'bp_rbe_schedule' );
 			$is_connected = bp_rbe_is_connected();
 
-			if ( $next ) :
 	?>
-		<h3><?php _e( 'Schedule Info', 'bp-rbe' ); ?></h3>
+		<h3><?php _e( 'Connection Info', 'bp-rbe' ); ?></h3>
 
 		<p class="<?php echo $is_connected ? 'connected' : 'not-connected'; ?>">
 			<?php if ( $is_connected ) : ?>
-				<?php printf( __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously. The next scheduled stop and restart is <strong>%s</strong>.', 'bp-rbe' ), date("l, F j, Y, g:i a (e)", $next ) ) ?>
+				<?php _e( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' ); ?>
 			<?php else : ?>
-				<?php printf( __( '<strong>Reply By Email</strong> is currently <span>NOT CONNECTED</span>. The next scheduled inbox check is <strong>%s</strong>.', 'bp-rbe' ), date("l, F j, Y, g:i a (e)", $next ) ) ?>
+				<?php _e( '<strong>Reply By Email</strong> is currently <span>NOT CONNECTED</span>.  Please refresh the page to initiate a connection.', 'bp-rbe' ); ?>
 			<?php endif; ?>
 		</p>
 
-		<p>
-			<?php printf( __( 'What this means is a user will need to visit your website after %s in order for the plugin to check your inbox again. This is a limitation of Wordpress\' scheduling API.', 'bp-rbe' ), date("g:i a (e)", $next ) ) ?>
-		</p>
-
-		<p>
-			<?php printf( __( '<a href="%s">View this article</a> for a potential solution.', 'bp-rbe' ), 'https://github.com/r-a-y/bp-reply-by-email/wiki/Frequently-Asked-Questions#wiki-traffic' ); ?>
-		</p>
-
 	<?php
-			endif;
 		endif;
 	}
 

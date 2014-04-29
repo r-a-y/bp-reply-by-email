@@ -14,11 +14,11 @@ if ( bp_rbe_is_required_completed() ) :
 
 	// imap mode hooks
 	if ( ! bp_rbe_is_inbound() ) {
-		// cron
-		add_filter( 'cron_schedules',  'bp_rbe_custom_cron_schedule' );
-		add_action( 'bp_rbe_schedule', 'bp_rbe_check_imap_inbox' );
-
-		add_action( 'init',            'bp_rbe_cron' );
+		// cron - only run on the root blog and if WP cron is not active
+		if ( bp_is_root_blog() && ! defined( 'DOING_CRON' ) ) {
+			add_action( 'init', 'bp_rbe_should_connect',     20 );
+			add_action( 'init', 'bp_rbe_run_inbox_listener', 999 );
+		}
 
 		// email inbox parsing
 		/**

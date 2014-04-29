@@ -118,13 +118,13 @@ function bp_rbe_is_inbound() {
  * @since 1.0-beta
  */
 function bp_rbe_is_connected() {
-	$is_connected = bp_get_option( 'bp_rbe_is_connected' );
+	$is_connected = get_site_transient( 'bp_rbe_is_connected' );
 
-	if ( ! empty( $is_connected ) ) {
-		return true;
+	if ( false === $is_connected ) {
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 /**
@@ -136,20 +136,20 @@ function bp_rbe_is_connected() {
  * @since 1.0-RC1
  */
 function bp_rbe_cleanup() {
-	// clear RBE's scheduled hook
-	wp_clear_scheduled_hook( 'bp_rbe_schedule' );
-
 	// remove remnants from any previous failed attempts to stop the inbox
 	bp_rbe_should_stop();
 
-	// clear RBE's connected marker
-	bp_delete_option( 'bp_rbe_is_connected' );
-
-	// clear connecting lock if available
+	// clear RBE's connected markers
+	delete_site_transient( 'bp_rbe_is_connected' );
 	delete_site_transient( 'bp_rbe_lock' );
 
-	// update RBE's spawn cron so we spawn cron on the next user visit
-	bp_update_option( 'bp_rbe_spawn_cron', 1 );
+	// we don't use these options anymore
+	bp_delete_option( 'bp_rbe_spawn_cron' );
+	bp_delete_option( 'bp_rbe_is_connected' );
+
+	// we don't use WP's cron feature anymore, but we clear RBE's old scheduled
+	// hook just in case
+	wp_clear_scheduled_hook( 'bp_rbe_schedule' );
 }
 
 /**
@@ -1251,61 +1251,69 @@ function bp_rbe_new_topic_info() {
 /** Cron ****************************************************************/
 
 /**
- * Add custom cron schedule to WP
+ * See if we should connect to the IMAP inbox.
  *
- * @since 1.0-beta
- */
-function bp_rbe_custom_cron_schedule( $schedules ) {
-
-	$schedules['bp_rbe_custom'] = array(
-		'interval' => bp_rbe_get_execution_time(), // interval in seconds
-		'display'  => sprintf( __( 'Every %s minutes', 'bp-rbe' ), bp_rbe_get_execution_time( 'minutes' ) )
-	);
-
-	return $schedules;
-}
-
-/**
- * Schedule our task
+ * If we need to connect, we add a hook to spawn an inbox check on the
+ * 'shutdown' action.
  *
- * @since 1.0-beta
+ * @since 1.0-RC3
+ *
+ * @see bp_rbe_spawn_inbox_check()
  */
-function bp_rbe_cron() {
-	if ( ! wp_next_scheduled( 'bp_rbe_schedule' ) )
-		wp_schedule_event( time(), 'bp_rbe_custom', 'bp_rbe_schedule' );
-
-	// if we need to spawn cron, do it here
-	// @see BP_Reply_By_Email_IMAP::run()
-	if ( bp_get_option( 'bp_rbe_spawn_cron' ) ) {
-		// manually spawn cron
-		spawn_cron();
-
-		// remove our DB marker
-		bp_delete_option( 'bp_rbe_spawn_cron' );
+function bp_rbe_should_connect() {
+	// check to see if we're connected via our DB marker
+	if ( ! bp_rbe_is_connected() ) {
+		if ( false === get_site_transient( 'bp_rbe_lock' ) ) {
+			add_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
+		}
 	}
 }
 
 /**
- * Run scheduled task action set in {@link bp_rbe_cron()}
+ * Send a request to check the IMAP inbox.
  *
- * @uses BP_Reply_By_Email_IMAP::init()
- * @uses bp_rbe_is_connected()
- * @since 1.0-beta
+ * @since 1.0-RC3
+ *
+ * @see bp_rbe_run_inbox_listener()
  */
-function bp_rbe_check_imap_inbox() {
+function bp_rbe_spawn_inbox_check() {
+	wp_remote_post( home_url( '/?bp-rbe-ping' ), array(
+		'blocking'  => false,
+		'sslverify' => false,
+		'timeout'   => 0.01,
+		'body'      => array(
+			'_bp_rbe_check' => 1
+		)
+	) );
+}
 
-	// check to see if we're connected via our DB marker
-	if ( bp_rbe_is_connected() ) {
-		bp_rbe_log( '--- Cronjob wants to connect - however according to our DB indicator, we already have an active IMAP connection! ---' );
+/**
+ * Listens to requests to check the IMAP inbox.
+ *
+ * If a POST request is made to check the IMAP inbox, RBE will actually
+ * process this request in this function.  We also make sure that WP-cron is
+ * running before pinging the IMAP inbox.
+ *
+ * @since 1.0-RC3
+ *
+ * @see bp_rbe_spawn_inbox_check()
+ */
+function bp_rbe_run_inbox_listener() {
+	if ( empty( $_POST['_bp_rbe_check'] ) ) {
+		return;
+	}
 
-		// hook to do some checks if connected
-		do_action( 'bp_rbe_log_already_connected' );
+	// make sure WP-cron isn't running
+	if ( defined( 'DOING_CRON' ) || isset( $_GET['doing_wp_cron'] ) ) {
 		return;
 	}
 
 	// run our inbox check
 	$imap = BP_Reply_By_Email_IMAP::init();
 	$imap->run();
+
+	// kill the rest of this page
+	die();
 }
 
 /**
