@@ -240,43 +240,41 @@ function bp_rbe_inject_qs_in_email( $qs ) {
  * @since 1.0-beta
  */
 function bp_rbe_encode( $args = array() ) {
-	$defaults = array (
+	$r = wp_parse_args( $args, array (
  		'string' => false,                       // the content we want to encode
  		'key'    => bp_rbe_get_setting( 'key' ), // the key used to aid in encryption; defaults to the key set in the admin area
  		'param'  => false,                       // the string we want to prepend to the key; handy to set different keys
  		'mode'   => 'aes',                       // mode of encryption; defaults to 'aes'
-	);
+	) );
 
-	$args = wp_parse_args( $args, $defaults );
-
-	extract( $args );
-
-	if ( empty( $string ) || empty( $key ) )
+	if ( empty( $r['string'] ) || empty( $r['key'] ) ) {
 		return false;
+	}
 
-	if ( $param )
-		$key = $param . $key;
+	if ( $r['param'] ) {
+		$r['key'] = $r['param'] . $r['key'];
+	}
 
 	$encrypt = false;
 
 	// default mode is AES
 	// you can override this with the filter below to prevent the AES library from loading
 	// to modify the return value, use the 'bp_rbe_encode' filter
-	$mode = apply_filters( 'bp_rbe_encode_mode', $mode );
+	$r['mode'] = apply_filters( 'bp_rbe_encode_mode', $r['mode'] );
 
-	if ( $mode == 'aes' ) {
+	if ( 'aes' == $r['mode'] ) {
 		if ( ! class_exists( 'Crypt_AES' ) ) {
 			require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
 		}
 
 		$cipher = new Crypt_AES();
-		$cipher->setKey( $key );
+		$cipher->setKey( $r['key'] );
 
 		// converts AES binary string to hexadecimal
-		$encrypt = bin2hex( $cipher->encrypt( $string ) );
+		$encrypt = bin2hex( $cipher->encrypt( $r['string'] ) );
 	}
 
-	return apply_filters( 'bp_rbe_encode', $encrypt, $string, $mode, $key, $param );
+	return apply_filters( 'bp_rbe_encode', $encrypt, $r['string'], $r['mode'], $r['key'], $r['param'] );
 }
 
 /**
@@ -292,43 +290,41 @@ function bp_rbe_encode( $args = array() ) {
  * @since 1.0-beta
  */
 function bp_rbe_decode( $args = array() ) {
-	$defaults = array (
+	$r = wp_parse_args( $args, array (
  		'string' => false,                       // the encoded string we want to dencode
  		'key'    => bp_rbe_get_setting( 'key' ), // the key used to aid in encryption; defaults to the key set in the admin area
  		'param'  => false,                       // the string we want to prepend to the key; handy to set different keys
  		'mode'   => 'aes',                       // mode of decryption; defaults to 'aes'
-	);
+	) );
 
-	$args = wp_parse_args( $args, $defaults );
-
-	extract( $args );
-
-	if ( empty( $string ) || empty( $key ) )
+	if ( empty( $r['string'] ) || empty( $r['key'] ) ) {
 		return false;
+	}
 
-	if ( $param )
-		$key = $param . $key;
+	if ( $r['param'] ) {
+		$r['key'] = $r['param'] . $r['key'];
+	}
 
 	$decrypt = false;
 
 	// default mode is AES
 	// you can override this with the filter below to prevent the AES library from loading
 	// to modify the return value, use the 'bp_rbe_decode' filter
-	$mode = apply_filters( 'bp_rbe_encode_mode', $mode );
+	$r['mode'] = apply_filters( 'bp_rbe_encode_mode', $r['mode'] );
 
-	if ( $mode == 'aes' ) {
+	if ( 'aes' == $r['mode'] ) {
 		if ( ! class_exists( 'Crypt_AES' ) ) {
 			require( BP_RBE_DIR . '/includes/phpseclib/AES.php' );
 		}
 
 		$cipher = new Crypt_AES();
-		$cipher->setKey( $key );
+		$cipher->setKey( $r['key'] );
 
 		// converts hexadecimal AES string back to binary and then decrypts string back to plain-text
-		$decrypt = $cipher->decrypt( hex2bin( $string ) );
+		$decrypt = $cipher->decrypt( hex2bin( $r['string'] ) );
 	}
 
-	return apply_filters( 'bp_rbe_decode', $decrypt, $string, $mode, $key, $param );
+	return apply_filters( 'bp_rbe_decode', $decrypt, $r['string'], $r['mode'], $r['key'], $r['param'] );
 }
 
 if ( ! function_exists( 'hex2bin' ) ) :
