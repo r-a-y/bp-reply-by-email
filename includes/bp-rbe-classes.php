@@ -367,6 +367,15 @@ class BP_Reply_By_Email_IMAP {
 			bp_rbe_log( '--- Invalid connection during close time ---' );
 		}
 
+		// autoconnect is off
+		if ( 1 !== (int) bp_rbe_get_setting( 'keepaliveauto', array( 'refetch' => true ) ) ) {
+			remove_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
+
+		// sleep a bit before autoconnecting again
+		} else {
+			sleep( 5 );
+		}
+
 		exit();
 	}
 

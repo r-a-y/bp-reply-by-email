@@ -277,6 +277,13 @@ class BP_Reply_By_Email_Admin {
 			$output['keepalive'] = $input['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
 		}
 
+		// automatically reconnect after keep-alive limit
+		if ( ! empty( $input['keepaliveauto'] ) ) {
+			$output['keepaliveauto'] = 1;
+		} else {
+			$output['keepaliveauto'] = 0;
+		}
+
 		// do a quick imap check if we have valid credentials to check
 		if ( $output['mode'] == 'imap' && ! empty( $output['servername'] ) && ! empty( $output['port'] ) && ! empty( $output['username'] ) && ! empty( $output['password'] ) ) {
 			if ( function_exists( 'imap_open' ) ) {
@@ -468,6 +475,14 @@ class BP_Reply_By_Email_Admin {
 							'labelname' => __( 'Keep Alive Connection *', 'bp-rbe' ),
 							'desc'      => sprintf( __( 'The length in minutes to stay connected to your inbox. Due to <a href="%s" target="_blank">RFC 2177 protocol</a>, this value cannot be larger than 29. If this value is changed, this will take effect on the next scheduled update.', 'bp-rbe' ), 'http://tools.ietf.org/html/rfc2177#page-2' ),
 							'size'      => 'small'
+						) ) ?>
+
+					<?php $this->render_field(
+						array(
+							'type'      => 'checkbox',
+							'name'      => 'keepaliveauto',
+							'labelname' => __( 'Automatically reconnect?', 'bp-rbe' ),
+							'desc'      => __( 'When checked, after the keep-alive limit completes, RBE can automatically reconnect to the inbox.  If unchecked, a user will need to be active on the site after the keep-alive limit expires for RBE to reconnect. If this value is changed, this will take effect on the next scheduled update.', 'bp-rbe' ),
 						) ) ?>
 					</table>
 				</div>
