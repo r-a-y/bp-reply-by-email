@@ -789,5 +789,3 @@ class BP_Reply_By_Email_Admin {
 		return plugin_basename( constant( 'BP_RBE_DIR' ) );
 	}
 }
-
-?>

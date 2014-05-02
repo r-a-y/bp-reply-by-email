@@ -79,4 +79,3 @@ endif;
 
 // activity comment permalink
 add_filter( 'bp_activity_permalink',                    'bp_rbe_activity_comment_view_link', 10, 2 );
-?>

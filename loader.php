@@ -118,5 +118,3 @@ function bp_rbe_default_extensions() {
 	}
 }
 add_action( 'bp_include', 'bp_rbe_default_extensions', 20 );
-
-?>

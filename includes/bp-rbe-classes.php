@@ -1549,5 +1549,3 @@ abstract class BP_Reply_By_Email_Extension {
 	}
 
 }
-
-?>

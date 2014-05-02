@@ -687,5 +687,3 @@ class BP_Reply_By_Email {
 		return $retval;
 	}
 }
-
-?>
