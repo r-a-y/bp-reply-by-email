@@ -690,13 +690,13 @@ class BP_Reply_By_Email_Admin {
 				<select id="<?php $this->field( $r['name'], true ) ?>" name="<?php $this->field( $r['name'] ) ?>">
 					<?php
 						foreach ( $r['options'] as $key => $option ) {
-							echo '<option value="' . $key .'"';
+							echo '<option value="' . esc_attr( $key ) .'"';
 
 							if ( $selected == $key ) {
 								echo ' selected="selected"';
 							}
 
-							echo '>' . $option . '</option>';
+							echo '>' . esc_html( $option ) . '</option>';
 						}
 					?>
 				</select>
