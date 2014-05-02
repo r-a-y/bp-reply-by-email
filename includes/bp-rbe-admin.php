@@ -570,20 +570,27 @@ class BP_Reply_By_Email_Admin {
 	 * If certain conditions for the webhost are not met, these warnings will be displayed on the admin page.
 	 */
 	protected function webhost_warnings() {
+		if ( ! bp_rbe_is_inbound() ) {
+			return;
+		}
+
 		$warnings = array();
 
-		if ( !function_exists( 'imap_open' ) )
+		if ( ! function_exists( 'imap_open' ) ) {
 			$warnings[] = __( 'IMAP extension for PHP is <strong>disabled</strong>.  This plugin will not run without it.  Please contact your webhost to enable this.', 'bp-rbe' );
+		}
 
-		if ( ini_get('safe_mode') )
+		if ( ini_get('safe_mode') ) {
 			$warnings[] = sprintf( __( 'PHP Safe Mode is <strong>on</strong>.  This is not a dealbreaker, but this means you cannot set the Keep Alive Connection value larger than %d minutes.', 'bp-rbe' ), bp_rbe_get_execution_time( 'minutes' ) );
+		}
 
-		if ( !empty( $warnings ) )
+		if ( ! empty( $warnings ) ) {
 			echo '<h3>' . __( 'Webhost Warnings', 'bp-rbe' ) . '</h3>';
+		}
 
-		foreach ( $warnings as $warning ) :
+		foreach ( $warnings as $warning ) {
 			echo '<div class="error"><p>' . $warning . '</p></div>';
-		endforeach;
+		}
 	}
 
 	/**
