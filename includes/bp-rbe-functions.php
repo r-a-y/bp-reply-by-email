@@ -473,6 +473,16 @@ function bp_rbe_tail( $filename, $lines_to_display ) {
  * @since 1.0-RC3
  */
 function bp_rbe_inbound_catch_callback() {
+	if ( empty( $_POST ) ) {
+		return;
+	}
+
+	global $bp_rbe;
+
+	// setup the webhook parser
+	if ( is_callable( array( $bp_rbe->inbound_provider, 'webhook_parser' ) ) ) {
+		call_user_func( array( $bp_rbe->inbound_provider, 'webhook_parser' ) );
+	}
 }
 
 /**

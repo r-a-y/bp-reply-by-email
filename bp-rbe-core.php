@@ -18,6 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class BP_Reply_By_Email {
 
 	/**
+	 * @var object Inbound provider loader. Defaults to boolean false.
+	 */
+	public $inbound_provider = false;
+
+	/**
 	 * Initializes the class when called upon.
 	 */
 	public function init() {
@@ -48,9 +53,14 @@ class BP_Reply_By_Email {
 			return;
 		}
 
-		/** Hooks ********************************************************/
+		/** Post-requirements routine ************************************/
 
-		// requirements are fulfilled! load the hooks!
+		// load inbound provider
+		if ( bp_rbe_is_inbound() ) {
+			$this->load_inbound_provider();
+		}
+
+		// load the hooks!
 		$this->hooks();
 	}
 
@@ -154,6 +164,48 @@ class BP_Reply_By_Email {
 		<div id="message" class="error"><p><?php _e( 'BuddyPress Reply By Email cannot initialize.  Please navigate to "BuddyPress > Reply By Email" to fill in the required fields and address the webhost warnings.', 'bp-rbe' ) ?></p></div>
 	<?php
 	}
+
+	/** INBOUND-RELATED ***********************************************/
+
+	/**
+	 * Load inbound provider.
+	 *
+	 * @since 1.0-RC3
+	 */
+	protected function load_inbound_provider() {
+		$selected = bp_rbe_get_setting( 'inbound-provider' );
+
+		// default to mandrill if no provider specified
+		if ( empty( $selected ) ) {
+			$selected = 'mandrill';
+		}
+
+		$providers = self::get_inbound_providers();
+
+		if ( isset( $providers[$selected] ) && class_exists( $providers[$selected] ) ) {
+			$this->inbound_provider =  new $providers[$selected];
+		}
+	}
+
+	/**
+	 * Get inbound providers.
+	 *
+	 * @since 1.0-RC3
+	 *
+	 * @return array Key/value pairs (inbound provider name => class name)
+	 */
+	public static function get_inbound_providers() {
+		$default = array(
+			'mandrill' => 'BP_Reply_By_Email_Inbound_Provider_Mandrill'
+		);
+
+		// If you've added a custom inbound provider, register it with this filter
+		$third_party_providers = apply_filters( 'bp_rbe_register_inbound_providers', array() );
+
+		return $default + (array) $third_party_providers;
+	}
+
+	/** EMAIL-HOOK RELATED ********************************************/
 
 	/**
 	 * Adds "Reply-To" to email headers in {@link wp_mail()}.
