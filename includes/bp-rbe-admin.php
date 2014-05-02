@@ -213,8 +213,12 @@ class BP_Reply_By_Email_Admin {
 		}
 
 		/** INBOUND-related ***************************************************/
-		$inbound_domain = wp_filter_nohtml_kses( $input['inbound-domain'] );
+		$inbound_provider = wp_filter_nohtml_kses( $input['inbound-provider'] );
+		if ( ! empty( $inbound_provider ) ) {
+			$output['inbound-provider'] = $inbound_provider;
+		}
 
+		$inbound_domain = wp_filter_nohtml_kses( $input['inbound-domain'] );
 		if ( ! empty( $inbound_domain ) ) {
 			$output['inbound-domain'] = $inbound_domain;
 		}
@@ -380,6 +384,19 @@ class BP_Reply_By_Email_Admin {
 
 				<div class="inbound-options">
 					<table class="form-table">
+					<?php $this->render_field(
+						array(
+							'type'      => 'select',
+							'name'      => 'inbound-provider',
+							'labelname' => __( 'Provider', 'bp-rbe' ),
+							'desc'      => sprintf(
+								__( 'Choose an inbound provider.  Make sure that you have set up an account with this provider and configured it properly.  By default, <a href="%s">Mandrill</a> is supported.', 'bp-rbe' ),
+								'https://github.com/r-a-y/bp-reply-by-email/wiki/Mandrill'
+							),
+							'options'   => $this->get_inbound_providers(),
+							'default'   => 'mandrill',
+						) ) ?>
+
 					<?php $this->render_field( array(
 							'name'      => 'inbound-domain',
 							'labelname' => __( 'Inbound Domain *', 'bp-rbe' ),
@@ -582,6 +599,30 @@ class BP_Reply_By_Email_Admin {
 
 	<?php
 		endif;
+	}
+
+	/**
+	 * Get an array of available inbound providers.
+	 *
+	 * @since 1.0-RC3
+	 *
+	 * @return array Key/value pairs (provider internal name => provider display name)
+	 */
+	protected function get_inbound_providers() {
+		$retval = array();
+
+		foreach ( BP_Reply_By_Email::get_inbound_providers() as $provider => $class ) {
+			$prop = new ReflectionProperty( $class, 'name' );
+			if ( $prop->isStatic() ) {
+				$retval[$provider] = $class::$name;
+			} else {
+				$retval[$provider] = ucfirst( $provider );
+			}
+		}
+
+		unset( $prop, $provider, $class );
+
+		return $retval;
 	}
 
 	/**

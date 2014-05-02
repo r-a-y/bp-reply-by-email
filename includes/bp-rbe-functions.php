@@ -29,7 +29,7 @@ function bp_rbe_is_required_completed( $settings = false ) {
 
 	// inbound mode requirements
 	if( isset( $settings['mode'] ) && $settings['mode'] == 'inbound' ) {
-		$required_key = array( 'inbound-domain', 'key' );
+		$required_key = array( 'inbound-domain', 'inbound-provider' );
 
 	// imap mode requirements
 	} else {
