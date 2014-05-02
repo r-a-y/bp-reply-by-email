@@ -207,6 +207,15 @@ class BP_Reply_By_Email_Admin {
 
 		$output['mode'] = wp_filter_nohtml_kses( $input['mode'] );
 
+		// switching from IMAP to inbound email mode
+		if ( 'inbound' == $output['mode'] && 'imap' == bp_rbe_get_setting( 'mode' ) ) {
+			// stop RBE if still connected via IMAP
+			if ( bp_rbe_is_connected() ) {
+				bp_rbe_stop_imap();
+			}
+			bp_rbe_log( '- Operating mode switched to inbound -' );
+		}
+
 		// check if key is alphanumeric
 		if ( ctype_alnum( $input['key'] ) ) {
 			$output['key'] = $input['key'];
