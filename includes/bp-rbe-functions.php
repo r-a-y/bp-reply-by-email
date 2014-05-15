@@ -526,7 +526,13 @@ function bp_rbe_activity_comment_action_filter( $user_id ) {
  */
 function bp_rbe_activity_comment_view_link( $link, $activity ) {
 	if ( $activity->type == 'activity_comment' ) {
-		$action = apply_filters_ref_array( 'bp_get_activity_action_pre_meta', array( $activity->action, &$activity ) );
+		$action = apply_filters_ref_array( 'bp_get_activity_action_pre_meta', array(
+			$activity->action,
+			&$activity,
+			array(
+				'no_timestamp' => false,
+			)
+		) );
 
 		$time_since = apply_filters_ref_array( 'bp_activity_time_since', array( '<span class="time-since">' . bp_core_time_since( $activity->date_recorded ) . '</span>', &$activity ) );
 
