@@ -114,17 +114,45 @@ function bp_rbe_is_inbound() {
  * To check if we're connected, a DB entry is updated in {@link BP_Reply_By_Email_IMAP::connect()}
  * and in {@link BP_Reply_By_Email_IMAP::close()}.
  *
- * @return bool
  * @since 1.0-beta
+ *
+ * @return bool
  */
 function bp_rbe_is_connected() {
-	$is_connected = get_site_transient( 'bp_rbe_is_connected' );
+	$is_connected = bp_get_option( 'bp_rbe_is_connected' );
 
-	if ( false === $is_connected ) {
+	// no timestamp saved in the DB
+	if ( false === (bool) $is_connected ) {
 		return false;
 	}
 
-	return true;
+	// we have an existing timestamp; do checks against current time
+	//
+	// we're connected - add 10 second leeway
+	if ( time() < $is_connected + 10 ) {
+		return true;
+
+	// server must have crashed if we're at this point
+	} else {
+		return false;
+	}
+}
+
+/**
+ * Check if we're in the process of connecting to the IMAP inbox.
+ *
+ * If we're already attempting a connection to the inbox, bail.
+ *
+ * @since 1.0-RC3
+ *
+ * @return bool
+ */
+function bp_rbe_is_connecting() {
+	if ( $lock = bp_get_option( 'bp_rbe_lock' ) && time() < $lock ) {
+		return true;
+	}
+
+	return false;
 }
 
 /**
@@ -140,12 +168,13 @@ function bp_rbe_cleanup() {
 	bp_rbe_should_stop();
 
 	// clear RBE's connected markers
-	delete_site_transient( 'bp_rbe_is_connected' );
-	delete_site_transient( 'bp_rbe_lock' );
+	bp_delete_option( 'bp_rbe_is_connected' );
+	bp_delete_option( 'bp_rbe_lock' );
 
 	// we don't use these options anymore
 	bp_delete_option( 'bp_rbe_spawn_cron' );
-	bp_delete_option( 'bp_rbe_is_connected' );
+	delete_site_transient( 'bp_rbe_is_connected' );
+	delete_site_transient( 'bp_rbe_lock' );
 
 	// we don't use WP's cron feature anymore, but we clear RBE's old scheduled
 	// hook just in case
@@ -1280,7 +1309,7 @@ function bp_rbe_new_topic_info() {
 function bp_rbe_should_connect() {
 	// check to see if we're connected via our DB marker
 	if ( ! bp_rbe_is_connected() ) {
-		if ( false === get_site_transient( 'bp_rbe_lock' ) ) {
+		if ( ! bp_rbe_is_connecting() ) {
 			add_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
 		}
 	}

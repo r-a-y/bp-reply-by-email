@@ -240,7 +240,7 @@ class BP_Reply_By_Email_IMAP {
 		$connect = $this->connect();
 
 		if ( ! $connect ) {
-			delete_site_transient( 'bp_rbe_lock' );
+			bp_delete_option( 'bp_rbe_lock' );
 			return false;
 		}
 
@@ -298,7 +298,7 @@ class BP_Reply_By_Email_IMAP {
 						//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, $parser->get_error_code() );
 						do_action( 'bp_rbe_no_match', $parser, $data, $i, $connection );
 					}
-					
+
 					// do something during the loop
 					// we mark the message for deletion here via this hook
 					do_action( 'bp_rbe_imap_loop', $this->connection, $i );
@@ -331,17 +331,20 @@ class BP_Reply_By_Email_IMAP {
 			if( ! imap_ping( $this->connection ) ) {
 				bp_rbe_log( '-- IMAP connection is down, attempting to reconnect... --' );
 
-				// check if we're already attemtping to connect
+				if ( ! wp_using_ext_object_cache() ) {
+					wp_cache_flush();
+				}
+
+				// check if we're already attempting to connect
 				// another precaution
-				if ( (int) get_site_transient( 'bp_rbe_lock' ) == 1 ) {
+				if ( bp_rbe_is_connecting() ) {
 					bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
 					continue;
 				}
 
 				// add lock marker before connecting
-				// transient expires after 60 second timeout, which should be enough time to
-				// connect to the IMAP server
-				set_site_transient( 'bp_rbe_lock', 1, 60 );
+				// add 60 second timeout, which should be enough time to connect
+				bp_update_option( 'bp_rbe_lock', time() + 60 );
 
 				// attempt to reconnect
 				$reopen = BP_Reply_By_Email_Connect::init( array( 'reconnect' => true ), $this->connection );
@@ -396,15 +399,14 @@ class BP_Reply_By_Email_IMAP {
 
 		// check if we're already attemtping to connect
 		// another precaution
-		if ( (int) get_site_transient( 'bp_rbe_lock' ) == 1 ) {
+		if ( bp_rbe_is_connecting() ) {
 			bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
 			return false;
 		}
 
 		// add lock marker before connecting
-		// transient expires after 60 second timeout, which should be enough time to
-		// connect to the IMAP server
-		set_site_transient( 'bp_rbe_lock', 1, 60 );
+		// add 60 second timeout, which should be enough time to connect
+		bp_update_option( 'bp_rbe_lock', time() + 60 );
 
 		// Let's open the IMAP stream!
 		$this->connection = BP_Reply_By_Email_Connect::init();
@@ -416,8 +418,7 @@ class BP_Reply_By_Email_IMAP {
 		}
 
 		// add an entry in the DB to say that we're connected
-		// add 15 second leeway to expiration time to account for any overlaps
-		set_site_transient( 'bp_rbe_is_connected', 1, bp_rbe_get_execution_time() + 15 );
+		bp_update_option( 'bp_rbe_is_connected', time() + bp_rbe_get_execution_time() );
 
 		bp_rbe_log( '--- Connection successful! ---' );
 
@@ -435,7 +436,7 @@ class BP_Reply_By_Email_IMAP {
 
 		if ( $this->is_connected()  ) {
 			@imap_close( $this->connection );
-			delete_site_transient( 'bp_rbe_is_connected' );
+			bp_delete_option( 'bp_rbe_is_connected' );
 			return true;
 		}
 
