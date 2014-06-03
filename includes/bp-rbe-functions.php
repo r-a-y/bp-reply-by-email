@@ -128,8 +128,8 @@ function bp_rbe_is_connected() {
 
 	// we have an existing timestamp; do checks against current time
 	//
-	// we're connected - add 10 second leeway
-	if ( time() < $is_connected + 10 ) {
+	// we're connected - add 15 second leeway
+	if ( time() < $is_connected + 15 ) {
 		return true;
 
 	// server must have crashed if we're at this point
