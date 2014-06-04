@@ -1139,19 +1139,17 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		$to = BP_Reply_By_Email_Parser::get_header( $data['headers'], 'From' );
 
 		if ( ! empty( $to ) ) {
-			global $bp_rbe;
-
 			$sitename = wp_specialchars_decode( get_blog_option( bp_get_root_blog_id(), 'blogname' ), ENT_QUOTES );
 			$subject  = sprintf( __( '[%s] Your Reply By Email message could not be posted', 'bp-rbe' ), $sitename );
 
-			// temporarily remove RBE mail filter
-			remove_filter( 'wp_mail', array( $bp_rbe, 'wp_mail_filter' ) );
+			// temporarily remove RBE mail filter by wiping out email querystring
+			add_filter( 'bp_rbe_querystring', '__return_false' );
 
 			// send email
 			wp_mail( $to, $subject, $message );
 
 			// add it back
-			add_filter( 'wp_mail', array( $bp_rbe, 'wp_mail_filter' ) );
+			remove_filter( 'bp_rbe_querystring', '__return_false' );
 		}
 	}
 }
