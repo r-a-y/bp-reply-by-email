@@ -577,7 +577,8 @@ class BP_Reply_By_Email {
 	public function get_temporary_variables( $retval ) {
 		global $bp;
 
-		$bp->rbe = $bp->rbe->temp = new stdClass;
+		$bp->rbe       = new stdClass;
+		$bp->rbe->temp = new stdClass;
 
 		// we need to temporarily hold the group ID so we can pass it
 		// to $this->group_forum_listener() via $this->set_group_id()
