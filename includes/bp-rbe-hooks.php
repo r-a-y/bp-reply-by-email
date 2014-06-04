@@ -78,4 +78,7 @@ if ( bp_rbe_is_required_completed() ) :
 endif;
 
 // activity comment permalink
-add_filter( 'bp_activity_permalink',                    'bp_rbe_activity_comment_view_link', 10, 2 );
+add_filter( 'bp_activity_permalink',                    'bp_rbe_activity_comment_view_link',         10, 2 );
+
+// activity comment action formatting
+add_filter( 'bp_activity_comment_action',               'bp_rbe_activity_comment_action_formatting', 10, 2 );

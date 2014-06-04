@@ -515,6 +515,28 @@ function bp_rbe_inbound_catch_callback() {
 }
 
 /**
+ * Overrides an activity comment's action formatting.
+ *
+ * If an activity comment was posted via email, this function reformats the
+ * activity action to denote this.
+ *
+ * Only applicable in BuddyPress 2.0+.  Lower versions uses {@link bp_rbe_activity_comment_action()}
+ * instead.
+ *
+ * @since 1.0-RC3
+ *
+ * @param string $retval The current activity comment action string
+ * @param BP_Activity_Activity $activity
+ */
+function bp_rbe_activity_comment_action_formatting( $retval, $activity ) {
+	if ( bp_activity_get_meta( $activity->id, 'bp_rbe' ) ) {
+		$retval = sprintf( __( '%s posted a new activity comment via email:', 'bp-rbe' ), bp_core_get_userlink( $activity->user_id ) );
+	}
+
+	return $retval;
+}
+
+/**
  * Overrides an activity comment's action string.
  *
  * BP doesn't pass the $user_id in the "bp_activity_comment_action" filter.
