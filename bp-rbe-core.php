@@ -280,6 +280,17 @@ class BP_Reply_By_Email {
 				// Don't like this? there's a filter for that!
 				$querystring = apply_filters( 'bp_rbe_encode_querystring', bp_rbe_encode( array( 'string' => $querystring ) ), $querystring );
 
+				// Set the 'Message-Id' header
+				// This is used to enable message threading in email clients
+				if ( ! empty( $listener->reply_to_id ) ) {
+					$reply_to_id = $listener->reply_to_id;
+				} elseif ( ! empty( $listener->secondary_item_id ) ) {
+					$reply_to_id = $listener->secondary_item_id;
+				} else {
+					$reply_to_id = $listener->item_id;
+				}
+				$args['headers'] .= 'Message-ID: <' . md5( $querystring . $reply_to_id ) . '@' . esc_url( $_SERVER['SERVER_NAME'] ) . '>' . PHP_EOL;
+
 				// Inject the querystring into the email address
 				$args['headers'] .= 'Reply-To: ' . bp_rbe_inject_qs_in_email( $querystring ) . PHP_EOL;
 
@@ -349,6 +360,11 @@ class BP_Reply_By_Email {
 				break;
 		}
 
+		// reply-to id fallback
+		if ( empty( $this->listener->reply_to_id ) ) {
+			$this->listener->reply_to_id = ! empty( $this->listener->secondary_item_id ) ? $this->listener->secondary_item_id : $this->listener->item_id;
+		}
+
 	}
 
 	/**
@@ -389,6 +405,9 @@ class BP_Reply_By_Email {
 		// @see BP_Reply_By_Email::get_temporary_variables()
 		// @see BP_Reply_By_Email::set_group_id()
 		$this->listener->secondary_item_id = bp_get_current_group_id();
+
+		// reply-to ID
+		$this->listener->reply_to_id = $post_id;
 	}
 
 	/**
@@ -403,9 +422,10 @@ class BP_Reply_By_Email {
 
 		$this->listener = new stdClass;
 
-		$this->listener->component = $bp->messages->id;
-		$this->listener->item_id   = $item->thread_id;
-		$this->listener->user_id   = $item->sender_id;
+		$this->listener->component   = $bp->messages->id;
+		$this->listener->item_id     = $item->thread_id;
+		$this->listener->user_id     = $item->sender_id;
+		$this->listener->reply_to_id = $item->id;
 	}
 
 	/**
@@ -427,8 +447,9 @@ class BP_Reply_By_Email {
 	public function bbp_listener( $reply_id, $topic_id ) {
 		$this->listener = new stdClass;
 
-		$this->listener->component = 'bbpress';
-		$this->listener->item_id   = $topic_id;
+		$this->listener->component   = 'bbpress';
+		$this->listener->item_id     = $topic_id;
+		$this->listener->reply_to_id = $reply_id;
 	}
 
 	/**
