@@ -145,10 +145,18 @@ function bp_rbe_is_connected() {
  *
  * @since 1.0-RC3
  *
+ * @param int|float The current UNIX timestamp to check
  * @return bool
  */
-function bp_rbe_is_connecting() {
-	if ( $lock = bp_get_option( 'bp_rbe_lock' ) && time() < $lock ) {
+function bp_rbe_is_connecting( $gmt_time = 0 ) {
+	if ( ! $gmt_time ) {
+		$gmt_time = microtime( true );
+	}
+
+	$lock = bp_get_option( 'bp_rbe_lock' );
+
+	// check if we're already attempting to connect
+	if ( $lock + WP_CRON_LOCK_TIMEOUT > $gmt_time ) {
 		return true;
 	}
 

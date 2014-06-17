@@ -335,12 +335,15 @@ class BP_Reply_By_Email_IMAP {
 					wp_cache_flush();
 				}
 
-				// check if we're already attempting to connect
-				// another precaution
-				if ( bp_rbe_is_connecting() ) {
+				$gmt_time = microtime( true );
+
+				if ( bp_rbe_is_connecting( $gmt_time ) ) {
 					bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
-					continue;
+					return continue;
 				}
+
+				// add lock marker before connecting
+				bp_update_option( 'bp_rbe_lock', sprintf( '%.22F', $gmt_time ) );
 
 				// add lock marker before connecting
 				// add 60 second timeout, which should be enough time to connect
@@ -390,23 +393,22 @@ class BP_Reply_By_Email_IMAP {
 	private function connect() {
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
 
+		$gmt_time = microtime( true );
+
+		if ( bp_rbe_is_connecting( $gmt_time ) ) {
+			bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
+			return false;
+		}
+
+		// add lock marker before connecting
+		bp_update_option( 'bp_rbe_lock', sprintf( '%.22F', $gmt_time ) );
+
 		// if our DB marker says we're already connected, stop now!
 		// this is an extra precaution
 		if ( bp_rbe_is_connected() ) {
 			bp_rbe_log( '--- RBE is already connected! ---' );
 			return false;
 		}
-
-		// check if we're already attemtping to connect
-		// another precaution
-		if ( bp_rbe_is_connecting() ) {
-			bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
-			return false;
-		}
-
-		// add lock marker before connecting
-		// add 60 second timeout, which should be enough time to connect
-		bp_update_option( 'bp_rbe_lock', time() + 60 );
 
 		// Let's open the IMAP stream!
 		$this->connection = BP_Reply_By_Email_Connect::init();
