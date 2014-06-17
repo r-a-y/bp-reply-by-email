@@ -345,10 +345,6 @@ class BP_Reply_By_Email_IMAP {
 				// add lock marker before connecting
 				bp_update_option( 'bp_rbe_lock', sprintf( '%.22F', $gmt_time ) );
 
-				// add lock marker before connecting
-				// add 60 second timeout, which should be enough time to connect
-				bp_update_option( 'bp_rbe_lock', time() + 60 );
-
 				// attempt to reconnect
 				$reopen = BP_Reply_By_Email_Connect::init( array( 'reconnect' => true ), $this->connection );
 
