@@ -339,7 +339,7 @@ class BP_Reply_By_Email_IMAP {
 
 				if ( bp_rbe_is_connecting( $gmt_time ) ) {
 					bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
-					return continue;
+					continue;
 				}
 
 				// add lock marker before connecting
