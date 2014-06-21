@@ -156,7 +156,7 @@ function bp_rbe_is_connecting( $gmt_time = 0 ) {
 	$lock = bp_get_option( 'bp_rbe_lock' );
 
 	// check if we're already attempting to connect
-	if ( $lock + WP_CRON_LOCK_TIMEOUT > $gmt_time ) {
+	if ( $gmt_time < $lock + WP_CRON_LOCK_TIMEOUT ) {
 		return true;
 	}
 
@@ -1337,9 +1337,7 @@ function bp_rbe_new_topic_info() {
 function bp_rbe_should_connect() {
 	// check to see if we're connected via our DB marker
 	if ( ! bp_rbe_is_connected() ) {
-		if ( ! bp_rbe_is_connecting() ) {
-			add_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
-		}
+		add_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
 	}
 }
 
@@ -1351,12 +1349,19 @@ function bp_rbe_should_connect() {
  * @see bp_rbe_run_inbox_listener()
  */
 function bp_rbe_spawn_inbox_check() {
+	$gmt_time = microtime( true );
+
+	if ( bp_rbe_is_connecting( $gmt_time ) ) {
+		return;
+	}
+
 	wp_remote_post( home_url( '/?bp-rbe-ping' ), array(
 		'blocking'  => false,
 		'sslverify' => false,
 		'timeout'   => 0.01,
 		'body'      => array(
-			'_bp_rbe_check' => 1
+			'_bp_rbe_check' => 1,
+			'_bp_rbe_timestamp' => $gmt_time,
 		)
 	) );
 }
@@ -1379,6 +1384,12 @@ function bp_rbe_run_inbox_listener() {
 
 	// make sure WP-cron isn't running
 	if ( defined( 'DOING_CRON' ) || isset( $_GET['doing_wp_cron'] ) ) {
+		return;
+	}
+
+	$gmt_time = $_POST['_bp_rbe_timestamp'];
+
+	if ( bp_rbe_is_connecting( $gmt_time ) ) {
 		return;
 	}
 

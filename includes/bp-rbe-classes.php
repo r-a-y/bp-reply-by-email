@@ -389,15 +389,12 @@ class BP_Reply_By_Email_IMAP {
 	private function connect() {
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
 
-		$gmt_time = microtime( true );
+		$gmt_time = ! empty( $_POST['_bp_rbe_timestamp'] ) ? $_POST['_bp_rbe_timestamp'] : microtime( true );
 
 		if ( bp_rbe_is_connecting( $gmt_time ) ) {
 			bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
 			return false;
 		}
-
-		// add lock marker before connecting
-		bp_update_option( 'bp_rbe_lock', sprintf( '%.22F', $gmt_time ) );
 
 		// if our DB marker says we're already connected, stop now!
 		// this is an extra precaution
@@ -405,6 +402,9 @@ class BP_Reply_By_Email_IMAP {
 			bp_rbe_log( '--- RBE is already connected! ---' );
 			return false;
 		}
+
+		// add lock marker before connecting
+		bp_update_option( 'bp_rbe_lock', sprintf( '%.22F', $gmt_time ) );
 
 		// Let's open the IMAP stream!
 		$this->connection = BP_Reply_By_Email_Connect::init();
