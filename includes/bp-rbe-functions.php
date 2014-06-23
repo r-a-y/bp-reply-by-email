@@ -138,30 +138,44 @@ function bp_rbe_is_connected() {
 	}
 }
 
+if ( ! function_exists( 'bp_rbe_is_connecting' ) ) :
 /**
  * Check if we're in the process of connecting to the IMAP inbox.
  *
  * If we're already attempting a connection to the inbox, bail.
  *
+ * Uses the filesystem.  Function is pluggable, so redeclare this function if
+ * you want to use another method (eg. memcached).
+ *
  * @since 1.0-RC3
  *
- * @param int|float The current UNIX timestamp to check
+ * @see bp_rbe_add_imap_lock()
+ * @see bp_rbe_remove_imap_lock()
+ * @see bp_rbe_should_stop()
+ * @see bp_rbe_stop_imap()
+ * @param array
  * @return bool
  */
-function bp_rbe_is_connecting( $gmt_time = 0 ) {
-	if ( ! $gmt_time ) {
-		$gmt_time = microtime( true );
+function bp_rbe_is_connecting( $args = array() ) {
+	$r = wp_parse_args( $args, array(
+		'clearcache' => false,
+	) );
+
+	if ( true == $r['clearcache'] ) {
+		clearstatcache();
 	}
 
-	$lock = bp_get_option( 'bp_rbe_lock' );
-
-	// check if we're already attempting to connect
-	if ( $gmt_time < $lock + WP_CRON_LOCK_TIMEOUT ) {
-		return true;
+	$lockfile = bp_core_avatar_upload_path() . '/bp-rbe-lock.txt';
+	if ( file_exists( $lockfile ) ) {
+		// check if we're already attempting to connect
+		if ( time() <= filemtime( $lockfile ) + WP_CRON_LOCK_TIMEOUT ) {
+			return true;
+		}
 	}
 
 	return false;
 }
+endif;
 
 /**
  * Cleanup RBE.
@@ -174,13 +188,14 @@ function bp_rbe_is_connecting( $gmt_time = 0 ) {
 function bp_rbe_cleanup() {
 	// remove remnants from any previous failed attempts to stop the inbox
 	bp_rbe_should_stop();
+	bp_rbe_remove_imap_lock();
 
 	// clear RBE's connected markers
 	bp_delete_option( 'bp_rbe_is_connected' );
-	bp_delete_option( 'bp_rbe_lock' );
 
 	// we don't use these options anymore
 	bp_delete_option( 'bp_rbe_spawn_cron' );
+	bp_delete_option( 'bp_rbe_lock' );
 	delete_site_transient( 'bp_rbe_is_connected' );
 	delete_site_transient( 'bp_rbe_lock' );
 
@@ -1349,9 +1364,7 @@ function bp_rbe_should_connect() {
  * @see bp_rbe_run_inbox_listener()
  */
 function bp_rbe_spawn_inbox_check() {
-	$gmt_time = microtime( true );
-
-	if ( bp_rbe_is_connecting( $gmt_time ) ) {
+	if ( bp_rbe_is_connecting( array( 'clearcache' => true ) ) ) {
 		return;
 	}
 
@@ -1360,8 +1373,7 @@ function bp_rbe_spawn_inbox_check() {
 		'sslverify' => false,
 		'timeout'   => 0.01,
 		'body'      => array(
-			'_bp_rbe_check' => 1,
-			'_bp_rbe_timestamp' => $gmt_time,
+			'_bp_rbe_check' => 1
 		)
 	) );
 }
@@ -1387,11 +1399,11 @@ function bp_rbe_run_inbox_listener() {
 		return;
 	}
 
-	$gmt_time = $_POST['_bp_rbe_timestamp'];
-
-	if ( bp_rbe_is_connecting( $gmt_time ) ) {
+	if ( bp_rbe_is_connecting( array( 'clearcache' => true ) ) ) {
 		return;
 	}
+
+	bp_rbe_add_imap_lock();
 
 	// run our inbox check
 	$imap = BP_Reply_By_Email_IMAP::init();
@@ -1401,6 +1413,7 @@ function bp_rbe_run_inbox_listener() {
 	die();
 }
 
+if ( ! function_exists( 'bp_rbe_stop_imap' ) ) :
 /**
  * Poor man's daemon stopper.
  *
@@ -1413,11 +1426,14 @@ function bp_rbe_run_inbox_listener() {
 function bp_rbe_stop_imap() {
 	touch( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' );
 }
+endif;
 
+if ( ! function_exists( 'bp_rbe_should_stop' ) ) :
 /**
- * Returns true when the main IMAP loop should finally stop in our version of a poor man's daemon.
+ * Returns true when the main IMAP loop should finally stop.
  *
- * Info taken from Christopher Nadeau's post - {@link http://devlog.info/2010/03/07/creating-daemons-in-php/#lphp-4}.
+ * Uses a poor man's daemon.  Info taken from Christopher Nadeau's post -
+ * {@link http://devlog.info/2010/03/07/creating-daemons-in-php/#lphp-4}.
  *
  * @see bp_rbe_stop_imap()
  * @uses clearstatcache() Clear stat cache. Needed when using file_exists() in a script like this.
@@ -1429,12 +1445,49 @@ function bp_rbe_should_stop() {
 	clearstatcache();
 
 	if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ) ) {
-		unlink( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' ); // delete the file for next time
+		// delete the file for next time
+		unlink( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' );
 		return true;
 	}
 
 	return false;
 }
+endif;
+
+if ( ! function_exists( 'bp_rbe_add_imap_lock' ) ) :
+/**
+ * Add IMAP lock before connecting to inbox.
+ *
+ * The lock uses the filesystem by default.  Function is pluggable.  Handy if
+ * you want to override the current system. (eg. using memcached instead.)
+ *
+ * Lock is checked in [@link bp_rbe_is_connecting()}.
+ *
+ * @since 1.0-RC3
+ *
+ * @uses touch() Sets or modifies time of file
+ */
+function bp_rbe_add_imap_lock() {
+	touch( bp_core_avatar_upload_path() . '/bp-rbe-lock.txt' );
+}
+endif;
+
+if ( ! function_exists( 'bp_rbe_remove_imap_lock' ) ) :
+/**
+ * Remove IMAP lock file.
+ *
+ * @since 1.0-RC3
+ *
+ * @see bp_rbe_add_imap_lock()
+ */
+function bp_rbe_remove_imap_lock() {
+	clearstatcache();
+
+	if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-lock.txt' ) ) {
+		unlink( bp_core_avatar_upload_path() . '/bp-rbe-lock.txt' );
+	}
+}
+endif;
 
 /** Modified BP functions ***********************************************/
 

@@ -240,7 +240,6 @@ class BP_Reply_By_Email_IMAP {
 		$connect = $this->connect();
 
 		if ( ! $connect ) {
-			bp_delete_option( 'bp_rbe_lock' );
 			return false;
 		}
 
@@ -331,19 +330,13 @@ class BP_Reply_By_Email_IMAP {
 			if( ! imap_ping( $this->connection ) ) {
 				bp_rbe_log( '-- IMAP connection is down, attempting to reconnect... --' );
 
-				if ( ! wp_using_ext_object_cache() ) {
-					wp_cache_flush();
-				}
-
-				$gmt_time = microtime( true );
-
-				if ( bp_rbe_is_connecting( $gmt_time ) ) {
+				if ( bp_rbe_is_connecting( array( 'clearcache' => true ) ) ) {
 					bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
 					continue;
 				}
 
 				// add lock marker before connecting
-				bp_update_option( 'bp_rbe_lock', sprintf( '%.22F', $gmt_time ) );
+				bp_rbe_add_imap_lock();
 
 				// attempt to reconnect
 				$reopen = BP_Reply_By_Email_Connect::init( array( 'reconnect' => true ), $this->connection );
@@ -389,13 +382,6 @@ class BP_Reply_By_Email_IMAP {
 	private function connect() {
 		bp_rbe_log( '--- Attempting to start new connection... ---' );
 
-		$gmt_time = ! empty( $_POST['_bp_rbe_timestamp'] ) ? $_POST['_bp_rbe_timestamp'] : microtime( true );
-
-		if ( bp_rbe_is_connecting( $gmt_time ) ) {
-			bp_rbe_log( '--- RBE is already attempting to connect - stopping connection attempt ---' );
-			return false;
-		}
-
 		// if our DB marker says we're already connected, stop now!
 		// this is an extra precaution
 		if ( bp_rbe_is_connected() ) {
@@ -403,15 +389,13 @@ class BP_Reply_By_Email_IMAP {
 			return false;
 		}
 
-		// add lock marker before connecting
-		bp_update_option( 'bp_rbe_lock', sprintf( '%.22F', $gmt_time ) );
-
 		// Let's open the IMAP stream!
 		$this->connection = BP_Reply_By_Email_Connect::init();
 
 		// couldn't connect :(
 		if ( $this->connection === false ) {
 			bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
+			bp_rbe_remove_imap_lock();
 			return false;
 		}
 
