@@ -309,8 +309,10 @@ class BP_Reply_By_Email {
 
 		// use this hook to block any unwanted activity items from being RBE'd!
 		// see https://github.com/r-a-y/bp-reply-by-email/wiki/Developer-Guide
-		if ( apply_filters( 'bp_rbe_block_activity_item', false, $item ) )
+		if ( apply_filters( 'bp_rbe_block_activity_item', false, $item ) ) {
+			$this->show_non_rbe_notice = true;
 			return;
+		}
 
 		$this->listener = new stdClass;
 
@@ -673,6 +675,12 @@ class BP_Reply_By_Email {
 	 * @return bool
 	 */
 	public function disable_non_rbe_notice( $retval, $args ) {
+		// if explicitly showing non-rbe notice, return true
+		if ( isset( $this->show_non_rbe_notice ) ) {
+			unset( $this->show_non_rbe_notice );
+			return true;
+		}
+
 		// don't do this in the admin area
 		if ( is_admin() ) {
 			return false;
