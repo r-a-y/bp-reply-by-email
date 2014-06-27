@@ -143,6 +143,9 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 			// $bp->rbe->temp->group_id gets passed to BP_Reply_By_Email::set_group_id()
 			$group_id = $bp->rbe->temp->group_id = $params[$this->item_id_param];
 
+			// get user ID
+			$user_id = $data['user_id'];
+
 			// check to see if the user can post comments for the group doc in question
 			//
 			// bp_docs_user_can( 'post_comments', $user_id, $group_id ) doesn't work the way I want it to
@@ -201,7 +204,7 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 			$new_comment_id = wp_insert_comment( array(
 				'user_id'              => $user_id,
 				'comment_post_ID'      => $comment->comment_post_ID,
-				'comment_content'      => $body,
+				'comment_content'      => $data['content'],
 				'comment_parent'       => $comment_id, // set as $comment_id? or "0" for not threaded?
 				'comment_author'       => $userdata->user_nicename, // user_login?
 				'comment_author_url'   => '', // use BP member domain?
@@ -239,7 +242,7 @@ class BP_Docs_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 					'user_id'           => $user_id,
 					'item_id'           => $group_id,
 					'secondary_item_id' => $comment_id,
-					'content'           => $body
+					'content'           => $data['content']
 				) );
 
 				// remove the filter after posting
