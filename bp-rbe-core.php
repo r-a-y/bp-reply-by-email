@@ -217,8 +217,6 @@ class BP_Reply_By_Email {
 	 * @since 1.0-beta
 	 */
 	public function wp_mail_filter( $args ) {
-		global $bp;
-
 		// if our 'listener' object hasn't initialized, stop now!
 		// @todo make this easier to extend in 3rd-party plugins
 		if ( empty( $this->listener ) ) {
@@ -250,17 +248,17 @@ class BP_Reply_By_Email {
 			$querystring = '';
 
 			switch ( $listener->component ) {
-				case $bp->activity->id :
+				case 'activity' :
 					$querystring = "a={$listener->item_id}&p={$listener->secondary_item_id}";
 				break;
 
 				// BP Group Email Subscripton (GES) plugin compatibility
 				// GES will send out group forum emails, so let's setup our param.
-				case $bp->forums->id :
+				case 'forums' :
 					$querystring = "t={$listener->item_id}&g={$listener->secondary_item_id}";
 				break;
 
-				case $bp->messages->id :
+				case 'messages' :
 					$querystring = "m={$listener->item_id}";
 				break;
 
@@ -300,13 +298,10 @@ class BP_Reply_By_Email {
 	 * Saves pertinent activity variables to our "listener" object, which is used in {@link BP_Reply_By_Email::wp_mail_filter()}
 	 * Since the activity component is used in other BP components, we can also do checks for forums and blogs as well.
 	 *
-	 * @global object $bp
 	 * @param object $item The activity object created during {@link BP_Activity_Activity::save()}
 	 * @since 1.0-beta
 	 */
 	public function activity_listener( $item ) {
-		global $bp;
-
 		// use this hook to block any unwanted activity items from being RBE'd!
 		// see https://github.com/r-a-y/bp-reply-by-email/wiki/Developer-Guide
 		if ( apply_filters( 'bp_rbe_block_activity_item', false, $item ) ) {
@@ -317,7 +312,7 @@ class BP_Reply_By_Email {
 		$this->listener = new stdClass;
 
 		// activity component
-		$this->listener->component = $bp->activity->id;
+		$this->listener->component = 'activity';
 
 		// the user id
 		$this->listener->user_id   = $item->user_id;
@@ -372,7 +367,7 @@ class BP_Reply_By_Email {
 
 		$this->listener = new stdClass;
 
-		$this->listener->component = $bp->forums->id;
+		$this->listener->component = 'forums';
 
 		// get the topic ID if it's locally cached
 		if ( ! empty( $bp->rbe->temp->topic_id ) ) {
@@ -401,11 +396,9 @@ class BP_Reply_By_Email {
 	 * @since 1.0-beta
 	 */
 	public function message_listener( $item ) {
-		global $bp;
-
 		$this->listener = new stdClass;
 
-		$this->listener->component = $bp->messages->id;
+		$this->listener->component = 'messages';
 		$this->listener->item_id   = $item->thread_id;
 		$this->listener->user_id   = $item->sender_id;
 	}
