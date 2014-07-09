@@ -570,7 +570,7 @@ class BP_Reply_By_Email_Admin {
 	 * If certain conditions for the webhost are not met, these warnings will be displayed on the admin page.
 	 */
 	protected function webhost_warnings() {
-		if ( ! bp_rbe_is_inbound() ) {
+		if ( bp_rbe_is_inbound() ) {
 			return;
 		}
 
