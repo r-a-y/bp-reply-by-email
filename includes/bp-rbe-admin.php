@@ -272,6 +272,7 @@ class BP_Reply_By_Email_Admin {
 			$output['port']	      = 993;
 			$output['tag']	      = '+';
 			$output['gmail']      = 1;
+			$output['email']      = $username;
 
 		// use alternate server settings as defined by the user
 		} else {
