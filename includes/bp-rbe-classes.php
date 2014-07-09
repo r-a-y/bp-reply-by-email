@@ -1213,7 +1213,7 @@ abstract class BP_Reply_By_Email_Inbound_Provider {
 	 *
 	 * This method must exist in extended classes.
 	 */
-	abstract public static function webhook_parser();
+	abstract public function webhook_parser();
 }
 
 /**
@@ -1232,7 +1232,7 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 	/**
 	 * Webhook parser class method for Mandrill.
 	 */
-	public static function webhook_parser() {
+	public function webhook_parser() {
 		if ( empty( $_SERVER['HTTP_X_MANDRILL_SIGNATURE'] ) ) {
 			return false;
 		}
