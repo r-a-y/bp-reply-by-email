@@ -379,9 +379,9 @@ class BP_Reply_By_Email {
 		// get the topic ID if it's locally cached
 		if ( ! empty( $bp->rbe->temp->topic_id ) ) {
 			$topic_id = $bp->rbe->temp->topic_id;
-		}
+
 		// query for the topic ID
-		else {
+		} else {
 			$post     = bb_get_post( $post_id );
 			$topic_id = $post->topic_id;
 		}
