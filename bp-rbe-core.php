@@ -251,6 +251,36 @@ class BP_Reply_By_Email {
 				$args['headers'] = explode( "\n", str_replace( "\r\n", "\n", $args['headers'] ) );
 			}
 
+			// set the "From" email header
+			if ( ! empty( $listener->user_id ) ) {
+				// override existing "From" name and use the member's display name
+				$from = false;
+				foreach ( $args['headers'] as $custom_header ) {
+					if ( substr( $custom_header, 0, 4 ) === "From" ) {
+						$from = true;
+						$lbracket = strpos( $custom_header, '<' );
+						$args['headers'][] = substr_replace( $custom_header, bp_core_get_user_displayname( $listener->user_id ), 6, $lbracket - 5 );
+						break;
+					}
+				}
+
+				// no "From" header? set it now!
+				if ( false === $from ) {
+					// Set "From" email; copied from wp_mail()
+					$sitename = strtolower( $_SERVER['SERVER_NAME'] );
+					if ( substr( $sitename, 0, 4 ) == 'www.' ) {
+						$sitename = substr( $sitename, 4 );
+					}
+					$from_email = apply_filters( 'bp_rbe_no_reply_email', 'noreply@' . $sitename );
+
+					// add the "From" header
+					$args['headers'][] = 'From: ' . bp_core_get_user_displayname( $listener->user_id ) . ' <' . $from_email . '>';
+				}
+
+				// remove BP's aggressive "From" name filtering
+				remove_filter( 'wp_mail_from_name', 'bp_core_email_from_name_filter' );
+			}
+
 			// Setup our querystring which we'll add to the Reply-To header
 			$querystring = '';
 
