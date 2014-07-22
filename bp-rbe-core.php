@@ -240,9 +240,16 @@ class BP_Reply_By_Email {
 		// If so, start manipulating the email headers!
 		if ( ! empty( $listener->item_id ) ) :
 
-			// Make sure we don't get rid of any headers that might be declared
-			if ( empty( $args['headers'] ) )
-				$args['headers'] = '';
+			// $args['headers'] can be either a string or array
+			// so standardize to an array
+			if ( empty( $args['headers'] ) ) {
+				$args['headers'] = array();
+
+			} elseif ( ! is_array( $args['headers'] ) ) {
+				// Explode the headers out, so this function can take both
+				// string headers and an array of headers.
+				$args['headers'] = explode( "\n", str_replace( "\r\n", "\n", $args['headers'] ) );
+			}
 
 			// Setup our querystring which we'll add to the Reply-To header
 			$querystring = '';
@@ -279,7 +286,7 @@ class BP_Reply_By_Email {
 				$querystring = apply_filters( 'bp_rbe_encode_querystring', bp_rbe_encode( array( 'string' => $querystring ) ), $querystring );
 
 				// Inject the querystring into the email address
-				$args['headers'] .= 'Reply-To: ' . bp_rbe_inject_qs_in_email( $querystring ) . PHP_EOL;
+				$args['headers'][] = 'Reply-To: ' . bp_rbe_inject_qs_in_email( $querystring );
 
 				// Inspired by Basecamp!
 				$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
