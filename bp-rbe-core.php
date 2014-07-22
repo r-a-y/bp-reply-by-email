@@ -607,7 +607,7 @@ class BP_Reply_By_Email {
 	public function set_group_id( $retval ) {
 		global $bp;
 
-		if ( ! empty( $bp->rbe->temp ) ) {
+		if ( ! empty( $bp->rbe->temp->group_id ) ) {
 			return $bp->rbe->temp->group_id;
 		}
 
