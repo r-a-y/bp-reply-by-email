@@ -380,14 +380,20 @@ class BP_Reply_By_Email {
 		if ( ! empty( $bp->rbe->temp->topic_id ) ) {
 			$topic_id = $bp->rbe->temp->topic_id;
 
+			$user_id  = $bp->rbe->temp->user_id;
+
 		// query for the topic ID
 		} else {
 			$post     = bb_get_post( $post_id );
 			$topic_id = $post->topic_id;
+			$user_id  = $post->poster_id;
 		}
 
 		// topic id
-		$this->listener->item_id   = $topic_id;
+		$this->listener->item_id = $topic_id;
+
+		// user ID
+		$this->listener->user_id = $user_id;
 
 		// group id; we filter bp_get_current_group_id() when we post from our IMAP inbox check via WP-cron
 		// @see BP_Reply_By_Email::get_temporary_variables()
@@ -585,6 +591,9 @@ class BP_Reply_By_Email {
 		// we need to temporarily hold the group ID so we can pass it
 		// to $this->group_forum_listener() via $this->set_group_id()
 		$bp->rbe->temp->group_id = $retval['group_id'];
+
+		// temporarily hold the user ID
+		$bp->rbe->temp->user_id  = $retval['user_id'];
 
 		// if we're using the 'bp_rbe_groups_new_group_forum_post_args' filter,
 		// the topic ID is passed as well, so let's save it to prevent querying for it later on!
