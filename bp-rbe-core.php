@@ -217,8 +217,10 @@ class BP_Reply_By_Email {
 	 * @since 1.0-beta
 	 */
 	public function wp_mail_filter( $args ) {
+		// plugins should hook here and add their custom listener to $this->listener
+		do_action_ref_array( 'bp_rbe_extend_listener', array( &$this ) );
+
 		// if our 'listener' object hasn't initialized, stop now!
-		// @todo make this easier to extend in 3rd-party plugins
 		if ( empty( $this->listener ) ) {
 			// since this isn't a RBE email, add a line above each email noting that
 			// this isn't a RBE email and that you should not reply to this
