@@ -257,11 +257,11 @@ class BP_Reply_By_Email {
 			if ( ! empty( $listener->user_id ) ) {
 				// override existing "From" name and use the member's display name
 				$from = false;
-				foreach ( $args['headers'] as $custom_header ) {
+				foreach ( $args['headers'] as $key => $custom_header ) {
 					if ( substr( $custom_header, 0, 4 ) === "From" ) {
 						$from = true;
 						$lbracket = strpos( $custom_header, '<' );
-						$args['headers'][] = substr_replace( $custom_header, bp_core_get_user_displayname( $listener->user_id ), 6, $lbracket - 5 );
+						$args['headers'][$key] = substr_replace( $custom_header, bp_core_get_user_displayname( $listener->user_id ), 6, $lbracket - 7 );
 						break;
 					}
 				}
