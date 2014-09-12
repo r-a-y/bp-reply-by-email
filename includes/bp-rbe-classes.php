@@ -1031,11 +1031,15 @@ class BP_Reply_By_Email_Parser {
 	 * If a header includes the user's name, it will return just the email address.
 	 *  eg. r-a-y <test@gmail.com> -> test@gmail.com
 	 *
-	 * @param array $headers The array of email headers
+	 * @param array|object $headers Email headers
 	 * @param string $key The key we want to check against the array.
 	 * @return mixed Either the email header on success or false on failure
 	 */
 	public static function get_header( $headers, $key ) {
+		// make sure we typecast $headers to an array
+		// mandrill sets headers as an object, while our RBE IMAP class uses an array
+		$headers = (array) $headers;
+
 		if ( empty( $headers[$key] ) ) {
 			bp_rbe_log( $key . ' parser - empty key' );
 			return false;
