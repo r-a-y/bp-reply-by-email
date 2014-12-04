@@ -227,7 +227,7 @@ class BP_Reply_By_Email_Admin {
 			$output['inbound-provider'] = $inbound_provider;
 		}
 
-		$inbound_domain = wp_filter_nohtml_kses( $input['inbound-domain'] );
+		$inbound_domain = isset( $input['inbound-domain'] ) ? wp_filter_nohtml_kses( $input['inbound-domain'] ) : '';
 		if ( ! empty( $inbound_domain ) ) {
 			$output['inbound-domain'] = $inbound_domain;
 		}
