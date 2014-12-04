@@ -49,28 +49,23 @@ function bp_rbe_activate() {
 	// Load the bp-rbe functions file
 	require( BP_RBE_DIR . '/includes/bp-rbe-functions.php' );
 
-	// no existing settings exist
 	if ( ! $settings = bp_get_option( 'bp-rbe' ) ) {
 		$settings = array();
+	}
 
-	// we have existing settings
-	} else {
-		// set mode to IMAP if it was previously being used
-		if ( empty( $settings['mode'] ) &&
-			! empty( $settings['servername'] ) && ! empty( $settings['port'] ) &&
-			! empty( $settings['username'] ) && ! empty( $output['password'] )
-		) {
-			$settings['mode'] = 'imap';
-		}
+	// set default mode to IMAP if no mode exists
+	// might default to 'inbound' in the future
+	if ( ! isset( $settings['mode'] ) ) {
+		$settings['mode'] = 'imap';
 	}
 
 	// generate a unique key if one doesn't exist
-	if ( ! $settings['key'] ) {
+	if ( ! isset( $settings['key'] ) ) {
 		$settings['key'] = uniqid( '' );
 	}
 
 	// set a default value for the keepalive value
-	if ( ! $settings['keepalive'] ) {
+	if ( ! isset( $settings['keepalive'] ) ) {
 		$settings['keepalive'] = bp_rbe_get_execution_time( 'minutes' );
 	}
 
