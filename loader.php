@@ -74,7 +74,7 @@ function bp_rbe_activate() {
 	// remove remnants from any previous failed attempts to stop the inbox
 	bp_rbe_cleanup();
 }
-register_activation_hook( __FILE__, 'bp_rbe_activate' );
+add_action( 'activate_' . basename( BP_RBE_DIR ) . '/loader.php', 'bp_rbe_activate' );
 
 /**
  * Remove our scheduled function from WP and stop the IMAP loop.
@@ -95,7 +95,7 @@ function bp_rbe_deactivate() {
 
 	bp_rbe_log( 'Plugin deactivated!' );
 }
-register_deactivation_hook( __FILE__, 'bp_rbe_deactivate' );
+add_action( 'deactivate_' . basename( BP_RBE_DIR ) . '/loader.php', 'bp_rbe_deactivate' );
 
 /**
  * BP Reply By Email default extensions.
