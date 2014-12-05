@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 3.5.x, BuddyPress 1.8
+Tested up to: WordPress 4.0.x, BuddyPress 2.2.x
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -69,6 +69,13 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC3 =
+* Feature: Added new mode - inbound mail.  For more info, check out [this page](https://github.com/r-a-y/bp-reply-by-email/wiki/Mandrill).
+* Feature: Preliminary bbPress 2.5.4 support for non-BuddyPress forums.
+* Feature: Set the "From" name in reply-by-emails to the member name instead of the site name.
+* Enhancement: Improved IMAP locking system.
+* Enhancement: Improved email signature stripping.
 
 = 1.0-RC2 =
 * Feature: Support auto-updating the plugin through GitHub.  Uses the [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) library by Janis Elsts.
