@@ -271,6 +271,12 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			// temporarily add some GES filters here
 			add_filter( 'bp_ass_activity_notification_subject', 'wp_specialchars_decode' );
 			add_filter( 'bp_ass_activity_notification_content', 'wp_specialchars_decode' );
+
+		// bbPress-only forums
+		} else {
+			// Subscriptions - make sure the author stays subscribed to the thread
+			// this is due to how bbp_update_reply() works
+			$_POST['bbp_topic_subscription'] = 'bbp_subscribe';
 		}
 
 		/** REPLY PERMISSIONS ********************************************/
