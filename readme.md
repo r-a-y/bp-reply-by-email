@@ -13,24 +13,9 @@ You can also create new group forum topics from your email inbox as well.
 
 This plugin was developed for the [CUNY Academic Commons](http://commons.gc.cuny.edu).  Licensed under the GPLv2 or later.
 
-#### Minimum Requirements
-* WordPress 3.4.1, BuddyPress 1.5.6
-* [IMAP module enabled in PHP](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server)
-* An email address that supports IMAP and [address tags](https://en.wikipedia.org/wiki/Email_address#Address_tags)
-
-#### Server Requirements
-* IMAP module (required) (with OpenSSL recommended)
-* Safe mode off (recommended)
-* A VPS or dedicated server (recommended) ([see notes about shared hosts here](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server))
-
-#### Getting Started
-* [Quick Setup with GMail](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail)
-* [Frequently Asked Questions](https://github.com/r-a-y/bp-reply-by-email/wiki/Frequently-Asked-Questions)
-
 #### Get Help
-* [Wiki](https://github.com/r-a-y/bp-reply-by-email/wiki/)
-* [Troubleshooting Guide](https://github.com/r-a-y/bp-reply-by-email/wiki/Troubleshooting-Guide)
-* [Bug Tracker](https://github.com/r-a-y/bp-reply-by-email/issues)
+
+Check out the [wiki](https://github.com/r-a-y/bp-reply-by-email/wiki/) for up-to-date information.
 
 ***
 
