@@ -865,7 +865,7 @@ function bp_rbe_remove_email_client_signature( $content ) {
 	// This is the last check because it's slightly more intensive than the others
 	else {
 		// split email into an array of lines; reverse the order
-		$lines = array_reverse( preg_split( '/$\R?^/m', $content ) );
+		$lines = array_reverse( preg_split( '/$\R?^/m', trim( $content ) ) );
 
 		//print_r($lines);
 
@@ -911,7 +911,7 @@ function bp_rbe_remove_email_client_signature( $content ) {
 		}
 	}
 
-	return $content;
+	return trim( $content );
 }
 
 /**
