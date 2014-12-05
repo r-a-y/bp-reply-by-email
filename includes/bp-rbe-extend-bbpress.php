@@ -284,7 +284,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// User cannot create replies
 		if ( ! user_can( $reply_author, 'publish_replies' ) ) {
 			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_permissions' );
-			return new WP_Error( 'bbp_reply_permissions', '', $data );
+			//return new WP_Error( 'bbp_reply_permissions', '', $data );
 		}
 
 		/** UNFILTERED HTML **********************************************/
