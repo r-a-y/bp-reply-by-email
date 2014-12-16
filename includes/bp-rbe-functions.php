@@ -1350,6 +1350,11 @@ function bp_rbe_new_topic_info() {
  * @see bp_rbe_spawn_inbox_check()
  */
 function bp_rbe_should_connect() {
+	// make sure WP-cron / XMLRPC isn't running
+	if ( defined( 'DOING_CRON' ) || isset( $_GET['doing_wp_cron'] ) || defined( 'XMLRPC_REQUEST' ) ) {
+		return;
+	}
+
 	// check to see if we're connected via our DB marker
 	if ( ! bp_rbe_is_connected() ) {
 		add_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
