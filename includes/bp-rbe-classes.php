@@ -247,6 +247,8 @@ class BP_Reply_By_Email_IMAP {
 		$duration = bp_rbe_get_execution_time();
 		bp_rbe_log( '--- Keep alive for ' . $duration / 60 . ' minutes ---' );
 
+		bp_rbe_remove_imap_lock();
+
 		// Mark the current timestamp, mark the future time when we should close the IMAP connection;
 		// Do our parsing until $future > $now; re-mark the timestamp at end of loop... rinse and repeat!
 		for ( $now = time(), $future = time() + $duration; $future > $now; $now = time() ) {
@@ -399,11 +401,13 @@ class BP_Reply_By_Email_IMAP {
 		if ( $this->connection === false ) {
 			bp_rbe_log( 'Cannot connect: ' . imap_last_error() );
 			bp_rbe_remove_imap_lock();
+			bp_rbe_remove_imap_connection_marker();
 			return false;
 		}
 
 		// add an entry in the DB to say that we're connected
-		bp_update_option( 'bp_rbe_is_connected', time() + bp_rbe_get_execution_time() );
+		//bp_update_option( 'bp_rbe_is_connected', time() + bp_rbe_get_execution_time() );
+		bp_rbe_add_imap_connection_marker();
 
 		bp_rbe_log( '--- Connection successful! ---' );
 
@@ -421,7 +425,7 @@ class BP_Reply_By_Email_IMAP {
 
 		if ( $this->is_connected()  ) {
 			@imap_close( $this->connection );
-			bp_delete_option( 'bp_rbe_is_connected' );
+			bp_rbe_remove_imap_connection_marker();
 			return true;
 		}
 

@@ -108,35 +108,37 @@ function bp_rbe_is_inbound() {
 	return (bool) ( bp_rbe_get_setting( 'mode' ) == 'inbound' );
 }
 
+if ( ! function_exists( 'bp_rbe_is_connected' ) ) :
 /**
- * Check to see if we're connected to the IMAP inbox.
+ * Check if we're connected to the IMAP inbox.
  *
- * To check if we're connected, a DB entry is updated in {@link BP_Reply_By_Email_IMAP::connect()}
- * and in {@link BP_Reply_By_Email_IMAP::close()}.
+ * This is updated in {@link BP_Reply_By_Email_IMAP::connect()} and in
+ * {@link BP_Reply_By_Email_IMAP::close()}.
  *
- * @since 1.0-beta
+ * @since 1.0-RC4
  *
  * @return bool
  */
-function bp_rbe_is_connected() {
-	$is_connected = bp_get_option( 'bp_rbe_is_connected' );
+function bp_rbe_is_connected( $args = array() ) {
+	$r = wp_parse_args( $args, array(
+		'clearcache' => true,
+	) );
 
-	// no timestamp saved in the DB
-	if ( false === (bool) $is_connected ) {
-		return false;
+	if ( true == $r['clearcache'] ) {
+		clearstatcache();
 	}
 
-	// we have an existing timestamp; do checks against current time
-	//
-	// we're connected - add 15 second leeway
-	if ( time() < $is_connected + 15 ) {
-		return true;
-
-	// server must have crashed if we're at this point
-	} else {
-		return false;
+	$file = bp_core_avatar_upload_path() . '/bp-rbe-connected.txt';
+	if ( file_exists( $file ) ) {
+		// check if we're connected
+		if ( time() <= ( filemtime( $file ) + bp_rbe_get_execution_time() + 15 ) ) {
+			return true;
+		}
 	}
+
+	return false;
 }
+endif;
 
 if ( ! function_exists( 'bp_rbe_is_connecting' ) ) :
 /**
@@ -189,11 +191,10 @@ function bp_rbe_cleanup() {
 	// remove remnants from any previous failed attempts to stop the inbox
 	bp_rbe_should_stop();
 	bp_rbe_remove_imap_lock();
-
-	// clear RBE's connected markers
-	bp_delete_option( 'bp_rbe_is_connected' );
+	bp_rbe_remove_imap_connection_marker();
 
 	// we don't use these options anymore
+	bp_delete_option( 'bp_rbe_is_connected' );
 	bp_delete_option( 'bp_rbe_spawn_cron' );
 	bp_delete_option( 'bp_rbe_lock' );
 	delete_site_transient( 'bp_rbe_is_connected' );
@@ -1502,6 +1503,41 @@ function bp_rbe_remove_imap_lock() {
 
 	if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-lock.txt' ) ) {
 		unlink( bp_core_avatar_upload_path() . '/bp-rbe-lock.txt' );
+	}
+}
+endif;
+
+if ( ! function_exists( 'bp_rbe_add_imap_connection_marker' ) ) :
+/**
+ * Add IMAP connection marker.  Used to determine if we are connected.
+ *
+ * The lock uses the filesystem by default.  Function is pluggable.  Handy if
+ * you want to override the current system. (eg. using memcached instead.)
+ *
+ * Lock is checked in [@link bp_rbe_is_connecting()}.
+ *
+ * @since 1.0-RC4
+ *
+ * @uses touch() Sets or modifies time of file
+ */
+function bp_rbe_add_imap_connection_marker() {
+	touch( bp_core_avatar_upload_path() . '/bp-rbe-connected.txt' );
+}
+endif;
+
+if ( ! function_exists( 'bp_rbe_remove_imap_connection_marker' ) ) :
+/**
+ * Remove IMAP connection marker file.
+ *
+ * @since 1.0-RC4
+ *
+ * @see bp_rbe_add_imap_lock()
+ */
+function bp_rbe_remove_imap_connection_marker() {
+	clearstatcache();
+
+	if ( file_exists( bp_core_avatar_upload_path() . '/bp-rbe-connected.txt' ) ) {
+		unlink( bp_core_avatar_upload_path() . '/bp-rbe-connected.txt' );
 	}
 }
 endif;
