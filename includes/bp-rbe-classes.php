@@ -349,6 +349,9 @@ class BP_Reply_By_Email_IMAP {
 
 					// cleanup RBE after failure
 					bp_rbe_cleanup();
+
+					remove_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
+					exit();
 				}
 			}
 
