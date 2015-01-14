@@ -1240,33 +1240,33 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 		if ( empty( $_SERVER['HTTP_X_MANDRILL_SIGNATURE'] ) ) {
 			return false;
 		}
-	
+
 		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) && strpos( $_SERVER['HTTP_USER_AGENT'], 'Mandrill-Webhook/' ) === false ) {
 			return false;
 		}
-	
+
 		bp_rbe_log( '- Mandrill webhook received -' );
-	
+
 		// mandrill signature verification
 		if ( defined( 'BP_RBE_MANDRILL_WEBHOOK_URL' ) && defined( 'BP_RBE_MANDRILL_WEBHOOK_KEY' ) ) {
 			$signed_data  = constant( 'BP_RBE_MANDRILL_WEBHOOK_URL' );
 			$signed_data .= 'mandrill_events';
 			$signed_data .= stripslashes( $_POST['mandrill_events'] );
 			$webhook_key  = constant( 'BP_RBE_MANDRILL_WEBHOOK_KEY' );
-	
+
 			$signature = base64_encode( hash_hmac( 'sha1', $signed_data, $webhook_key, true ) );
-			
+
 			// check if generated signature matches Mandrill's
 			if ( $signature !== $_SERVER['HTTP_X_MANDRILL_SIGNATURE'] ) {
 				bp_rbe_log( 'Mandrill signature verification failed.' );
 				die();
 			}
-	
+
 		}
-	
+
 		// get parsed content
 		$response = json_decode( stripslashes( $_POST['mandrill_events'] ) );
-	
+
 		// log JSON errors if present
 		if ( json_last_error() != JSON_ERROR_NONE ) {
 			switch ( json_last_error() ) {
@@ -1289,12 +1289,12 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 					bp_rbe_log( 'json error: - Unknown error' );
 					break;
 			}
-	
+
 			die();
-	
+
 		// ready to start the parsing!
 		} else {
-	
+
 			$i = 1;
 			foreach ( $response as $item ) {
 				$data = array(
@@ -1304,18 +1304,18 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 					'content'    => $item->msg->text,
 					'subject'    => $item->msg->subject
 				);
-	
+
 				$parser = BP_Reply_By_Email_Parser::init( $data, $i );
-	
+
 				if ( is_wp_error( $parser ) ) {
 					do_action( 'bp_rbe_no_match', $parser, $data, $i, false );
 				}
-	
+
 				++$i;
 			}
-	
+
 			bp_rbe_log( '- Webhook parsing completed -' );
-	
+
 			die();
 		}
 	}
