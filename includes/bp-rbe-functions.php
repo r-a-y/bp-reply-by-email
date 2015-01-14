@@ -1359,7 +1359,7 @@ function bp_rbe_new_topic_info() {
  */
 function bp_rbe_should_connect() {
 	// make sure WP-cron / XMLRPC isn't running
-	if ( defined( 'DOING_CRON' ) || isset( $_GET['doing_wp_cron'] ) || defined( 'XMLRPC_REQUEST' ) ) {
+	if ( defined( 'DOING_CRON' ) || defined( 'DOING_AJAX' ) || isset( $_GET['doing_wp_cron'] ) || defined( 'XMLRPC_REQUEST' ) ) {
 		return;
 	}
 
@@ -1413,6 +1413,10 @@ function bp_rbe_run_inbox_listener() {
 	}
 
 	if ( bp_rbe_is_connecting( array( 'clearcache' => true ) ) ) {
+		return;
+	}
+
+	if ( bp_rbe_is_connected() ) {
 		return;
 	}
 
