@@ -1280,11 +1280,14 @@ function bp_rbe_alter_forum_post_timestamp( $timestamp ) {
  * @since 1.0-beta
  */
 function bp_rbe_new_topic_info_css() {
-	$current_group = groups_get_current_group();
-
-	$show_css = apply_filters( 'bp_rbe_new_topic_info_css', bp_is_single_item() && bp_is_groups_component() && bp_is_current_action( 'forum' ) && ! bp_action_variables() && bp_loggedin_user_id() && ! empty( $current_group->is_member ) );
+	$show_css = apply_filters( 'bp_rbe_new_topic_info_css', bp_is_single_item() && bp_is_groups_component() && bp_is_current_action( 'forum' ) && ! bp_action_variables() && bp_loggedin_user_id() );
 
 	if ( $show_css ) :
+
+		$current_group = function_exists( 'groups_get_current_group' ) ? groups_get_current_group() : false;
+		if ( is_object( $current_group ) && false === $current_group->is_member ) {
+			return;
+		}
 ?>
 	<style type="text/css">
 		#rbe-toggle { display:none; }
