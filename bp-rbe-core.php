@@ -566,7 +566,7 @@ class BP_Reply_By_Email {
 				if ( messages_is_valid_thread( $params['m'] ) ) {
 
 					// see if the user is in the PM conversation
-					$has_access = messages_check_thread_access( $params['m'], $data['user_id'] );
+					$has_access = messages_check_thread_access( $params['m'], $data['user_id'] ) || is_super_admin( $data['user_id'] );
 
 					if ( ! $has_access ) {
 						//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'private_message_not_in_thread' );
