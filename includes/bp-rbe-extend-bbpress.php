@@ -1106,6 +1106,8 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		if ( ! empty( $bp->rbe->temp->group_id ) ) {
 			unset( $bp->rbe->temp->group_id );
 		}
+
+		remove_filter( 'bbp_map_meta_caps', array( $this, 'map_forum_meta_caps' ), 5, 4 );
 	}
 
 	/**
