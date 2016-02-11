@@ -297,7 +297,7 @@ class BP_Reply_By_Email_IMAP {
 
 					if ( is_wp_error( $parser ) ) {
 						//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, $parser->get_error_code() );
-						do_action( 'bp_rbe_no_match', $parser, $data, $i, $connection );
+						do_action( 'bp_rbe_no_match', $parser, $data, $i, $this->connection );
 					}
 
 					// do something during the loop
