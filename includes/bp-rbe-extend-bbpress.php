@@ -88,7 +88,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		add_filter( 'bp_rbe_encode_group_querystring',   array( $this, 'new_topic_querystring' ), 10, 2 );
 
 		// clear locally-cached values after post is submitted
-		add_action( 'bp_rbe_imap_no_match',              array( $this, 'clear_global_cache' ) );
+		add_action( 'bp_rbe_no_match',                   array( $this, 'clear_global_cache' ) );
 		add_action( 'bbp_new_topic_post_extras',         array( $this, 'clear_global_cache' ) );
 		add_action( 'bbp_new_reply_post_extras',         array( $this, 'clear_global_cache' ) );
 	}
