@@ -281,6 +281,12 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		/** REPLY PERMISSIONS ********************************************/
 
+		// Allow member to pass default cap checks.
+		// The reason why we keep the 'publish_replies' check below is b/c bbPress
+		// plugins may disable cap access for a specific user if they have hooked into
+		// the 'bbp_map_meta_caps' filter.
+		add_filter( 'bbp_map_meta_caps', array( $this, 'map_forum_meta_caps' ), 5, 4 );
+
 		// User cannot create replies
 		if ( ! user_can( $reply_author, 'publish_replies' ) ) {
 			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_permissions' );
@@ -527,6 +533,12 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		}
 
 		/** TOPIC / FORUM PERMISSIONS ************************************/
+
+		// Allow member to pass default cap checks.
+		// The reason why we keep the user_can() checks below is b/c bbPress
+		// plugins may disable cap access for a specific user if they have hooked into
+		// the 'bbp_map_meta_caps' filter.
+		add_filter( 'bbp_map_meta_caps', array( $this, 'map_forum_meta_caps' ), 5, 4 );
 
 		// User cannot create topics
 		if ( ! user_can( $topic_author, 'publish_topics' ) ) {
@@ -1094,6 +1106,35 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		if ( ! empty( $bp->rbe->temp->group_id ) ) {
 			unset( $bp->rbe->temp->group_id );
 		}
+	}
+
+	/**
+	 * Allow members to pass default cap checks.
+	 *
+	 * A modified copy of BBP_Forums_Group_Extension::map_group_forum_meta_caps().
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param array $caps
+	 * @param string $cap
+	 * @param int $user_id
+	 * @param array $args
+	 * @return array
+	 */
+	public function map_forum_meta_caps( $caps = array(), $cap = '', $user_id = 0, $args = array() ) {
+
+		switch ( $cap ) {
+
+			// Allow a member replying through RBE to pass these checks.
+			case 'publish_replies'     :
+			case 'publish_topics'      :
+			case 'read_hidden_forums'  :
+			case 'read_private_forums' :
+				$caps = array( 'participate' );
+				break;
+		}
+
+		return $caps;
 	}
 
 	/**
