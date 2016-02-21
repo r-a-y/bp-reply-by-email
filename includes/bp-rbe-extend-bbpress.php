@@ -60,7 +60,8 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 			// custom params
 			// here you can add whatever you want and you can use it in your class
-			'forum_id_param' => 'bbpf'
+			'forum_id_param' => 'bbpf',
+			'reply_id_param' => 'bbpr'
 		) );
 
 		// custom hooks
@@ -121,15 +122,21 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// setup our secondary item ID, which is the topic ID
 		$listener->secondary_item_id = $item->secondary_item_id;
 
+		// setup our reply to ID, which is the reply post ID
+		$listener->reply_to_id = $item->secondary_item_id;
+
 		// if activity type is a bbPress reply, we need to grab the topic ID manually
 		if ( $item->type == $this->activity_type ) {
 			global $bp;
 
 			// grab our locally-cached topic ID
 			// @see get_topic_id() method (handles frontend)
-			// @see post_by_email() method (handles posting by email)
+			// @see post() method (handles posting by email)
 			if ( ! empty( $bp->rbe->temp->topic_id ) ) {
 				$listener->secondary_item_id = $bp->rbe->temp->topic_id;
+			}
+			if ( ! empty( $bp->rbe->temp->reply_to_id ) ) {
+				$listener->reply_to_id = $bp->rbe->temp->reply_to_id;
 			}
 		}
 
@@ -151,19 +158,31 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			// check to see if the listener component matches our extension's unique ID
 			// if it does, proceed with setting up our custom querystring
 			case $this->id :
+				// BuddyPress group ID.
 				$querystring = "{$this->item_id_param}={$listener->item_id}";
 
-				// some querystrings only use one parameter; if a second one exists,
-				// add it.
-				if ( ! empty( $this->secondary_item_id_param ) )
+				// Topic post ID.
+				if ( ! empty( $this->secondary_item_id_param ) ) {
 					$querystring .= "&{$this->secondary_item_id_param}={$listener->secondary_item_id}";
+				}
+
+				// Reply post ID.
+				if ( ! empty( $this->reply_id_param ) ) {
+					$querystring .= "&{$this->reply_id_param}={$listener->reply_to_id}";
+				}
 
 				break;
 
 			// check to see if component matches our secondary listener as defined in the
 			// BP_Reply_By_Email::bbp_listener() method
 			case 'bbpress' :
-					$querystring = "{$this->secondary_item_id_param}={$listener->item_id}";
+				// Topic post ID.
+				$querystring = "{$this->secondary_item_id_param}={$listener->item_id}";
+
+				// Reply post ID.
+				if ( ! empty( $this->reply_id_param ) ) {
+					$querystring .= "&{$this->reply_id_param}={$listener->reply_to_id}";
+				}
 
 				break;
 		}
@@ -210,6 +229,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// get topic ID
 		$topic_id = ! empty( $params[$this->secondary_item_id_param] ) ? $params[$this->secondary_item_id_param] : false;
 
+		// get reply post ID
+		$reply_to = ! empty( $params[$this->reply_id_param] ) ? $params[$this->reply_id_param] : 0;
+
 		// current email is not a bbPress group reply
 		if ( empty( $topic_id ) ) {
 			// if current email is a bbPress new group topic, parse it
@@ -233,7 +255,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		}
 
 		// locally cache topic ID - referenced in extend_activity_listener() method
-		$bp->rbe->temp->topic_id  = $topic_id;
+		$bp->rbe->temp->topic_id = $topic_id;
 
 		// other variables
 		$reply_author   = $user_id;
@@ -371,6 +393,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// Reply posted!
 		if ( ! is_wp_error( $reply_id ) ) {
+			// Locally cache new reply ID - referenced in extend_activity_listener() method.
+			$bp->rbe->temp->reply_to_id = $reply_id;
+
 			// more internal logging
 			bp_rbe_log( 'Message #' . $i . ': bbPress reply successfully posted!' );
 
@@ -446,7 +471,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// bbPress Reply Hooks ////////////////////////////////////////////
 
-		do_action( 'bbp_new_reply',                          $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author );
+		do_action( 'bbp_new_reply',                          $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author, false, $reply_to );
 		do_action( 'bbp_new_reply_post_extras',              $reply_id );
 
 		return array( 'bbp_reply_id' => $reply_id );
@@ -1045,13 +1070,14 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	/** CUSTOM METHODS ************************************************/
 
 	/**
-	 * This method registers our custom 'forum_id_param' with RBE.
+	 * Registers our custom 'forum_id_param' and 'reply_id_param' params with RBE.
 	 *
 	 * @param array $params Whitelisted parameters used by RBE for the querystring
 	 * @return array $params
 	 */
 	public function register_custom_params( $params ) {
 		$params[$this->forum_id_param] = false;
+		$params[$this->reply_id_param] = false;
 
 		return $params;
 	}
@@ -1071,7 +1097,8 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 				$bp->rbe->temp = new stdClass;
 			}
 
-			$bp->rbe->temp->topic_id = $topic_id;
+			$bp->rbe->temp->topic_id    = $topic_id;
+			$bp->rbe->temp->reply_to_id = $reply_id;
 		}
 	}
 

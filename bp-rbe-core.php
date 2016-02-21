@@ -466,8 +466,9 @@ class BP_Reply_By_Email {
 	public function bbp_listener( $reply_id, $topic_id ) {
 		$this->listener = new stdClass;
 
-		$this->listener->component = 'bbpress';
-		$this->listener->item_id   = $topic_id;
+		$this->listener->component   = 'bbpress';
+		$this->listener->item_id     = $topic_id;
+		$this->listener->reply_to_id = $reply_id;
 
 		if ( function_exists( 'bbp_get_reply_author_id' ) ) {
 			$this->listener->user_id = bbp_get_reply_author_id( $reply_id );
