@@ -352,6 +352,11 @@ class BP_Reply_By_Email_Admin {
 			$output['messages'] = $messages;
 		}
 
+		// For sites using an external object cache, make sure they get the new value.
+		// This is all sorts of ugly! :(
+		// I think this is a WP core bug with the WP Settings API...
+		wp_cache_delete( 'alloptions', 'options' );
+
 		return $output;
 	}
 
