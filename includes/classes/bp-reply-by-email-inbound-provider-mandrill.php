@@ -27,11 +27,15 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 	 */
 	public function webhook_parser() {
 		if ( empty( $_SERVER['HTTP_X_MANDRILL_SIGNATURE'] ) ) {
-			return false;
+			return;
 		}
 
 		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) && strpos( $_SERVER['HTTP_USER_AGENT'], 'Mandrill-Webhook/' ) === false ) {
-			return false;
+			return;
+		}
+
+		if ( empty( $_POST ) || empty( $_POST['mandrill_events'] ) ) {
+			return;
 		}
 
 		bp_rbe_log( '- Mandrill webhook received -' );

@@ -526,11 +526,12 @@ function bp_rbe_tail( $filename, $lines_to_display ) {
  * @since 1.0-RC3
  */
 function bp_rbe_inbound_catch_callback() {
-	if ( empty( $_POST ) ) {
+	global $bp_rbe;
+
+	// make sure WP-cron / AJAX / XMLRPC isn't running.
+	if ( defined( 'DOING_CRON' ) || defined( 'DOING_AJAX' ) || isset( $_GET['doing_wp_cron'] ) || defined( 'XMLRPC_REQUEST' ) ) {
 		return;
 	}
-
-	global $bp_rbe;
 
 	// setup the webhook parser
 	if ( is_callable( array( $bp_rbe->inbound_provider, 'webhook_parser' ) ) ) {
