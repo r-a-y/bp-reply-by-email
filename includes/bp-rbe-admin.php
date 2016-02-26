@@ -405,11 +405,11 @@ class BP_Reply_By_Email_Admin {
 							'name'      => 'inbound-provider',
 							'labelname' => __( 'Provider', 'bp-rbe' ),
 							'desc'      => sprintf(
-								__( 'Choose an inbound provider.  Make sure that you have set up an account with this provider and configured it properly.  By default, <a href="%s">Mandrill</a> is supported.', 'bp-rbe' ),
-								'https://github.com/r-a-y/bp-reply-by-email/wiki/Mandrill'
+								__( 'Choose an inbound provider.  Make sure that you have set up an account with this provider and configured it properly.  By default, <a href="%s">Postmark</a> is supported.', 'bp-rbe' ),
+								'https://github.com/r-a-y/bp-reply-by-email/wiki/Postmark'
 							),
 							'options'   => $this->get_inbound_providers(),
-							'default'   => 'mandrill',
+							'default'   => 'postmark',
 						) ) ?>
 
 					<?php $this->render_field( array(

@@ -15,5 +15,6 @@ require dirname( __FILE__ ) . '/classes/bp-reply-by-email-connect.php';
 require dirname( __FILE__ ) . '/classes/bp-reply-by-email-extension.php';
 require dirname( __FILE__ ) . '/classes/bp-reply-by-email-imap.php';
 require dirname( __FILE__ ) . '/classes/bp-reply-by-email-inbound-provider.php';
+require dirname( __FILE__ ) . '/classes/bp-reply-by-email-inbound-provider-postmark.php';
 require dirname( __FILE__ ) . '/classes/bp-reply-by-email-inbound-provider-mandrill.php';
 require dirname( __FILE__ ) . '/classes/bp-reply-by-email-parser.php';
