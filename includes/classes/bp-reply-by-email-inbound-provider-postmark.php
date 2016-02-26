@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * @since 1.0-RC4
  *
- * @see http://help.mandrill.com/entries/22092308-What-is-the-format-of-inbound-email-webhooks-
+ * @see http://developer.postmarkapp.com/developer-process-parse.html
  */
 class BP_Reply_By_Email_Inbound_Provider_Postmark extends BP_Reply_By_Email_Inbound_Provider {
 	/**
@@ -34,9 +34,7 @@ class BP_Reply_By_Email_Inbound_Provider_Postmark extends BP_Reply_By_Email_Inbo
 			return;
 		}
 
-		// Should do more checks before parsing...
 		bp_rbe_log( '- Postmark webhook received -' );
-
 
 		$response = file_get_contents( 'php://input' );
 		if ( empty( $response ) ) {
