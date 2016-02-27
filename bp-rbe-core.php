@@ -196,8 +196,9 @@ class BP_Reply_By_Email {
 	 */
 	public static function get_inbound_providers() {
 		$default = array(
-			'postmark' => 'BP_Reply_By_Email_Inbound_Provider_Postmark',
-			'mandrill' => 'BP_Reply_By_Email_Inbound_Provider_Mandrill'
+			'postmark'  => 'BP_Reply_By_Email_Inbound_Provider_Postmark',
+			'sparkpost' => 'BP_Reply_By_Email_Inbound_Provider_Sparkpost',
+			'mandrill'  => 'BP_Reply_By_Email_Inbound_Provider_Mandrill'
 		);
 
 		// If you've added a custom inbound provider, register it with this filter
