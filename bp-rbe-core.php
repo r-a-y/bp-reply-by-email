@@ -198,6 +198,7 @@ class BP_Reply_By_Email {
 		$default = array(
 			'postmark'  => 'BP_Reply_By_Email_Inbound_Provider_Postmark',
 			'sparkpost' => 'BP_Reply_By_Email_Inbound_Provider_Sparkpost',
+			'sendgrid'  => 'BP_Reply_By_Email_Inbound_Provider_Sendgrid',
 			'mandrill'  => 'BP_Reply_By_Email_Inbound_Provider_Mandrill'
 		);
 
