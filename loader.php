@@ -53,10 +53,9 @@ function bp_rbe_activate() {
 		$settings = array();
 	}
 
-	// set default mode to IMAP if no mode exists
-	// might default to 'inbound' in the future
+	// Set default mode to Inbound if no mode exists
 	if ( ! isset( $settings['mode'] ) ) {
-		$settings['mode'] = 'imap';
+		$settings['mode'] = 'inbound';
 	}
 
 	// generate a unique key if one doesn't exist
