@@ -122,6 +122,11 @@ class BP_Reply_By_Email {
 		// Filter wp_mail(); use our listener object for component checks
 		add_filter( 'wp_mail',                                  array( &$this, 'wp_mail_filter' ) );
 
+		// BuddyPress 2.5+ has their own email implementation; these hooks support it.
+		add_filter( 'bp_email_set_reply_to',                    array( $this, 'set_bp_reply_to' ), 10, 4 );
+		add_filter( 'bp_email_set_post_object',                 array( $this, 'set_bp_post_object' ) );
+		add_filter( 'bp_email_get_property',                    array( $this, 'move_rbe_marker_in_bp_html' ), 10, 3 );
+
 		// WP Better Emails support
 		add_filter( 'wpbe_html_body',                           array( &$this, 'move_rbe_marker' ) );
 
@@ -209,6 +214,73 @@ class BP_Reply_By_Email {
 	}
 
 	/** EMAIL-HOOK RELATED ********************************************/
+
+	/**
+	 * Set the email address for BP 2.5's 'Reply-To' email header.
+	 *
+	 * For BuddyPress 2.5+.
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param  BP_Email_Recipient $retval Current reply-to address.
+	 * @return BP_Email_Recipient
+	 */
+	public function set_bp_reply_to( $retval, $noop, $noop2, $email ) {
+		// Backpat headers to be used for checks in 'bp_rbe_querystring' filter.
+		$headers = array();
+		$headers['to'] = $email->get_to();
+		$reply_to = $this->get_reply_to_address( $headers );
+
+		if ( empty( $reply_to ) ) {
+			return $retval;
+		}
+
+		return new BP_Email_Recipient( $reply_to );
+	}
+
+	/**
+	 * Modify BP email content to prepend our RBE marker.
+	 *
+	 * For BuddyPress 2.5+.
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param  WP_Post $post BP Email post object.
+	 * @return WP_Post
+	 */
+	public function set_bp_post_object( $post ) {
+		if ( false === is_a( $post, 'WP_Post' ) ) {
+			return $post;
+		}
+
+		if ( empty( $this->listener->item_id ) ) {
+			return $post;
+		}
+
+		$post->post_content = $this->prepend_rbe_marker_to_content( $post->post_content );
+		$post->post_excerpt = $this->prepend_rbe_marker_to_content( $post->post_excerpt );
+
+		return $post;
+	}
+
+	/**
+	 * Moves the RBE marker in the BP HTML email content to the top of the email.
+	 *
+	 * For BuddyPress 2.5+.
+	 *
+	 * @since 1.0-RC4.
+	 *
+	 * @param string $retval        Current email HTML content.
+	 * @param string $property_name The email property being fetched.
+	 * @param string $transform     Transformation return type.
+	 */
+	public function move_rbe_marker_in_bp_html( $retval, $property_name, $transform ) {
+		if ( 'template' !== $property_name || 'add-content' !== $transform ) {
+			return $retval;
+		}
+
+		return $this->move_rbe_marker( $retval );
+	}
 
 	/**
 	 * Adds "Reply-To" to email headers in {@link wp_mail()}.
