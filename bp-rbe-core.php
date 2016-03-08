@@ -287,45 +287,15 @@ class BP_Reply_By_Email {
 			}
 
 			// Setup our querystring which we'll add to the Reply-To header
-			$querystring = '';
-
-			switch ( $listener->component ) {
-				case 'activity' :
-					$querystring = "a={$listener->item_id}&p={$listener->secondary_item_id}";
-				break;
-
-				// BP Group Email Subscripton (GES) plugin compatibility
-				// GES will send out group forum emails, so let's setup our param.
-				case 'forums' :
-					$querystring = "t={$listener->item_id}&g={$listener->secondary_item_id}";
-				break;
-
-				case 'messages' :
-					$querystring = "m={$listener->item_id}";
-				break;
-
-				// 3rd party plugins can hook into this
-				default :
-					$querystring = apply_filters( 'bp_rbe_extend_querystring', $querystring, $listener );
-				break;
-			}
-
-			// last chance to disable the querystring with this filter!
-			$querystring = apply_filters( 'bp_rbe_querystring', $querystring, $listener, $args );
+			$reply_to = $this->get_reply_to_address( $args );
 
 			// Add our special querystring to the Reply-To header!
-			if ( ! empty( $querystring ) ) {
-
-				// Encode the qs
-				// Don't like this? there's a filter for that!
-				$querystring = apply_filters( 'bp_rbe_encode_querystring', bp_rbe_encode( array( 'string' => $querystring ) ), $querystring );
-
+			if ( ! empty( $reply_to ) ) {
 				// Inject the querystring into the email address
-				$args['headers'][] = 'Reply-To: ' . bp_rbe_inject_qs_in_email( $querystring );
+				$args['headers'][] = 'Reply-To: ' . $reply_to;
 
-				// Inspired by Basecamp!
-				$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
-				$args['message'] = "{$reply_line}\n\n" . $args['message'];
+				// Prepend our RBE marker to the email content.
+				$args['message'] = $this->prepend_rbe_marker_to_content( $args['message'] );
 			}
 
 			// Filter the headers; 3rd-party components could potentially hook into this
@@ -742,5 +712,76 @@ class BP_Reply_By_Email {
 		}
 
 		return $retval;
+	}
+
+	/** HELPERS *************************************************************/
+
+	/**
+	 * Get the email address used for the 'Reply-To' email header.
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param array $headers Email headers.
+	 */
+	protected function get_reply_to_address( $headers = array() ) {
+		if ( empty( $this->listener->item_id ) ) {
+			return '';
+		}
+
+		// Setup our querystring which we'll add to the Reply-To header
+		$querystring = '';
+
+		switch ( $this->listener->component ) {
+			case 'activity' :
+				$querystring = "a={$this->listener->item_id}&p={$this->listener->secondary_item_id}";
+			break;
+
+			// BP Group Email Subscripton (GES) plugin compatibility
+			// GES will send out group forum emails, so let's setup our param.
+			case 'forums' :
+				$querystring = "t={$this->listener->item_id}&g={$this->listener->secondary_item_id}";
+			break;
+
+			case 'messages' :
+				$querystring = "m={$this->listener->item_id}";
+			break;
+
+			// 3rd party plugins can hook into this
+			default :
+				$querystring = apply_filters( 'bp_rbe_extend_querystring', $querystring, $this->listener );
+			break;
+		}
+
+		// last chance to disable the querystring with this filter!
+		$querystring = apply_filters( 'bp_rbe_querystring', $querystring, $this->listener, $headers );
+
+		// Add our special querystring to the Reply-To header!
+		if ( ! empty( $querystring ) ) {
+
+			// Encode the qs
+			// Don't like this? there's a filter for that!
+			$querystring = apply_filters( 'bp_rbe_encode_querystring', bp_rbe_encode( array( 'string' => $querystring ) ), $querystring );
+
+			// Inject the querystring into the email address
+			$querystring = bp_rbe_inject_qs_in_email( $querystring );
+		}
+
+		return $querystring;
+	}
+
+	/**
+	 * Prepend our RBE marker to a string.
+	 *
+	 * This adds the '--- Reply ABOVE THIS LINE to add a comment ---' line to the
+	 * beginning of an email's content.  Inspired by Basecamp!
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param  string $content
+	 * @return string
+	 */
+	protected function prepend_rbe_marker_to_content( $content = '' ) {
+		$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
+		return "{$reply_line}\n\n{$content}";
 	}
 }
