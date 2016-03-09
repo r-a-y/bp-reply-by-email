@@ -226,6 +226,9 @@ class BP_Reply_By_Email {
 	 * @param BP_Email $email      Current instance of the email type class.
 	 */
 	public function set_bp_reply_to( $email_type, $email ) {
+		// Plugins should hook here and add their custom listener to $this->listener
+		do_action_ref_array( 'bp_rbe_extend_listener', array( &$this ) );
+
 		// Backpat headers to be used for checks in 'bp_rbe_querystring' filter.
 		$headers = array();
 		$headers['to'] = $email->get_to();
