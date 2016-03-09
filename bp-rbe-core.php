@@ -123,7 +123,7 @@ class BP_Reply_By_Email {
 		add_filter( 'wp_mail',                                  array( &$this, 'wp_mail_filter' ) );
 
 		// BuddyPress 2.5+ has their own email implementation; these hooks support it.
-		add_filter( 'bp_email_set_reply_to',                    array( $this, 'set_bp_reply_to' ), 10, 4 );
+		add_action( 'bp_email',                                 array( $this, 'set_bp_reply_to' ), 10, 2 );
 		add_filter( 'bp_email_set_post_object',                 array( $this, 'set_bp_post_object' ) );
 		add_filter( 'bp_email_get_property',                    array( $this, 'move_rbe_marker_in_bp_html' ), 10, 3 );
 
@@ -222,20 +222,21 @@ class BP_Reply_By_Email {
 	 *
 	 * @since 1.0-RC4
 	 *
-	 * @param  BP_Email_Recipient $retval Current reply-to address.
-	 * @return BP_Email_Recipient
+	 * @param string   $email_type Unique identifier for current email.
+	 * @param BP_Email $email      Current instance of the email type class.
 	 */
-	public function set_bp_reply_to( $retval, $noop, $noop2, $email ) {
+	public function set_bp_reply_to( $email_type, $email ) {
 		// Backpat headers to be used for checks in 'bp_rbe_querystring' filter.
 		$headers = array();
 		$headers['to'] = $email->get_to();
 		$reply_to = $this->get_reply_to_address( $headers );
 
 		if ( empty( $reply_to ) ) {
-			return $retval;
+			return;
 		}
 
-		return new BP_Email_Recipient( $reply_to );
+		// Set our custom 'Reply-To' email header.
+		$email->set_reply_to( $reply_to );
 	}
 
 	/**
