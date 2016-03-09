@@ -281,6 +281,18 @@ function bp_rbe_inject_qs_in_email( $qs ) {
 }
 
 /**
+ * Returns the RBE marker used to parse the email reply content.
+ *
+ * @since 1.0-RC4
+ *
+ * @return string
+ */
+function bp_rbe_get_marker() {
+	// @todo Perhaps add a filter here?
+	return __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
+}
+
+/**
  * Encodes a string.
  *
  * By default, uses AES encryption from {@link http://phpseclib.sourceforge.net/ phpseclib}.
@@ -1003,7 +1015,7 @@ For reference, your entire reply was:
 
 "%s".
 
-If you have any questions, please let us know.', 'bp-rbe' ), __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ), $data['content'] );
+If you have any questions, please let us know.', 'bp-rbe' ), bp_rbe_get_marker(), $data['content'] );
 
 			break;
 

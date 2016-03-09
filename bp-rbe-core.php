@@ -725,7 +725,7 @@ class BP_Reply_By_Email {
 			return $html;
 		}
 
-		$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
+		$reply_line = bp_rbe_get_marker();
 
 		// try to find the reply line in the email
 		$pos = strpos( $html, $reply_line );

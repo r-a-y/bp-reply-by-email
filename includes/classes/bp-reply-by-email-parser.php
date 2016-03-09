@@ -483,7 +483,7 @@ class BP_Reply_By_Email_Parser {
 		if ( $reply ) {
 
 			// Find our pointer
-			$pointer = strpos( $body, __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ) );
+			$pointer = strpos( $body, bp_rbe_get_marker() );
 
 			// If our pointer isn't found, return false
 			if ( $pointer === false ) {
