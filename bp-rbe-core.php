@@ -257,6 +257,11 @@ class BP_Reply_By_Email {
 			return $post;
 		}
 
+		// We've already added our RBE marker, so bail!
+		if ( false !== strpos( $post->post_excerpt, bp_rbe_get_marker() ) ) {
+			return $post;
+		}
+
 		$post->post_content = $this->prepend_rbe_marker_to_content( $post->post_content );
 		$post->post_excerpt = $this->prepend_rbe_marker_to_content( $post->post_excerpt );
 
