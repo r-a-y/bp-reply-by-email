@@ -1464,6 +1464,7 @@ if ( ! function_exists( 'bp_rbe_stop_imap' ) ) :
  */
 function bp_rbe_stop_imap() {
 	touch( bp_core_avatar_upload_path() . '/bp-rbe-stop.txt' );
+	remove_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
 }
 endif;
 
