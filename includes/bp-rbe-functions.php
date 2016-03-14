@@ -1441,7 +1441,12 @@ function bp_rbe_run_inbox_listener() {
 
 	// run our inbox check
 	$imap = BP_Reply_By_Email_IMAP::init();
-	$imap->run();
+	$imap = $imap->run();
+
+	// Do not run the inbox check again on failure.
+	if ( false === $imap ) {
+		remove_action( 'shutdown', 'bp_rbe_spawn_inbox_check' );
+	}
 
 	// kill the rest of this page
 	die();
