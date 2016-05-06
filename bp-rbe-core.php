@@ -229,9 +229,11 @@ class BP_Reply_By_Email {
 		// Plugins should hook here and add their custom listener to $this->listener
 		do_action_ref_array( 'bp_rbe_extend_listener', array( &$this ) );
 
+		$to = $email->get_to();
+
 		// Backpat headers to be used for checks in 'bp_rbe_querystring' filter.
 		$headers = array();
-		$headers['to'] = $email->get_to();
+		$headers['to'] = array_shift( $to )->get_address();
 		$reply_to = $this->get_reply_to_address( $headers );
 
 		if ( empty( $reply_to ) ) {
