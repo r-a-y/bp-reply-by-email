@@ -722,22 +722,30 @@ function bp_rbe_remove_eol_char( $content ) {
 /**
  * Converts HTML to plain-text.
  *
- * Uses the html2text functions from the {@link http://openiaml.org/ IAML Modelling Platform}
- * by {@link mailto:j.m.wright@massey.ac.nz Jevon Wright}.
+ * Uses the html2text() function by Jevon Wright.  Thanks Jevon! :)
  *
- * Licensed under the Eclipse Public License v1.0:
- * {@link http://www.eclipse.org/legal/epl-v10.html}
+ * @uses html2text() by Jevon Wright. Licensed under the EPL v1.0 and LGPL v3.0.
+ *       We use a fork of 0.1.1 to maintain PHP 5.2 compatibility.
+ * @link https://github.com/r-a-y/html2text/tree/0.1.x
+ * @link https://github.com/soundasleep/html2text/
  *
- * Thanks Jevon! :)
- *
- * @link https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php
- * @uses convert_html_to_text() Converts HTML to plain-text.
  * @param string $content The HTML content we want to convert to plain-text.
  * @return string Converted plain-text.
  */
 function bp_rbe_html_to_plaintext( $content ) {
-	if ( ! function_exists( 'convert_html_to_text' ) )
-		require( BP_RBE_DIR . '/includes/functions.html2text.php' );
+	if ( empty( $content ) ) {
+		return $content;
+	}
+
+	if ( false === function_exists( 'convert_html_to_text' ) ) {
+		require BP_RBE_DIR . '/includes/functions.html2text.php';
+	}
+
+	// Suppress warnings when using DOMDocument.
+	// This addresses issues when failing to parse certain HTML.
+	if ( function_exists( 'libxml_use_internal_errors' ) ) {
+		libxml_use_internal_errors( true );
+	}
 
 	return convert_html_to_text( $content );
 }

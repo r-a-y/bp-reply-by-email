@@ -8,6 +8,14 @@
  *
  * Contributors:
  *    Jevon Wright - initial API and implementation
+ *    r-a-y - maintenance of 0.1 branch; slight mod to use a markdown syntax
+ *            for the <img> element
+ *
+ * Based off html2text 0.1.1 to maintain function approach and compatibility
+ * with PHP 5.2.  Updated to use newer algorithm from 0.3.1.
+ *
+ * @link https://github.com/soundasleep/html2text/
+ * @link https://github.com/r-a-y/html2text/tree/0.1.x
  ****************************************************************************/
 
 /**
@@ -24,6 +32,10 @@
  * @return the HTML converted, as best as possible, to text
  */
 function convert_html_to_text($html) {
+	// replace &nbsp; with spaces
+	$html = str_replace("&nbsp;", " ", $html);
+	$html = str_replace("\xc2\xa0", " ", $html);
+
 	$html = fix_newlines($html);
 
 	$doc = new DOMDocument();
@@ -34,6 +46,10 @@ function convert_html_to_text($html) {
 
 	// remove leading and trailing spaces on each line
 	$output = preg_replace("/[ \t]*\n[ \t]*/im", "\n", $output);
+	$output = preg_replace("/ *\t */im", "\t", $output);
+
+	// remove unnecessary empty lines
+	$output = preg_replace("/\n\n\n*/im", "\n\n", $output);
 
 	// remove leading and trailing whitespace
 	$output = trim($output);
@@ -74,6 +90,7 @@ function next_child_name($node) {
 
 	return $nextName;
 }
+
 function prev_child_name($node) {
 	// get the previous child
 	$nextNode = $node->previousSibling;
@@ -93,7 +110,7 @@ function prev_child_name($node) {
 
 function iterate_over_node($node) {
 	if ($node instanceof DOMText) {
-		return preg_replace("/\\s+/im", " ", $node->wholeText);
+		return preg_replace("/[\\t\\n\\f\\r ]+/im", " ", $node->wholeText);
 	}
 	if ($node instanceof DOMDocumentType) {
 		// ignore
@@ -124,14 +141,45 @@ function iterate_over_node($node) {
 		case "h4":
 		case "h5":
 		case "h6":
-			// add two newlines
+		case "ol":
+		case "ul":
+			// add two newlines, second line is added below
 			$output = "\n";
 			break;
 
+		case "td":
+		case "th":
+			// add tab char to separate table fields
+		   $output = "\t";
+		   break;
+
+		case "tr":
 		case "p":
 		case "div":
 			// add one line
 			$output = "\n";
+			break;
+
+		case "li":
+			$output = "- ";
+			break;
+
+		case "b":
+		case "strong":
+			$output = "**";
+			break;
+
+		case "i":
+		case "em":
+			$output = "_";
+			break;
+
+		case "del":
+			$output = "~~";
+			break;
+
+		case "code":
+			$output = "`";
 			break;
 
 		default:
@@ -143,24 +191,18 @@ function iterate_over_node($node) {
 	// debug
 	//$output .= "[$name,$nextName]";
 
-	for ($i = 0; $i < $node->childNodes->length; $i++) {
-		$n = $node->childNodes->item($i);
+	if (isset($node->childNodes)) {
+		for ($i = 0; $i < $node->childNodes->length; $i++) {
+			$n = $node->childNodes->item($i);
 
-		$text = iterate_over_node($n);
+			$text = iterate_over_node($n);
 
-		$output .= $text;
+			$output .= $text;
+		}
 	}
 
 	// end whitespace
 	switch ($name) {
-		case "style":
-		case "head":
-		case "title":
-		case "meta":
-		case "script":
-			// ignore these tags
-			return "";
-
 		case "h1":
 		case "h2":
 		case "h3":
@@ -186,18 +228,41 @@ function iterate_over_node($node) {
 		case "a":
 			// links are returned in [text](link) format
 			$href = $node->getAttribute("href");
+
+			$output = trim($output);
+
+			// remove double [[ ]] s from linking images
+			if (substr($output, 0, 1) == "[" && substr($output, -1) == "]") {
+				$output = substr($output, 1, strlen($output) - 2);
+
+				// for linking images, the title of the <a> overrides the title of the <img>
+				if ($node->getAttribute("title")) {
+					$output = $node->getAttribute("title");
+				}
+			}
+
+			// if there is no link text, but a title attr
+			if (!$output && $node->getAttribute("title")) {
+				$output = $node->getAttribute("title");
+			}
+
 			if ($href == null) {
 				// it doesn't link anywhere
 				if ($node->getAttribute("name") != null) {
 					$output = "[$output]";
 				}
 			} else {
-				if ($href == $output) {
+				if ($href == $output || $href == "mailto:$output" || $href == "http://$output" || $href == "https://$output") {
 					// link to the same address: just use link
 					$output;
 				} else {
 					// replace it
-					$output = "[$output]($href)";
+					if ($output) {
+						$output = "[$output]($href)";
+					} else {
+						// empty string
+						$output = $href;
+					}
 				}
 			}
 
@@ -207,6 +272,44 @@ function iterate_over_node($node) {
 					$output .= "\n";
 					break;
 			}
+			break;
+
+		// mod by r-a-y
+		case "img":
+			$alt = $node->getAttribute("alt");
+			$src = $node->getAttribute("src");
+
+			if ( ! empty( $alt ) ) {
+				$output = "![Image - $alt]";
+			} else {
+				$output = "![Image]";
+			}
+
+			$output .= "($src)";
+
+			break;
+
+		case "li":
+			$output .= "\n";
+			break;
+
+		case "b":
+		case "strong":
+			$output .= "**";
+			break;
+
+		case "i":
+		case "em":
+			$output .= "_";
+			break;
+
+		case "del":
+			$output .= "~~";
+			break;
+
+		case "code":
+			$output .= "`";
+			break;
 
 		default:
 			// do nothing
