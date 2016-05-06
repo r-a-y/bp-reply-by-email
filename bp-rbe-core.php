@@ -124,7 +124,7 @@ class BP_Reply_By_Email {
 
 		// BuddyPress 2.5+ has their own email implementation; these hooks support it.
 		add_filter( 'bp_email_set_post_object',                 array( $this, 'set_bp_post_object' ) );
-		add_filter( 'bp_email_validate',                        array( $this, 'set_bp_reply_to' ), 10, 2 );
+		add_filter( 'bp_email_validate',                        array( $this, 'set_bp_email_headers' ), 10, 2 );
 		add_filter( 'bp_email_get_property',                    array( $this, 'move_rbe_marker_in_bp_html' ), 10, 3 );
 
 		// WP Better Emails support
@@ -249,17 +249,21 @@ class BP_Reply_By_Email {
 	}
 
 	/**
-	 * Set the email address for BP 2.5's 'Reply-To' email header.
+	 * Set various email headers for BP 2.5 emails.
 	 *
-	 * For BuddyPress 2.5+.
+	 * This includes the 'Reply-To' and custom 'From' headers.
 	 *
 	 * @since 1.0-RC4
 	 *
 	 * @param bool|WP_Error $retval Returns true if validation is successful, else a descriptive WP_Error.
 	 * @param BP_Email      $email  Current instance of the email type class.
 	 */
-	public function set_bp_reply_to( $retval, $email ) {
+	public function set_bp_email_headers( $retval, $email ) {
 		if ( ! $email->get_to() ) {
+			return $retval;
+		}
+
+		if ( empty( $this->listener->item_id ) ) {
 			return $retval;
 		}
 
@@ -270,8 +274,30 @@ class BP_Reply_By_Email {
 		$headers['to'] = array_shift( $to )->get_address();
 		$reply_to = $this->get_reply_to_address( $headers );
 
+		// If no reply to, bail.
 		if ( empty( $reply_to ) ) {
 			return $retval;
+		}
+
+		/**
+		 * Should we use the poster's display name as the 'From' name?
+		 *
+		 * @since 1.0-RC4.
+		 *
+		 * @param bool $retval
+		 */
+		$use_custom_from_header = apply_filters( 'bp_rbe_use_custom_from_header', true );
+
+		// Set custom 'From' header.
+		if ( ! empty( $this->listener->user_id ) && true === $use_custom_from_header ) {
+			// Fetch current 'From' email address.
+			$from = $email->get_from()->get_address();
+
+			// Grab the host.
+			$host = substr( $from, strpos( $from, '@' ) + 1 );
+
+			// Set the custom From email address and name.
+			$email->set_from( "noreply@{$host}", bp_core_get_user_displayname( $this->listener->user_id ) );
 		}
 
 		/**
@@ -355,8 +381,11 @@ class BP_Reply_By_Email {
 				$args['headers'] = explode( "\n", str_replace( "\r\n", "\n", $args['headers'] ) );
 			}
 
-			// set the "From" email header
-			if ( ! empty( $listener->user_id ) ) {
+			/** This filter is documented in /bp-reply-by-email/bp-rbe-core.php */
+			$use_custom_from_header = apply_filters( 'bp_rbe_use_custom_from_header', true );
+
+			// Set the "From" email header.
+			if ( ! empty( $listener->user_id ) && true === $use_custom_from_header ) {
 				// override existing "From" name and use the member's display name
 				$from = false;
 				foreach ( $args['headers'] as $key => $custom_header ) {
