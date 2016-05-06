@@ -240,8 +240,18 @@ class BP_Reply_By_Email {
 			return;
 		}
 
-		// Set our custom 'Reply-To' email header.
-		$email->set_reply_to( $reply_to );
+		/**
+		 * Set our custom 'Reply-To' email header.
+		 *
+		 * Have to workaround a mailbox character limit PHPMailer bug by wiping out
+		 * the Reply-To header and then setting it as a custom header.
+		 *
+		 * @link https://github.com/PHPMailer/PHPMailer/issues/706
+		 */
+		$email->set_reply_to( '' );
+		$email->set_headers( array(
+			'Reply-To' => $reply_to
+		) );
 	}
 
 	/**
