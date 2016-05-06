@@ -123,8 +123,8 @@ class BP_Reply_By_Email {
 		add_filter( 'wp_mail',                                  array( &$this, 'wp_mail_filter' ) );
 
 		// BuddyPress 2.5+ has their own email implementation; these hooks support it.
-		add_action( 'bp_email',                                 array( $this, 'set_bp_reply_to' ), 10, 2 );
 		add_filter( 'bp_email_set_post_object',                 array( $this, 'set_bp_post_object' ) );
+		add_filter( 'bp_email_validate',                        array( $this, 'set_bp_reply_to' ), 10, 2 );
 		add_filter( 'bp_email_get_property',                    array( $this, 'move_rbe_marker_in_bp_html' ), 10, 3 );
 
 		// WP Better Emails support
@@ -216,45 +216,6 @@ class BP_Reply_By_Email {
 	/** EMAIL-HOOK RELATED ********************************************/
 
 	/**
-	 * Set the email address for BP 2.5's 'Reply-To' email header.
-	 *
-	 * For BuddyPress 2.5+.
-	 *
-	 * @since 1.0-RC4
-	 *
-	 * @param string   $email_type Unique identifier for current email.
-	 * @param BP_Email $email      Current instance of the email type class.
-	 */
-	public function set_bp_reply_to( $email_type, $email ) {
-		// Plugins should hook here and add their custom listener to $this->listener
-		do_action_ref_array( 'bp_rbe_extend_listener', array( &$this ) );
-
-		$to = $email->get_to();
-
-		// Backpat headers to be used for checks in 'bp_rbe_querystring' filter.
-		$headers = array();
-		$headers['to'] = array_shift( $to )->get_address();
-		$reply_to = $this->get_reply_to_address( $headers );
-
-		if ( empty( $reply_to ) ) {
-			return;
-		}
-
-		/**
-		 * Set our custom 'Reply-To' email header.
-		 *
-		 * Have to workaround a mailbox character limit PHPMailer bug by wiping out
-		 * the Reply-To header and then setting it as a custom header.
-		 *
-		 * @link https://github.com/PHPMailer/PHPMailer/issues/706
-		 */
-		$email->set_reply_to( '' );
-		$email->set_headers( array(
-			'Reply-To' => $reply_to
-		) );
-	}
-
-	/**
 	 * Modify BP email content to prepend our RBE marker.
 	 *
 	 * For BuddyPress 2.5+.
@@ -269,6 +230,9 @@ class BP_Reply_By_Email {
 			return $post;
 		}
 
+		// Plugins should hook here and add their custom listener to $this->listener
+		do_action_ref_array( 'bp_rbe_extend_listener', array( &$this ) );
+
 		if ( empty( $this->listener->item_id ) ) {
 			return $post;
 		}
@@ -282,6 +246,48 @@ class BP_Reply_By_Email {
 		$post->post_excerpt = $this->prepend_rbe_marker_to_content( $post->post_excerpt );
 
 		return $post;
+	}
+
+	/**
+	 * Set the email address for BP 2.5's 'Reply-To' email header.
+	 *
+	 * For BuddyPress 2.5+.
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param bool|WP_Error $retval Returns true if validation is successful, else a descriptive WP_Error.
+	 * @param BP_Email      $email  Current instance of the email type class.
+	 */
+	public function set_bp_reply_to( $retval, $email ) {
+		if ( ! $email->get_to() ) {
+			return $retval;
+		}
+
+		$to = $email->get_to();
+
+		// Backpat headers to be used for checks in 'bp_rbe_querystring' filter.
+		$headers = array();
+		$headers['to'] = array_shift( $to )->get_address();
+		$reply_to = $this->get_reply_to_address( $headers );
+
+		if ( empty( $reply_to ) ) {
+			return $retval;
+		}
+
+		/**
+		 * Set our custom 'Reply-To' email header.
+		 *
+		 * Have to workaround a mailbox character limit PHPMailer bug by wiping out
+		 * the Reply-To header and then setting it as a custom header.
+		 *
+		 * @link https://github.com/PHPMailer/PHPMailer/issues/706
+		 */
+		$email->set_reply_to( '' );
+		$email->set_headers( array(
+			'Reply-To' => $reply_to
+		) );
+
+		return $retval;
 	}
 
 	/**
