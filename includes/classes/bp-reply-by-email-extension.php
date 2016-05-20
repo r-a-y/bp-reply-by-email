@@ -134,6 +134,7 @@ abstract class BP_Reply_By_Email_Extension {
 		if ( ! empty( $this->activity_type ) && $item->type == $this->activity_type ) {
 			$listener->component = $this->id;
 			$listener->item_id   = $item->item_id;
+			$listener->user_id   = $item->user_id;
 
 			if ( ! empty( $this->secondary_item_id_param ) )
 				$listener->secondary_item_id = $item->secondary_item_id;

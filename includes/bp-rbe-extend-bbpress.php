@@ -125,6 +125,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// setup our reply to ID, which is the reply post ID
 		$listener->reply_to_id = $item->secondary_item_id;
 
+		// setup our user ID
+		$listener->user_id = $item->user_id;
+
 		// if activity type is a bbPress reply, we need to grab the topic ID manually
 		if ( $item->type == $this->activity_type ) {
 			global $bp;
