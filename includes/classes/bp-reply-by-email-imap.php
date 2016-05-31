@@ -122,7 +122,7 @@ class BP_Reply_By_Email_IMAP {
 						'from_email' => BP_Reply_By_Email_Parser::get_header( $headers, 'From' ),
 						'content'    => $content,
 						'is_html'    => self::$html,
-						'subject'    => BP_Reply_By_Email_Parser::get_header( $headers, 'Subject' )
+						'subject'    => imap_utf8( BP_Reply_By_Email_Parser::get_header( $headers, 'Subject' ) )
 					);
 
 					$parser = BP_Reply_By_Email_Parser::init( $data, $i );
