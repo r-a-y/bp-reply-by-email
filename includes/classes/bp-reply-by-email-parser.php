@@ -199,7 +199,8 @@ class BP_Reply_By_Email_Parser {
 
 		// set email subject
 		if ( ! empty( $args['subject'] ) ) {
-			self::$subject = $args['subject'];
+			// Strip line-breaks from subject lines.
+			self::$subject = str_replace( "\r\n", '', $args['subject'] );
 		}
 
 		// is the current email HTML-only?
