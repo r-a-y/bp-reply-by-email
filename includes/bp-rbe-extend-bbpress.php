@@ -92,6 +92,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		add_action( 'bp_rbe_no_match',                   array( $this, 'clear_global_cache' ) );
 		add_action( 'bbp_new_topic_post_extras',         array( $this, 'clear_global_cache' ) );
 		add_action( 'bbp_new_reply_post_extras',         array( $this, 'clear_global_cache' ) );
+
+		// BPMFP support.
+		add_action( 'bpmfp_before_send', array( $this, 'bpmfp_support' ) );
 	}
 
 	/**
@@ -1303,4 +1306,36 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		return bp_rbe_inject_qs_in_email( $querystring . '-new' );
 	}
 
+	/**
+	 * Add support for the BP Multiple Forum Post plugin.
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param BP_Activity_Activity $activity
+	 */
+	public function bpmfp_support( $activity ) {
+		// Temporarily save activity object so we can reference it in the bpmfp_support() method.
+		$this->temp_activity = $activity;
+
+		// Extend RBE's listener to add RBE support.
+		add_action( 'bp_rbe_extend_listener', array( $this, 'bpmfp_extend_listener' ) );
+	}
+
+	/**
+	 * Register support for BPMFP with RBE.
+	 *
+	 * Since BPMFP works by delaying email sending to remove duplicate emails
+	 * {@see bpmfp_interrupt_original_activity_notification()}, we must tell RBE
+	 * about this on the 'bp_rbe_extend_listener' hook.
+	 *
+	 * @since 1.0-RC4
+	 *
+	 * @param BP_Reply_By_Email $rbe
+	 */
+	public function bpmfp_extend_listener( $rbe ) {
+		$rbe->listener->component         = $this->id;
+		$rbe->listener->item_id           = $this->temp_activity->item_id;
+		$rbe->listener->secondary_item_id = $this->temp_activity->secondary_item_id;
+		$rbe->listener->user_id           = $this->temp_activity->user_id;
+	}
 }
