@@ -73,9 +73,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 * Some custom hooks this class uses.
 	 */
 	private function custom_hooks() {
-		// cache topic ID after a bbPress forum post is made in a BP group
-		add_action( 'bbp_new_reply',                     array( $this, 'get_topic_id' ),  10, 2 );
-
 		// register our additional param with RBE
 		add_filter( 'bp_rbe_allowed_params',             array( $this, 'register_custom_params' ) );
 
@@ -133,17 +130,8 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// if activity type is a bbPress reply, we need to grab the topic ID manually
 		if ( $item->type == $this->activity_type ) {
-			global $bp;
-
-			// grab our locally-cached topic ID
-			// @see get_topic_id() method (handles frontend)
-			// @see post() method (handles posting by email)
-			if ( ! empty( $bp->rbe->temp->topic_id ) ) {
-				$listener->secondary_item_id = $bp->rbe->temp->topic_id;
-			}
-			if ( ! empty( $bp->rbe->temp->reply_to_id ) ) {
-				$listener->reply_to_id = $bp->rbe->temp->reply_to_id;
-			}
+			$listener->secondary_item_id = bbp_get_reply_topic_id( $item->secondary_item_id );
+			$listener->reply_to_id       = bbp_get_reply_to( $item->secondary_item_id );
 		}
 
 	}
@@ -259,9 +247,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		} else {
 			bp_rbe_log( 'Message #' . $i . ': this is a bbPress forum reply' );
 		}
-
-		// locally cache topic ID - referenced in extend_activity_listener() method
-		$bp->rbe->temp->topic_id = $topic_id;
 
 		// other variables
 		$reply_author   = $user_id;
@@ -399,9 +384,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// Reply posted!
 		if ( ! is_wp_error( $reply_id ) ) {
-			// Locally cache new reply ID - referenced in extend_activity_listener() method.
-			$bp->rbe->temp->reply_to_id = $reply_id;
-
 			// more internal logging
 			bp_rbe_log( 'Message #' . $i . ': bbPress reply successfully posted!' );
 
@@ -1086,26 +1068,6 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		$params[$this->reply_id_param] = false;
 
 		return $params;
-	}
-
-	/**
-	 * Locally cache the topic ID after a bbPress forum post is made.
-	 *
-	 * @param int $reply_id The reply post ID created by bbPress
-	 * @param int $topic_id The topic post ID created by bbPress
-	 */
-	public function get_topic_id( $reply_id, $topic_id ) {
-		if ( bp_is_group() ) {
-			global $bp;
-
-			if ( empty( $bp->rbe ) && empty( $bp->rbe->temp ) ) {
-				$bp->rbe = new stdClass;
-				$bp->rbe->temp = new stdClass;
-			}
-
-			$bp->rbe->temp->topic_id    = $topic_id;
-			$bp->rbe->temp->reply_to_id = $reply_id;
-		}
 	}
 
 	/**
