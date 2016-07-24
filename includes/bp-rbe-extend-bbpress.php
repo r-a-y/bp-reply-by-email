@@ -1365,7 +1365,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		// If activity type is a bbPress reply, we need to grab the topic ID manually.
 		if ( $this->temp_activity->type === $this->activity_type ) {
 			$rbe->listener->secondary_item_id = bbp_get_reply_topic_id( $this->temp_activity->secondary_item_id );
-			$rbe->listener->reply_to_id       = get_post_field( 'post_parent', $this->temp_activity->secondary_item_id );
+			$rbe->listener->reply_to_id       = bbp_get_reply_to( $this->temp_activity->secondary_item_id );
 		}
 	}
 }
