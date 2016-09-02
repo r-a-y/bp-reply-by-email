@@ -597,7 +597,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		/** UNFILTERED HTML **********************************************/
 
 		// Remove wp_filter_kses filters from title and content for capable users
-		if ( user_can( $user_id, 'unfiltered_html' ) ) {
+		if ( user_can( $topic_author, 'unfiltered_html' ) ) {
 			remove_filter( 'bbp_new_topic_pre_title',   'wp_filter_kses' );
 			remove_filter( 'bbp_new_topic_pre_content', 'wp_filter_kses' );
 		}
