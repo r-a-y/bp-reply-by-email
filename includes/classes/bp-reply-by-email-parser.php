@@ -369,8 +369,19 @@ class BP_Reply_By_Email_Parser {
 			if ( $new !== false ) {
 				// get rid of "-new" from the querystring
 				$qs = substr( self::$querystring, 0, $new );
+
 			} else {
-				return false;
+				/**
+				 * If new item querystring isn't default, let plugins render querystring.
+				 *
+				 * Plugins should return a querystring matching whitelisted parameters from the
+				 * 'bp_rbe_allowed_params' filter.
+				 *
+				 * @since 1.0-RC4
+				 *
+				 * @param string $qs Current string.
+				 */
+				$qs = (string) apply_filters( 'bp_rbe_new_item_querystring', self::$querystring );
 			}
 
 		} else {
