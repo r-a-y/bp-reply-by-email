@@ -547,6 +547,13 @@ function bp_rbe_inbound_catch_callback() {
 
 	// setup the webhook parser
 	if ( is_callable( array( $bp_rbe->inbound_provider, 'webhook_parser' ) ) ) {
+		/**
+		 * Hook to allow plugins to do something before webhook parser begins.
+		 *
+		 * @since 1.0-RC4
+		 */
+		do_action( 'bp_rbe_before_webhook_parser' );
+
 		call_user_func( array( $bp_rbe->inbound_provider, 'webhook_parser' ) );
 	}
 }
