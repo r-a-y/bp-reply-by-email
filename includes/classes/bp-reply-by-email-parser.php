@@ -68,6 +68,13 @@ class BP_Reply_By_Email_Parser {
 	 *  WP_Error object on failure.
 	 */
 	public static function init( $args = array(), $i = 1 ) {
+		/**
+		 * Hook to allow plugins to do something before parser begins.
+		 *
+		 * @since 1.0-RC4
+		 */
+		do_action( 'bp_rbe_before_parser' );
+
 		$instance = new self( $args, $i );
 
 		// Email header check ******************************************
