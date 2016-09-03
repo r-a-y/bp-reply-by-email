@@ -177,7 +177,7 @@ class BP_Reply_By_Email {
 	 *
 	 * @since 1.0-RC3
 	 */
-	protected function load_inbound_provider() {
+	public function load_inbound_provider() {
 		$selected = bp_rbe_get_setting( 'inbound-provider' );
 
 		// default to mandrill if no provider specified
