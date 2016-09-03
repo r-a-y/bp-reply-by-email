@@ -243,18 +243,28 @@ class BP_Reply_By_Email_Parser {
 
 		// inbound mode uses subdomain addressing
 		if ( bp_rbe_is_inbound() ) {
-			return substr( $address, 0, $at );
+			$qs = substr( $address, 0, $at );
 
 		// imap mode uses address tags
 		} else {
 			$tag = strpos( $address, bp_rbe_get_setting( 'tag' ) );
 
 			if ( $tag === false ) {
-				return false;
+				$qs = false;
+			} else {
+				$qs = substr( $address, ++$tag, $at - $tag );
 			}
-
-			return substr( $address, ++$tag, $at - $tag );
 		}
+
+		/**
+		 * Filter the querystring from an email address.
+		 *
+		 * @since 1.0-RC4
+		 *
+		 * @param string|false $qs      Current querystring.
+		 * @param string       $address Full 'to' email address.
+		 */
+		return apply_filters( 'bp_rbe_get_querystring', $qs, $address );
 	}
 
 	/**
