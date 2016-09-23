@@ -424,6 +424,10 @@ class BP_Reply_By_Email {
 
 				// Prepend our RBE marker to the email content.
 				$args['message'] = $this->prepend_rbe_marker_to_content( $args['message'] );
+
+				// PHPMailer 'Reply-To' email header override.
+				$this->temp_args = $args;
+				add_action( 'phpmailer_init', array( $this, 'phpmailer_set_reply_to_header' ) );
 			}
 
 			// Filter the headers; 3rd-party components could potentially hook into this
@@ -432,6 +436,36 @@ class BP_Reply_By_Email {
 		endif;
 
 		return $args;
+	}
+
+	/**
+	 * Set 'Reply-To' email address for PHPMailer if mailbox is > 64 characters.
+	 *
+	 * Have to workaround a PHPMailer mailbox character limit issue by setting the
+	 * 'Reply-To' email address again after PHPMailer has done its checks.
+	 *
+	 * This is done for installs still using wp_mail().
+	 *
+	 * @since 1.0-RC4.
+	 * @link  https://github.com/PHPMailer/PHPMailer/issues/706
+	 *
+	 * @param PHPMailer $phpmailer
+	 */
+	public function phpmailer_set_reply_to_header( $phpmailer ) {
+		/*
+		 * Do a check to see if the reply-to email address is > 64 characters.
+		 *
+		 * If so, set the 'Reply-To' email address again since PHPMailer silently
+		 * drops our first attempt at doing this.
+		 */
+		$reply_to = $this->get_reply_to_address( $this->temp_args );
+		if ( strpos( $reply_to, '@' ) > 64 ) {
+			$phpmailer->addCustomHeader( 'Reply-To', $reply_to );
+		}
+
+		// Unset some temporary items.
+		unset( $this->temp_args );
+		remove_action( 'phpmailer_init', array( $this, 'phpmailer_set_reply_to_header' ) );
 	}
 
 	/**
