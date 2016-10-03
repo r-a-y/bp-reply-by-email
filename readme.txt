@@ -57,7 +57,6 @@ Italian - [htrex](https://github.com/htrex)
 
 * Jim Wigginton - for his `Crypt_AES` class from the [PHP Secure Communications Library](http://phpseclib.sourceforge.net/). Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
 * Jevon Wright - for his [html2text](https://code.google.com/p/iaml/source/browse/trunk/org.openiaml.model.runtime/src/include/html2text/html2text.php) functions from the [IAML Modelling Platform](http://openiaml.org/).  Licensed under the [Eclipse Public License v1.0](http://www.eclipse.org/legal/epl-v10.html).
-* Dan Roscoe - for his [PHP-Tail](https://github.com/ruscoe/PHP-Tail) library. Licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.html).
 * Janis Elsts - for his [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) library. Licensed under the [GPL License](http://www.gnu.org/licenses/gpl.html).
 
 

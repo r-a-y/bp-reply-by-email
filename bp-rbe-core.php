@@ -92,11 +92,6 @@ class BP_Reply_By_Email {
 
 		if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) )
 			define( 'BP_RBE_DEBUG_LOG_PATH', WP_CONTENT_DIR . '/bp-rbe-debug.log' );
-
-		// the number of lines to grab from the end of the RBE debug log
-		// @see bp_rbe_failsafe()
-		if ( ! defined( 'BP_RBE_TAIL_LINES' ) )
-			define( 'BP_RBE_TAIL_LINES', 3 );
 	}
 
 	/**
