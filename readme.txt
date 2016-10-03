@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 4.0.x, BuddyPress 2.2.x
+Tested up to: WordPress 4.6.x, BuddyPress 2.7.x
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -33,8 +33,8 @@ Check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by-emai
 
 == Installation ==
 
-**Quick Setup with Gmail**
-[Check out the guide here.](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail)
+**Starter Guide**
+[Check out the guide here.](https://github.com/r-a-y/bp-reply-by-email/wiki/Starter-Guide)
 
 **Upgrading manually**
 
@@ -43,9 +43,7 @@ If you already have the plugin activated, but you choose to upgrade the plugin m
 
 == Frequently Asked Questions ==
 
-[Check out the FAQ here.](https://github.com/r-a-y/bp-reply-by-email/wiki/Frequently-Asked-Questions)
-
-Also check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by-email/wiki) for more information!
+[Check out the wiki here.](https://github.com/r-a-y/bp-reply-by-email/wiki)
 
 
 = Translations =
@@ -68,6 +66,15 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC4 =
+* Feature: Add support to reply to BuddyPress HTML emails, available since BuddyPress 2.5.
+* Feature: Add SparkPost, SendGrid and Postmark as alternative inbound providers.
+* Fix: Fix issue with PHPMailer where the reply-to email address would get silently removed if mailbox was larger than 64 characters.
+* Fix: Fatal error if the BuddyPress groups component is not active.
+* Fix: Fix subject line encoding if using UTF-8 for those using IMAP mode.
+* Fix: Fix bug where settings would not update for sites using an external object cache.
+* Enhancement: Improved IMAP locking system.
 
 = 1.0-RC3 =
 * Feature: Added new mode - inbound mail.  For more info, check out [this page](https://github.com/r-a-y/bp-reply-by-email/wiki/Mandrill).
