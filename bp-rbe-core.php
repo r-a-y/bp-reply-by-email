@@ -180,15 +180,14 @@ class BP_Reply_By_Email {
 	public function load_inbound_provider() {
 		$selected = bp_rbe_get_setting( 'inbound-provider' );
 
-		// default to mandrill if no provider specified
-		if ( empty( $selected ) ) {
-			$selected = 'mandrill';
-		}
-
 		$providers = self::get_inbound_providers();
 
 		if ( isset( $providers[$selected] ) && class_exists( $providers[$selected] ) ) {
 			$this->inbound_provider =  new $providers[$selected];
+
+		// Default to SendGrid if no provider is valid.
+		} else {
+			$this->inbound_provider =  new $providers['sendgrid'];
 		}
 	}
 
