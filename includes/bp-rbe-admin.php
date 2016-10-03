@@ -124,7 +124,7 @@ class BP_Reply_By_Email_Admin {
 
 		$github_updater = new PluginUpdateChecker(
 			// JSON file that gets updated when we release a new version of RBE
-			'https://raw.github.com/gist/610fe45a0c5ed6344be5',
+			'https://gist.githubusercontent.com/r-a-y/610fe45a0c5ed6344be5/raw/d6da803c0166559cb2110a8930746abea1416277/bp-reply-by-email.json',
 			constant( 'BP_RBE_DIR' ) . '/loader.php',
 			$this->get_plugin_basename()
 		);
