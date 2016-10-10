@@ -288,8 +288,16 @@ function bp_rbe_inject_qs_in_email( $qs ) {
  * @return string
  */
 function bp_rbe_get_marker() {
-	// @todo Perhaps add a filter here?
-	return __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
++	/**
+	 * Filters the marker used in reply-to emails.
+	 *
+	 * @since 1.0-RC5
+	 *
+	 * @param string $marker RBE marker.
+	 */
+	$marker = apply_filters( 'bp_rbe_get_marker', __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' ) );
+
+	return $marker;
 }
 
 /**
