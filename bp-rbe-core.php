@@ -937,7 +937,7 @@ class BP_Reply_By_Email {
 	 * @return string
 	 */
 	protected function prepend_rbe_marker_to_content( $content = '' ) {
-		$reply_line = __( '--- Reply ABOVE THIS LINE to add a comment ---', 'bp-rbe' );
+		$reply_line = bp_rbe_get_marker();
 		return "{$reply_line}\n\n{$content}";
 	}
 }
