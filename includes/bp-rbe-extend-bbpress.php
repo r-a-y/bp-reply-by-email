@@ -881,37 +881,33 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			case 'bbp_reply_permissions' :
 				$message = sprintf( __( 'Hi there,
 
-Your reply to the forum topic:
+Unfortunately, your reply to the forum topic could not be posted because it appears that you do not have the ability to post replies.
 
-"%s"
+We are sorry for the inconvenience, but you will need to repost the following message:
 
-Could not be posted because it appears that you do not have the ability to post replies.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
 			case 'bbp_reply_flood' :
 				$message = sprintf( __( 'Hi there,
 
-Your reply to the forum topic:
+Unfortunately, your reply to the forum topic could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
 
-"%s"
+We are sorry for the inconvenience, but you will need to repost the following message:
 
-Could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
 			case 'bbp_reply_duplicate' :
 				$message = sprintf( __( 'Hi there,
 
-Your reply to the forum topic:
+Unfortunately, your reply to the forum topic could not be posted because it appears you have already made the same reply.
+
+Here is a copy of your reply:
 
 "%s"
-
-Could not be posted because it appears you have already made the same reply.
 
 We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
@@ -920,11 +916,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			case 'bbp_reply_blacklist' :
 				$message = sprintf( __( 'Hi there,
 
-Your reply to the forum topic:
+Unfortunately, your reply to the forum topic could not be posted because the content of your message was automatically marked as spam.
+
+Here is a copy of your reply that was marked as spam:
 
 "%s"
-
-Could not be posted because the content of your message was automatically marked as spam.
 
 We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
@@ -933,11 +929,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			case 'bbp_reply_error' :
 				$message = sprintf( __( 'Hi there,
 
-Your reply to the forum topic:
+Unfortunately, your reply to the forum topic could not be posted due to an error.
+
+Here is a copy of your attempted reply:
 
 "%s"
-
-Could not be posted due to an error.
 
 We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
@@ -948,39 +944,33 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			case 'bbp_topic_permissions' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted because it appears that you do have the ability to post topics.
 
-"%s"
+We are sorry for the inconvenience, but you will need to repost the following message:
 
-Could not be posted because it appears that you do not have the ability to post topics.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_edit_topic_forum_category' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted because the forum you are attempting to post in is a forum category.  Forum categories cannot contain topics.
 
-"%s"
+We are sorry for the inconvenience, but you will need to repost the following message:
 
-Could not be posted because the forum you are trying to post in is a forum category.  Forum categories cannot contain topics.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_edit_topic_forum_closed' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted because the forum you are trying to post in is closed and no new topics can be created there.
 
-"%s"
+We are sorry for the inconvenience, but you will need to repost the following message:
 
-Could not be posted because the forum you are trying to post in is closed and no new topics can be created there.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
@@ -988,50 +978,44 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			case 'bbp_edit_topic_forum_hidden' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted because it appears that you do not have access to that forum.
 
-"%s"
+We are sorry for the inconvenience, but you will need to repost the following message:
 
-Could not be posted because it appears that you do not have access to that forum.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_topic_flood' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
 
-"%s"
+We are sorry for the inconvenience, but you will need to repost the following message:
 
-Could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_topic_duplicate' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted because it appears you already created this topic before.
 
-"%s"
+Here is a copy of your attempted topic:
 
-Could not be posted because it appears you already created this topic before.
-
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_topic_blacklist' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted because the content of your message was automatically marked as spam.
+
+Here is a copy of your topic that was marked as spam:
 
 "%s"
-
-Could not be posted because the content of your message was automatically marked as spam.
 
 We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
@@ -1040,11 +1024,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			case 'bbp_topic_error' :
 				$message = sprintf( __( 'Hi there,
 
-Your new forum topic:
+Unfortunately, your new forum topic could not be posted due to an error.
+
+Here is a copy of your attempted topic:
 
 "%s"
-
-Could not be posted due to an error.
 
 We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
