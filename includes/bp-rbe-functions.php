@@ -301,6 +301,26 @@ function bp_rbe_get_marker() {
 }
 
 /**
+ * Returns the notice used to denote if an email cannot be replied by email.
+ *
+ * @since 1.0-RC5
+ *
+ * @return string
+ */
+function bp_rbe_get_nonrbe_notice() {
++	/**
+	 * Filters the non-RBE notice.
+	 *
+	 * @since 1.0-RC5
+	 *
+	 * @param string $notice Non-RBE notice.
+	 */
+	$notice = apply_filters( 'bp_rbe_get_nonrbe_notice', __( '--- Replying to this email will not send a message directly to the recipient or group ---', 'bp-rbe' ) );
+
+	return $notice;
+}
+
+/**
  * Encodes a string.
  *
  * By default, uses AES encryption from {@link http://phpseclib.sourceforge.net/ phpseclib}.
