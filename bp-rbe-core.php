@@ -118,9 +118,10 @@ class BP_Reply_By_Email {
 		add_filter( 'wp_mail',                                  array( &$this, 'wp_mail_filter' ) );
 
 		// BuddyPress 2.5+ has their own email implementation; these hooks support it.
-		add_filter( 'bp_email_set_post_object',                 array( $this, 'set_bp_post_object' ) );
+		add_filter( 'bp_email_set_post_object',                 array( $this, 'set_bp_post_object' ), 999 );
 		add_filter( 'bp_email_validate',                        array( $this, 'set_bp_email_headers' ), 10, 2 );
 		add_filter( 'bp_email_get_property',                    array( $this, 'move_rbe_marker_in_bp_html' ), 10, 3 );
+		add_filter( 'bp_email_get_property',                    array( $this, 'move_nonrbe_notice_in_bp_html' ), 10, 3 );
 
 		// WP Better Emails support
 		add_filter( 'wpbe_html_body',                           array( &$this, 'move_rbe_marker' ) );
@@ -227,7 +228,13 @@ class BP_Reply_By_Email {
 		// Plugins should hook here and add their custom listener to $this->listener
 		do_action_ref_array( 'bp_rbe_extend_listener', array( &$this ) );
 
+		// Prepend notice to non-RBE emails.
 		if ( empty( $this->listener->item_id ) ) {
+			$args = array();
+			$args['post'] = $post;
+
+			$post->post_content = $this->prepend_nonrbe_notice_to_content( $post->post_content, $args );
+			$post->post_excerpt = $this->prepend_nonrbe_notice_to_content( $post->post_excerpt, $args );
 			return $post;
 		}
 
@@ -330,6 +337,44 @@ class BP_Reply_By_Email {
 	}
 
 	/**
+	 * Moves the non-RBE notice in the BP HTML email content to the top of the email.
+	 *
+	 * For BuddyPress 2.5+.
+	 *
+	 * @since 1.0-RC5.
+	 *
+	 * @param string $retval        Current email HTML content.
+	 * @param string $property_name The email property being fetched.
+	 * @param string $transform     Transformation return type.
+	 */
+	public function move_nonrbe_notice_in_bp_html( $retval, $property_name, $transform ) {
+		if ( 'template' !== $property_name || 'add-content' !== $transform ) {
+			return $retval;
+		}
+
+		$notice = bp_rbe_get_nonrbe_notice();
+
+		// try to find the reply line in the email
+		$pos = strpos( $retval, $notice );
+
+		// if our non-RBE notice isn't in this email, bail.
+		if ( $pos === false ) {
+			return $retval;
+		}
+
+		// remove the marker temporarily
+		$html = substr_replace( $retval, '', $pos, strlen( $notice ) + 13 );
+
+		// add some CSS styling
+		// 3rd party devs can filter this
+		$style = apply_filters( 'bp_rbe_reply_marker_css', "color:#333; font-size:12px; font-family:arial,san-serif;" );
+
+		// add back the marker at the top of the HTML email and centered
+		$body_close_pos = strpos( $retval, '>', strpos( $retval, '<body' ) );
+		return substr_replace( $html, '<center><span style="' . $style . '">' . $notice . '</span></center>', $body_close_pos + 1, 0 );
+	}
+
+	/**
 	 * Adds "Reply-To" to email headers in {@link wp_mail()}.
 	 * Also manipulates message content for Basecamp-like behaviour.
 	 *
@@ -346,14 +391,7 @@ class BP_Reply_By_Email {
 		if ( empty( $this->listener ) ) {
 			// since this isn't a RBE email, add a line above each email noting that
 			// this isn't a RBE email and that you should not reply to this
-			//
-			// can be disabled with the 'bp_rbe_show_non_rbe_notice' filter
-			if ( true === (bool) apply_filters( 'bp_rbe_show_non_rbe_notice', true, $args ) ) {
-
-				$notice = __( '--- Replying to this email will not send a message directly to the recipient or group ---', 'bp-rbe' );
-
-				$args['message'] = "{$notice}\n\n" . $args['message'];
-			}
+			$args['message'] = $this->prepend_nonrbe_notice_to_content( $args['message'], $args );
 
 			return $args;
 		}
@@ -683,7 +721,7 @@ class BP_Reply_By_Email {
 
 			// remove the filter after posting
 			remove_filter( 'bp_activity_comment_action', 'bp_rbe_activity_comment_action' );
-			
+
 			// return array of item on success
 			return array( 'activity_comment_id' => $comment_id );
 
@@ -867,6 +905,14 @@ class BP_Reply_By_Email {
 				return false;
 		}
 
+		// BP post type version check for activation emails.
+		if ( isset( $args['post'] ) && $args['post'] instanceof WP_Post ) {
+			$terms = get_the_terms( $args['post'], bp_get_email_tax_type() );
+			if ( ! empty( $terms[0] ) && false !== strpos( $terms[0]->slug, 'core-user-registration' ) ) {
+				return false;
+			}
+		}
+
 		return $retval;
 	}
 
@@ -940,4 +986,23 @@ class BP_Reply_By_Email {
 		$reply_line = bp_rbe_get_marker();
 		return "{$reply_line}\n\n{$content}";
 	}
+
+	/**
+	 * Prepend our non-RBE notice to a string.
+	 *
+	 * @since 1.0-RC5
+	 *
+	 * @param  string $content
+	 * @return string
+	 */
+	protected function prepend_nonrbe_notice_to_content( $content = '', $args = array() ) {
+		if ( true === (bool) apply_filters( 'bp_rbe_show_non_rbe_notice', true, $args ) ) {
+			$notice = bp_rbe_get_nonrbe_notice();
+
+			$content = "{$notice}\n\n" . $content;
+		}
+
+		return $content;
+	}
+
 }
