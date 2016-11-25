@@ -122,9 +122,9 @@ class PluginUpdateChecker_1_3_1 {
 		}
 
 		if ( did_action('plugins_loaded') ) {
-			$this->initDebugBarPanel();
+			//$this->initDebugBarPanel();
 		} else {
-			add_action('plugins_loaded', array($this, 'initDebugBarPanel'));
+			//add_action('plugins_loaded', array($this, 'initDebugBarPanel'));
 		}
 	}
 
