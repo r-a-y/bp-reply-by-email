@@ -51,11 +51,11 @@ class BP_Reply_By_Email_Inbound_Provider_Postmark extends BP_Reply_By_Email_Inbo
 
 		// Postmark separates parsed email headers; add them back for RBE parsing.
 		$headers['From'] = $response->From;
-		$headers['To']   = $response->To;
+		$headers['To']   = $response->OriginalRecipient;
 
 		$data = array(
 			'headers'    => $headers,
-			'to_email'   => $response->To,
+			'to_email'   => $response->OriginalRecipient,
 			'from_email' => $response->From,
 			'content'    => $response->TextBody,
 			'subject'    => $response->Subject
