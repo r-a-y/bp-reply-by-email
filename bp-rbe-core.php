@@ -900,8 +900,10 @@ class BP_Reply_By_Email {
 
 		// do not add the notice to activation emails
 		// check the subject line and look for the activation subject text
-		if ( strpos( $args['subject'], __( 'Activate Your Account', 'buddypress' ) ) !== false ||
-			strpos( $args['subject'], __( 'Activate %s', 'buddypress' ) ) !== false ) {
+		if ( isset( $args['subject'] ) && (
+			strpos( $args['subject'], __( 'Activate Your Account', 'buddypress' ) ) !== false ||
+			strpos( $args['subject'], __( 'Activate %s', 'buddypress' ) ) !== false )
+		)  {
 				return false;
 		}
 
