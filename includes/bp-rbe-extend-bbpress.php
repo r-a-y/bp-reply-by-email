@@ -324,13 +324,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		/** REPLY MODERATION *********************************************/
 
-		// Reply Flooding
-		if ( ! bbp_check_for_flood( $anonymous_data, $reply_author ) ) {
-			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_reply_flood' );
-			//bbp_add_error( 'bbp_reply_flood', __( '<strong>ERROR</strong>: Slow down; you move too fast.', 'bbpress' ) );
-			return new WP_Error( 'bbp_reply_flood', '', $data );
-		}
-
 		// Reply Duplicate
 		if ( ! bbp_check_for_duplicate( array(
 			'post_type'      => bbp_get_reply_post_type(),
@@ -638,13 +631,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		*/
 
 		/** TOPIC MODERATION *********************************************/
-
-		// Post Flooding
-		if ( ! bbp_check_for_flood( $anonymous_data, $topic_author ) ) {
-			//do_action( 'bp_rbe_imap_no_match', $connection, $i, $headers, 'bbp_topic_flood' );
-			//bbp_add_error( 'bbp_reply_flood', __( '<strong>ERROR</strong>: Slow down; you move too fast.', 'bbpress' ) );
-			return new WP_Error( 'bbp_topic_flood', '', $data );
-		}
 
 		// Topic Duplicate
 		if ( ! bbp_check_for_duplicate( array(
