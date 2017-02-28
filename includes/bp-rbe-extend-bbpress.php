@@ -765,11 +765,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 				break;
 
-			case 'bbp_reply_flood' :
-				$log = __( "error - bbPress reply failed. user is flooding!", 'bp-rbe' );
-
-				break;
-
 			case 'bbp_reply_duplicate' :
 				$log = __( "error - bbPress reply failed. duplicate reply detected.", 'bp-rbe' );
 
@@ -814,11 +809,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 			case 'bbp_new_forum_topic_empty' :
 				$log = __( "error - bbPress new topic failed. no body content.", 'bp-rbe' );
-
-				break;
-
-			case 'bbp_topic_flood' :
-				$log = __( "error - bbPress new topic failed. user is flooding!", 'bp-rbe' );
 
 				break;
 
@@ -868,17 +858,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 				$message = sprintf( __( 'Hi there,
 
 Unfortunately, your reply to the forum topic could not be posted because it appears that you do not have the ability to post replies.
-
-We are sorry for the inconvenience, but you will need to repost the following message:
-
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
-
-				break;
-
-			case 'bbp_reply_flood' :
-				$message = sprintf( __( 'Hi there,
-
-Unfortunately, your reply to the forum topic could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
 
 We are sorry for the inconvenience, but you will need to repost the following message:
 
@@ -965,17 +944,6 @@ We are sorry for the inconvenience, but you will need to repost the following me
 				$message = sprintf( __( 'Hi there,
 
 Unfortunately, your new forum topic could not be posted because it appears that you do not have access to that forum.
-
-We are sorry for the inconvenience, but you will need to repost the following message:
-
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
-
-				break;
-
-			case 'bbp_topic_flood' :
-				$message = sprintf( __( 'Hi there,
-
-Unfortunately, your new forum topic could not be posted because it appears that you are trying to post too often.  Please wait a few minutes and try again.
 
 We are sorry for the inconvenience, but you will need to repost the following message:
 
