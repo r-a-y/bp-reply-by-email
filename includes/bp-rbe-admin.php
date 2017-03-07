@@ -234,7 +234,7 @@ class BP_Reply_By_Email_Admin {
 
 		/** IMAP-related ******************************************************/
 		$username = wp_filter_nohtml_kses( $input['username'] );
-		$password = wp_filter_nohtml_kses( $input['password'] );
+		$password = $input['password'];
 
 		if ( $email = is_email( $input['email'] ) ) {
 			$output['email'] = $email;
@@ -310,8 +310,7 @@ class BP_Reply_By_Email_Admin {
 
 				// if connection failed, add an error
 				if ( $imap === false ) {
-					$errors = imap_errors();
-					$messages['connect_error'] = sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), $errors[0] );
+					$messages['connect_error'] = sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), join( '. ', (array) imap_errors() ) );
 					$output['connect'] = 0;
 
 				// connection was successful, now close our temporary connection
