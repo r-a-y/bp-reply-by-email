@@ -1365,20 +1365,47 @@ function bp_rbe_spawn_inbox_check() {
  * running before pinging the IMAP inbox.
  *
  * @since 1.0-RC3
+ * @since 1.0-RC5 Added $r as an argument.
  *
  * @see bp_rbe_spawn_inbox_check()
+ *
+ * @param array $r {
+ *     An array of parameters.
+ *
+ *     @type bool $force If true, do not check for GET or WP cron parameters.
+ * }
  */
-function bp_rbe_run_inbox_listener() {
-	if ( empty( $_POST['_bp_rbe_check'] ) ) {
+function bp_rbe_run_inbox_listener( $r = array() ) {
+	$r = wp_parse_args( $r, array(
+		'force' => false
+	) );
+
+	/**
+	 * Filter to bail out of running IMAP inbox checks.
+	 *
+	 * Handy if you're using IMAP and you want to run your own thing via real cron.
+	 *
+	 * @since 1.0-RC5
+	 *
+	 * @return bool
+	 */
+	if ( true !== apply_filters( 'bp_rbe_run_inbox_listener', true ) ) {
 		return;
 	}
 
-	// make sure WP-cron isn't running
-	if ( defined( 'DOING_CRON' ) || isset( $_GET['doing_wp_cron'] ) ) {
-		return;
+	if ( false === $r['force'] ) {
+		if ( false === isset( $_GET['bp-rbe-ping'] ) ) {
+			return;
+		}
+
+		// make sure WP-cron isn't running
+		if ( defined( 'DOING_CRON' ) || isset( $_GET['doing_wp_cron'] ) ) {
+			return;
+		}
+
 	}
 
-	if ( bp_rbe_is_connecting( array( 'clearcache' => true ) ) ) {
+	if ( bp_rbe_is_inbound() || bp_rbe_is_connecting( array( 'clearcache' => true ) ) ) {
 		return;
 	}
 
