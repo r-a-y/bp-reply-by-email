@@ -36,6 +36,9 @@ class BP_Reply_By_Email_Admin {
 	public function __construct() {
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 		add_action( 'admin_menu', array( $this, 'setup_admin' ) );
+
+		add_action( 'wp_ajax_bp_rbe_admin_connect',        array( $this, 'ajax_connect' ) );
+		add_action( 'wp_ajax_bp_rbe_admin_connect_notice', array( $this, 'ajax_connect_notice' ) );
 	}
 
 	/**
@@ -140,6 +143,7 @@ class BP_Reply_By_Email_Admin {
 			p.connected span, p.not-connected span {font-weight:bold;}
 			p.connected span     {color:green;}
 			p.not-connected span {color:red;}
+			div.imap-options .spinner {float:left; margin-top:0; margin-left:0; display:none;}
 		</script>
 	<?php
 	}
@@ -187,9 +191,77 @@ class BP_Reply_By_Email_Admin {
 				$( 'tr.bp-rbe-email' ).toggle();
 				$( '.bp-rbe-username span' ).toggle();
 			});
+
+			$('button.connect').on('click', function(e) {
+				var btn = $(this);
+				btn.prop( 'disabled', true );
+				$('.imap-options .spinner').show();
+				$('.error-rbe').remove();
+
+				$.post( ajaxurl, {
+					action: 'bp_rbe_admin_connect',
+					'_wpnonce': $('#bp-rbe-ajax-connect-nonce').val()
+				},
+				function(response) {
+
+				});
+
+				// Run another AJAX to check if connected.
+				setTimeout( function() {
+					$.post( ajaxurl, {
+						action: 'bp_rbe_admin_connect_notice',
+						'_wpnonce': $('#bp-rbe-ajax-connect-nonce').val()
+					},
+					function(response) {
+						$('.imap-options .spinner').hide();
+
+						if ( response.success ) {
+							$('p.not-connected').removeClass('not-connected').addClass('connected').html( response.data.msg );
+							$('button.connect').hide();
+						} else {
+							btn.prop( 'disabled', false );
+
+							$( 'div.wrap form:first' ).before( '<div class="error error-rbe">' + response.data.msg + '</div>' );
+						}
+					});
+
+				}, 5000 );
+
+			});
 		});
 		</script>
 	<?php
+	}
+
+	/**
+	 * AJAX callback to connect to the IMAP inbox.
+	 *
+	 * @since 1.0-RC5.
+	 */
+	public function ajax_connect() {
+		check_ajax_referer( 'bp_rbe_ajax_connect' );
+
+		// Run IMAP inbox check.
+		bp_rbe_run_inbox_listener( array( 'force' => true ) );
+	}
+
+	/**
+	 * AJAX callback to check if we're connected to the IMAP inbox.
+	 *
+	 * @since 1.0-RC5.
+	 */
+	public function ajax_connect_notice() {
+		check_ajax_referer( 'bp_rbe_ajax_connect' );
+
+		if ( bp_rbe_is_connected() ) {
+			wp_send_json_success( array(
+				'msg' => __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' )
+			) );
+		} else {
+			wp_send_json_success( array(
+				'msg' => sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), join( '. ', (array) imap_errors() ) )
+			) );
+		}
 	}
 
 	/**
@@ -607,14 +679,25 @@ class BP_Reply_By_Email_Admin {
 		if ( bp_rbe_is_required_completed() && ! bp_rbe_is_inbound() ) :
 			$is_connected = bp_rbe_is_connected();
 
+			$is_autoconnect = 1 === (int) bp_rbe_get_setting( 'keepaliveauto' );
 	?>
 		<h3><?php _e( 'Connection Info', 'bp-rbe' ); ?></h3>
+
+		<div class="spinner is-active"></div>
 
 		<p class="<?php echo $is_connected ? 'connected' : 'not-connected'; ?>">
 			<?php if ( $is_connected ) : ?>
 				<?php _e( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' ); ?>
+			<?php elseif ( $is_autoconnect ) : ?>
+				<?php _e( '<strong>Reply By Email</strong> is currently <span>NOT CONNECTED</span>.  Please click on the "Connect" button to initiate a connection.', 'bp-rbe' ); ?>
+
+				<?php wp_nonce_field( 'bp_rbe_ajax_connect', 'bp-rbe-ajax-connect-nonce' ); ?>
+
+				<p class="submit"><button type="button" class="button-primary connect"><?php esc_html_e( 'Connect', 'bp-rbe' ); ?></button></p>
+
 			<?php else : ?>
 				<?php _e( '<strong>Reply By Email</strong> is currently <span>NOT CONNECTED</span>.  Please refresh the page to initiate a connection.', 'bp-rbe' ); ?>
+
 			<?php endif; ?>
 		</p>
 

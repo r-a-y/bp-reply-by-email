@@ -206,6 +206,9 @@ class BP_Reply_By_Email_IMAP {
 		// sleep a bit before autoconnecting again
 		} else {
 			sleep( 5 );
+
+			// Do this whole thing again!
+			bp_rbe_run_inbox_listener( array( 'force' => true ) );
 		}
 
 		exit();
