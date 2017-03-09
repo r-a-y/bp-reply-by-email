@@ -192,21 +192,24 @@ class BP_Reply_By_Email_Admin {
 				$( '.bp-rbe-username span' ).toggle();
 			});
 
+			// Run inbox check.
 			$('button.connect').on('click', function(e) {
 				var btn = $(this);
 				btn.prop( 'disabled', true );
 				$('.imap-options .spinner').show();
 				$('.error-rbe').remove();
 
-				$.post( ajaxurl, {
-					action: 'bp_rbe_admin_connect',
-					'_wpnonce': $('#bp-rbe-ajax-connect-nonce').val()
-				},
-				function(response) {
+				// Ping inbox check.
+				$.post( {
+					url: ajaxurl,
+					data: {
+						action: 'bp_rbe_admin_connect',
+						'_wpnonce': $('#bp-rbe-ajax-connect-nonce').val()
+					},
+					timeout: 500
+				} );
 
-				});
-
-				// Run another AJAX to check if connected.
+				// Run another AJAX to check if connected after five seconds.
 				setTimeout( function() {
 					$.post( ajaxurl, {
 						action: 'bp_rbe_admin_connect_notice',
