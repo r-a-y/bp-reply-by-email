@@ -256,7 +256,7 @@ class BP_Reply_By_Email_Admin {
 	public function ajax_connect_notice() {
 		check_ajax_referer( 'bp_rbe_ajax_connect' );
 
-		$success_msg = __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' );
+		$success_msg = __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously. To disconnect, deactivate the plugin.', 'bp-rbe' );
 
 		if ( bp_rbe_is_connected() ) {
 			wp_send_json_success( array(
@@ -718,7 +718,7 @@ class BP_Reply_By_Email_Admin {
 
 		<p class="<?php echo $is_connected ? 'connected' : 'not-connected'; ?>">
 			<?php if ( $is_connected ) : ?>
-				<?php _e( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' ); ?>
+				<?php _e( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously. To disconnect, deactivate the plugin.', 'bp-rbe' ); ?>
 			<?php elseif ( $is_autoconnect ) : ?>
 				<?php _e( '<strong>Reply By Email</strong> is currently <span>NOT CONNECTED</span>.  Please click on the "Connect" button to initiate a connection.', 'bp-rbe' ); ?>
 
