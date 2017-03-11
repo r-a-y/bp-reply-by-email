@@ -261,9 +261,18 @@ class BP_Reply_By_Email_Admin {
 				'msg' => __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' )
 			) );
 		} else {
-			wp_send_json_success( array(
-				'msg' => sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), join( '. ', (array) imap_errors() ) )
-			) );
+			// If we're here, check connection for errors.
+			$imap = BP_Reply_By_Email_Connect::init();
+			if ( false === $imap ) {
+				wp_send_json_error( array(
+					'msg' => sprintf( __( 'Error: Unable to connect to inbox - %s', 'bp-rbe' ), join( '. ', (array) imap_errors() ) )
+				) );
+
+			// We shouldn't be here, so close the connection and die.
+			} else {
+				imap_close( $imap );
+				die();
+			}
 		}
 	}
 
