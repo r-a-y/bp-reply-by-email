@@ -256,11 +256,30 @@ class BP_Reply_By_Email_Admin {
 	public function ajax_connect_notice() {
 		check_ajax_referer( 'bp_rbe_ajax_connect' );
 
+		$success_msg = __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' );
+
 		if ( bp_rbe_is_connected() ) {
 			wp_send_json_success( array(
-				'msg' => __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously.', 'bp-rbe' )
+				'msg' => $success_msg
 			) );
 		} else {
+			if ( ! ini_get( 'safe_mode' ) ) {
+				set_time_limit( 0 );
+			}
+
+			// If we're connecting, loop until we get a response.
+			while ( bp_rbe_is_connecting( array( 'clearcache' => true ) ) ) {
+				// Sleep for a sec.
+				sleep( 1 );
+
+				// Success!
+				if ( bp_rbe_is_connected( array( 'clearcache' => true ) ) ) {
+					wp_send_json_success( array(
+						'msg' => $success_msg
+					) );
+				}
+			}
+
 			// If we're here, check connection for errors.
 			$imap = BP_Reply_By_Email_Connect::init();
 			if ( false === $imap ) {
