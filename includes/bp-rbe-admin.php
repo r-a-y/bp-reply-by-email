@@ -244,6 +244,16 @@ class BP_Reply_By_Email_Admin {
 	public function ajax_connect() {
 		check_ajax_referer( 'bp_rbe_ajax_connect' );
 
+		/*
+		 * Stupid WordPress plugins using session_start() without closing the session
+		 * properly.
+		 *
+		 * @link http://stackoverflow.com/a/9906646 Thanks for the hint!
+		 */
+		if ( session_id() ) {
+			session_write_close();
+		}
+
 		// Run IMAP inbox check.
 		bp_rbe_run_inbox_listener( array( 'force' => true ) );
 	}
