@@ -200,8 +200,7 @@ function bp_rbe_cleanup() {
 	delete_site_transient( 'bp_rbe_is_connected' );
 	delete_site_transient( 'bp_rbe_lock' );
 
-	// we don't use WP's cron feature anymore, but we clear RBE's old scheduled
-	// hook just in case
+	// Clear RBE's cron.
 	wp_clear_scheduled_hook( 'bp_rbe_schedule' );
 }
 
@@ -1539,6 +1538,52 @@ function bp_rbe_remove_imap_connection_marker() {
 	}
 }
 endif;
+
+/**
+ * Run hourly WP cron check to see if IMAP connection is connected
+ *
+ * If not connected, an email will be sent to the site admin by default so
+ * that person can login and re-initiate the IMAP connection.  This only runs
+ * in IMAP mode and if the auto-connect option is enabled.
+ *
+ * @since 1.0-RC5
+ */
+function bp_rbe_imap_down_email_notice() {
+	// If inbound mode or is connecting or IMAP auto-connect is off, bail.
+	if ( bp_rbe_is_inbound() || bp_rbe_is_connecting( array( 'clearcache' => true ) ) || ( 1 !== (int) bp_rbe_get_setting( 'keepaliveauto' ) ) ) {
+		return;
+	}
+
+	// If IMAP connection is down, send email so someone can reconnect.
+	if ( ! bp_rbe_is_connected() ) {
+		$recipients   = array();
+		$recipients[] = get_option( 'admin_email' );
+
+		/**
+		 * Filter of email addresses to send "IMAP connection is down" email to.
+		 *
+		 * @since 1.0-RC5
+		 *
+		 * @param array
+		 */
+		$recipients = apply_filters( 'bp_rbe_imap_down_recipients', $recipients );
+
+		if ( ! empty( $recipients ) ) {
+			$message = sprintf( __( 'Hi,
+
+The IMAP connection to the email inbox - %1$s - has been disconnected.
+
+Please manually go to:
+%2$s
+
+And click on the "Connect" button to re-establish a connection.
+
+Otherwise, new replies by email will not be posted to the site.', 'bp-rbe' ), bp_rbe_get_setting( 'servername' ), admin_url( 'admin.php?page=bp-rbe' ) );
+
+			wp_mail( $recipients, __( 'BP Reply By Email - IMAP connection is down', 'bp-rbe' ), $message );
+		}
+	}
+}
 
 /** Modified BP functions ***********************************************/
 

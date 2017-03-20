@@ -24,6 +24,10 @@ if ( bp_rbe_is_required_completed() ) :
 			add_action( 'init', 'bp_rbe_run_inbox_listener', 999 );
 		}
 
+		if ( bp_is_root_blog() && bp_rbe_get_setting( 'keepaliveauto' ) ) {
+			add_action( 'bp_rbe_schedule', 'bp_rbe_imap_down_email_notice' );
+		}
+
 		// email inbox parsing
 		/**
 		 * In Gmail, imap_delete() moves the email to the "All Mail" folder; it doesn't mark the email for deletion.
