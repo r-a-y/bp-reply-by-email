@@ -454,9 +454,6 @@ class BP_Reply_By_Email {
 				// Inject the querystring into the email address
 				$args['headers'][] = 'Reply-To: ' . $reply_to;
 
-				// Prepend our RBE marker to the email content.
-				$args['message'] = $this->prepend_rbe_marker_to_content( $args['message'] );
-
 				// PHPMailer 'Reply-To' email header override.
 				$this->temp_args = $args;
 				add_action( 'phpmailer_init', array( $this, 'phpmailer_set_reply_to_header' ) );
