@@ -347,11 +347,18 @@ function bp_rbe_encode( $args = array() ) {
 		$r['key'] = $r['param'] . $r['key'];
 	}
 
-	$encrypt = false;
+	$encoded = false;
 
-	// default mode is AES
-	// you can override this with the filter below to prevent the AES library from loading
-	// to modify the return value, use the 'bp_rbe_encode' filter
+	/**
+	 * Set the encode mode for the string.
+	 *
+	 * Default mode is 'aes'.  If you override this in the filter, you still have
+	 * to modify the return value by using the 'bp_rbe_encode' filter.
+	 *
+	 * @since 1.0-beta1
+	 *
+	 * @param string $mode
+	 */
 	$r['mode'] = apply_filters( 'bp_rbe_encode_mode', $r['mode'] );
 
 	if ( 'aes' == $r['mode'] ) {
@@ -363,10 +370,21 @@ function bp_rbe_encode( $args = array() ) {
 		$cipher->setKey( $r['key'] );
 
 		// converts AES binary string to hexadecimal
-		$encrypt = bin2hex( $cipher->encrypt( $r['string'] ) );
+		$encoded = bin2hex( $cipher->encrypt( $r['string'] ) );
 	}
 
-	return apply_filters( 'bp_rbe_encode', $encrypt, $r['string'], $r['mode'], $r['key'], $r['param'] );
+	/**
+	 * Override the encoded value for a string.
+	 *
+	 * @since 1.0-beta1
+	 *
+	 * @param string|bool $encoded The encoded value. Boolean false if no value.
+	 * @param string      $string  Unencoded string we want to encode.
+	 * @param string      $mode    Encrypt mode.
+	 * @param string      $key     Encryption key.
+	 * @param string      $param   String to prepend to the key. Handy to set different keys.
+	 */
+	return apply_filters( 'bp_rbe_encode', $encoded, $r['string'], $r['mode'], $r['key'], $r['param'] );
 }
 
 /**
@@ -397,11 +415,9 @@ function bp_rbe_decode( $args = array() ) {
 		$r['key'] = $r['param'] . $r['key'];
 	}
 
-	$decrypt = false;
+	$decoded = false;
 
-	// default mode is AES
-	// you can override this with the filter below to prevent the AES library from loading
-	// to modify the return value, use the 'bp_rbe_decode' filter
+	/** This filter is documented in bp_rbe_encode() - /includes/bp-rbe-functions.php */
 	$r['mode'] = apply_filters( 'bp_rbe_encode_mode', $r['mode'] );
 
 	if ( 'aes' == $r['mode'] ) {
@@ -413,10 +429,21 @@ function bp_rbe_decode( $args = array() ) {
 		$cipher->setKey( $r['key'] );
 
 		// converts hexadecimal AES string back to binary and then decrypts string back to plain-text
-		$decrypt = $cipher->decrypt( hex2bin( $r['string'] ) );
+		$decoded = $cipher->decrypt( hex2bin( $r['string'] ) );
 	}
 
-	return apply_filters( 'bp_rbe_decode', $decrypt, $r['string'], $r['mode'], $r['key'], $r['param'] );
+	/**
+	 * Override the decoded value for a string.
+	 *
+	 * @since 1.0-beta1
+	 *
+	 * @param string|bool $decoded The decoded value. Boolean false if no value.
+	 * @param string      $string  Encoded string we want to decode.
+	 * @param string      $mode    Encrypt mode.
+	 * @param string      $key     Encryption key.
+	 * @param string      $param   String to prepend to the key. Handy to set different keys.
+	 */
+	return apply_filters( 'bp_rbe_decode', $decoded, $r['string'], $r['mode'], $r['key'], $r['param'] );
 }
 
 if ( ! function_exists( 'hex2bin' ) ) :
