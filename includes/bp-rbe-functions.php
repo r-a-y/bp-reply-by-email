@@ -353,7 +353,8 @@ function bp_rbe_encode( $args = array() ) {
 	 * Set the encode mode for the string.
 	 *
 	 * Default mode is 'aes'.  If you override this in the filter, you still have
-	 * to modify the return value by using the 'bp_rbe_encode' filter.
+	 * to modify the return value by using the 'bp_rbe_encode' and 'bp_rbe_decode'
+	 * filters.
 	 *
 	 * @since 1.0-beta1
 	 *
