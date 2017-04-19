@@ -533,6 +533,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			// override groups_get_current_group() with our cached group ID
 			add_filter( 'groups_get_current_group', array( $this, 'set_group_id' ) );
 
+			// make sure bbP doesn't send any emails as GES handles this
+			add_filter( 'bbp_get_forum_subscribers', '__return_false' );
+
 			// temporarily add some GES filters here
 			add_filter( 'bp_ass_activity_notification_subject', 'wp_specialchars_decode' );
 			add_filter( 'bp_ass_activity_notification_content', 'wp_specialchars_decode' );
