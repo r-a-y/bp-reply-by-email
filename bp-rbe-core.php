@@ -314,6 +314,13 @@ class BP_Reply_By_Email {
 			'Reply-To' => $reply_to
 		) );
 
+		// Fix issues with PHPmailer date when IMAP auto-connect is in effect.
+		if ( ! bp_rbe_is_inbound() && 1 === (int) bp_rbe_get_setting( 'keepaliveauto' ) ) {
+			add_action( 'phpmailer_init', function( $p ) {
+				$p->MessageDate = date( 'D, j M Y H:i:s O' );
+			} );
+		}
+
 		return $retval;
 	}
 
