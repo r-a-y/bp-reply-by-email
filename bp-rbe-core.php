@@ -388,7 +388,7 @@ class BP_Reply_By_Email {
 		do_action_ref_array( 'bp_rbe_extend_listener', array( &$this ) );
 
 		// if our 'listener' object hasn't initialized, stop now!
-		if ( empty( $this->listener ) ) {
+		if ( empty( $this->listener ) && ! did_action( 'bp_send_email' ) ) {
 			// since this isn't a RBE email, add a line above each email noting that
 			// this isn't a RBE email and that you should not reply to this
 			$args['message'] = $this->prepend_nonrbe_notice_to_content( $args['message'], $args );
@@ -453,6 +453,11 @@ class BP_Reply_By_Email {
 			if ( ! empty( $reply_to ) ) {
 				// Inject the querystring into the email address
 				$args['headers'][] = 'Reply-To: ' . $reply_to;
+
+				// Only add our RBE marker if we're not sending a BuddyPress email.
+				if ( ! did_action( 'bp_send_email' ) ) {
+					$args['message'] = $this->prepend_rbe_marker_to_content( $args['message'] );
+				}
 
 				// PHPMailer 'Reply-To' email header override.
 				$this->temp_args = $args;
