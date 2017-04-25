@@ -92,6 +92,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// New GES support.
 		add_filter( 'bp_ass_send_activity_notification_for_user', array( $this, 'ges_support' ), 9999, 2 );
+		add_action( 'bp_ges_after_bp_send_email', array( $this, 'ges_remove_listener' ) );
 	}
 
 	/**
@@ -1269,6 +1270,23 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		if ( $this->temp_activity->type === $this->activity_type ) {
 			$rbe->listener->secondary_item_id = bbp_get_reply_topic_id( $this->temp_activity->secondary_item_id );
 			$rbe->listener->reply_to_id       = bbp_get_reply_to( $this->temp_activity->secondary_item_id );
+		}
+	}
+
+	/**
+	 * Remove RBE listener for GES.
+	 *
+	 * When used in a loop like an IMAP continuous inbox check, we have to remove
+	 * the RBE listener for GES since the GES RBE listener is more of a tacked-on
+	 * approach than regular RBE items and can conflict with the generation of the
+	 * 'Reply-To' email header for other RBE components.
+	 *
+	 * @since 1.0-RC5
+	 */
+	public function ges_remove_listener() {
+		if ( isset( $this->temp_activity ) ) {
+			unset( $this->temp_activity );
+			remove_action( 'bp_rbe_extend_listener', array( $this, 'ges_extend_listener' ) );
 		}
 	}
 }
