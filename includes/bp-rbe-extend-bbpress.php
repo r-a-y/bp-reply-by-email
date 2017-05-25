@@ -179,6 +179,16 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 					$querystring .= "&{$this->reply_id_param}={$listener->reply_to_id}";
 				}
 
+				/**
+				 * Special case for users subscribed to a topic for a group forum.
+				 *
+				 * This is needed so GES can continue sending their subscriptions.
+				 */
+				$group_ids = bbp_get_forum_group_ids( bbp_get_topic_forum_id( $listener->item_id ) );
+				if ( ! empty( $group_ids[0] ) ) {
+					$querystring  .= "&{$this->item_id_param}={$group_ids[0]}";
+				}
+
 				break;
 		}
 
