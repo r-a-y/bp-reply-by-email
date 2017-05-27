@@ -229,7 +229,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		}
 
 		$i       = $data['i'];
-		$user_id = $data['user_id'];
+		$user_id = (int) $data['user_id'];
 
 		// get topic ID
 		$topic_id = ! empty( $params[$this->secondary_item_id_param] ) ? $params[$this->secondary_item_id_param] : false;
@@ -289,17 +289,25 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			// override groups_get_current_group() with our cached group ID
 			add_filter( 'groups_get_current_group',  array( $this, 'set_group_id' ) );
 
-			// make sure bbP doesn't send any emails as GES handles this
-			add_filter( 'bbp_get_topic_subscribers', '__return_false' );
+			// GES: remove their subscription filter and add our own.
+			if ( has_filter( 'bbp_subscription_mail_title', 'ass_bbp_add_topic_subscribers_filter' ) ) {
+				remove_filter( 'bbp_subscription_mail_title', 'ass_bbp_add_topic_subscribers_filter', 99 );
+			}
+			add_filter( 'bbp_get_topic_subscribers', array( $this, 'bbp_remove_subscribers' ) );
 
 			// temporarily add some GES filters here
 			add_filter( 'bp_ass_activity_notification_subject', 'wp_specialchars_decode' );
 			add_filter( 'bp_ass_activity_notification_content', 'wp_specialchars_decode' );
+		}
 
-		// bbPress-only forums
-		} else {
-			// Subscriptions - make sure the author stays subscribed to the thread
-			// this is due to how bbp_update_reply() works
+		/** SUBSCRIPTIONS ************************************************/
+
+		/**
+		 * Make sure the author stays subscribed to the thread.
+		 *
+		 * This is due to how {@link bbp_update_reply()} works.
+		 */
+		if ( bbp_is_subscriptions_active() && bbp_is_user_subscribed( $reply_author, $topic_id ) ) {
 			$_POST['bbp_topic_subscription'] = 'bbp_subscribe';
 		}
 
@@ -466,6 +474,16 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		do_action( 'bbp_new_reply',                          $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author, false, $reply_to );
 		do_action( 'bbp_new_reply_post_extras',              $reply_id );
 
+		// Remove some filters after reply hook for groups.
+		if ( ! empty( $params[$this->item_id_param] ) ) {
+			remove_filter( 'bbp_get_topic_subscribers', array( $this, 'bbp_remove_subscribers' ) );
+		}
+
+		// Undo subscription hack.
+		if ( isset( $_POST['bbp_topic_subscription'] ) ) {
+			unset( $_POST['bbp_topic_subscription'] );
+		}
+
 		return array( 'bbp_reply_id' => $reply_id );
 	}
 
@@ -544,8 +562,11 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			// override groups_get_current_group() with our cached group ID
 			add_filter( 'groups_get_current_group', array( $this, 'set_group_id' ) );
 
-			// make sure bbP doesn't send any emails as GES handles this
-			add_filter( 'bbp_get_forum_subscribers', '__return_false' );
+			// GES: remove their subscription filter and add our own.
+			if ( has_filter( 'bbp_subscription_mail_title', 'ass_bbp_add_topic_subscribers_filter' ) ) {
+				remove_filter( 'bbp_subscription_mail_title', 'ass_bbp_add_topic_subscribers_filter', 99 );
+			}
+			add_filter( 'bbp_get_forum_subscribers', array( $this, 'bbp_remove_subscribers' ) );
 
 			// temporarily add some GES filters here
 			add_filter( 'bp_ass_activity_notification_subject', 'wp_specialchars_decode' );
@@ -747,6 +768,11 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		do_action( 'bbp_new_topic',             $topic_id, $forum_id, $anonymous_data, $topic_author );
 		do_action( 'bbp_new_topic_post_extras', $topic_id );
+
+		// Remove some filters after topic hook for groups.
+		if ( ! empty( $params[$this->item_id_param] ) ) {
+			remove_filter( 'bbp_get_forum_subscribers', array( $this, 'bbp_remove_subscribers' ) );
+		}
 
 		return array( 'bbp_topic_id' => $topic_id );
 	}
@@ -1298,5 +1324,37 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			unset( $this->temp_activity );
 			remove_action( 'bp_rbe_extend_listener', array( $this, 'ges_extend_listener' ) );
 		}
+	}
+
+	/**
+	 * Remove users from bbPress subscriptions list.
+	 *
+	 * If the recipient is already subscribed to the group's "All Mail" option, we
+	 * remove the recipient from bbPress' subscription list to prevent duplicate
+	 * emails.
+	 *
+	 * This scenario might happen if a user subscribed to a bunch of bbP group
+	 * topics and later switched to the group's "All Mail" subscription.
+	 *
+	 * @since 1.0-RC5
+	 */
+	public function bbp_remove_subscribers( $retval ) {
+		if ( empty( $retval ) ) {
+			return $retval;
+		}
+
+		// get group sub status
+		$group_user_subscriptions = groups_get_groupmeta( $GLOBALS['bp']->rbe->temp->group_id, 'ass_subscribed_users' );
+
+		// loop through all bbP topic subscribers and check against group sub status
+		foreach ( $retval as $index => $user_id ) {
+			$user_subscription = isset( $group_user_subscriptions[$user_id] ) ? $group_user_subscriptions[$user_id] : false;
+
+			// if user's group status is "All Mail", remove user ID from topic subscribers
+			if ( 'supersub' === $user_subscription ) {
+				unset( $retval[$index] );
+			}
+		}
+		return $retval;
 	}
 }
