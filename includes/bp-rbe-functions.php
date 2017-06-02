@@ -1313,7 +1313,7 @@ function bp_rbe_new_topic_info() {
 	</div>
 
 	<div id="rbe-message">
-		<h5><?php printf( __( 'Send an email to <strong><a href="%s">%s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto: " . bp_get_current_group_name() . " <" . bp_rbe_groups_get_encoded_email_address(). ">", bp_rbe_groups_get_encoded_email_address(), bp_get_current_group_name() ); ?></h5>
+		<h5><?php printf( __( 'Send an email to <strong><a href="%s">%s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto:" . bp_rbe_groups_get_encoded_email_address(), bp_rbe_groups_get_encoded_email_address(), bp_get_current_group_name() ); ?></h5>
 
 		<ul>
 			<li><?php printf( __( 'Compose a new email from the same email address you registered with &ndash; %s', 'bp-rbe' ), '<strong>' . $bp->loggedin_user->userdata->user_email . '</strong>' ) ?>.</li>
