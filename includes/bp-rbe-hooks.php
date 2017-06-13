@@ -25,6 +25,11 @@ if ( bp_rbe_is_required_completed() ) :
 		}
 
 		if ( bp_is_root_blog() && bp_rbe_get_setting( 'keepaliveauto' ) ) {
+			// Schedule hourly check.
+			if ( ! wp_next_scheduled ( 'bp_rbe_schedule' ) ) {
+				wp_schedule_event( time() + 60 * 60, 'hourly', 'bp_rbe_schedule' );
+			}
+
 			add_action( 'bp_rbe_schedule', 'bp_rbe_imap_down_email_notice' );
 		}
 
