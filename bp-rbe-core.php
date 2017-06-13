@@ -90,8 +90,10 @@ class BP_Reply_By_Email {
 		if ( ! defined( 'BP_RBE_DEBUG' ) )
 			define( 'BP_RBE_DEBUG', true );
 
-		if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) )
-			define( 'BP_RBE_DEBUG_LOG_PATH', WP_CONTENT_DIR . '/bp-rbe-debug.log' );
+		if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) ) {
+			$dir = wp_upload_dir();
+			define( 'BP_RBE_DEBUG_LOG_PATH', trailingslashit( $dir['basedir'] ) . 'bp-rbe-debug.log' );
+		}
 	}
 
 	/**
