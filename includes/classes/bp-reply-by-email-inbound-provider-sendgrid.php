@@ -26,7 +26,7 @@ class BP_Reply_By_Email_Inbound_Provider_SendGrid extends BP_Reply_By_Email_Inbo
 	 * Webhook parser class method for SendGrid.
 	 */
 	public function webhook_parser() {
-		if ( empty( $_SERVER['HTTP_USER_AGENT'] ) || ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) && 0 !== strpos( $_SERVER['HTTP_USER_AGENT'], 'SendGrid' ) ) ) {
+		if ( empty( $_SERVER['HTTP_USER_AGENT'] ) || ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) && 0 !== strpos( $_SERVER['HTTP_USER_AGENT'], 'Sendlib' ) ) ) {
 			return;
 		}
 
