@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 4.6.x, BuddyPress 2.7.x
+Tested up to: WordPress 4.8.x, BuddyPress 2.9.x
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -66,6 +66,14 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC5 =
+* Enhancement: Better IMAP auto-connect mode.  When "Automatically reconnect" is enabled on the admin page, if not connected to the IMAP inbox, a "Connect" button will appear.  Clicking on this button will connect and try to keep a persistent connection to the inbox.  For more info, check out [this page](https://github.com/r-a-y/bp-reply-by-email/wiki/IMAP-Autoconnect-Mode).
+* Enhancement: Better compatibility when using the bbPress and BuddyPress Group Email Subscription plugins with BuddyPress groups.
+* Fix: Postmark and SendGrid parsing for those using Inbound Mode.
+* Fix: Fatal error for those using the Debug Bar plugin.
+* Fix: Do not filter passwords for those using IMAP mode.
+* Fix: Remove flood check when replying to bbPress items by email.
 
 = 1.0-RC4 =
 * Feature: Add support to reply to BuddyPress HTML emails, available since BuddyPress 2.5.

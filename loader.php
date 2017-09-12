@@ -4,7 +4,7 @@ Plugin Name: BuddyPress Reply By Email
 Description: Reply to BuddyPress items from the comfort of your email inbox.
 Author: r-a-y
 Author URI: http://profiles.wordpress.org/r-a-y
-Version: 1.0-RC5.dev
+Version: 1.0-RC5
 License: GPLv2 or later
 */
 
