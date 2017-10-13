@@ -321,16 +321,19 @@ class BP_Reply_By_Email_IMAP {
 	 * Tries to fetch the plain-text version when available first. Otherwise, will
 	 * fallback to the HTML version.
 	 *
-	 * @uses imap_fetchstructure() Get the structure of an email
-	 * @uses imap_fetchbody() Using the third parameter will return a portion of the email depending on the email structure.
-	 * @param resource $imap The current IMAP connection
-	 * @param int $i The current email message number
-	 * @param bool $reply If we're parsing a reply or not. Default set to true.
-	 * @return mixed Either the email body on success or false on failure
+	 * @since 1.0-beta1
+	 * @since 1.0-RC6   Added $structure as a parameter.
+	 *
+	 * @param  resource $imap      The current IMAP connection
+	 * @param  int      $i         The current email message number
+	 * @param  object   $structure The structure for the particular email. Parsed from {@link imap_fetchstructure()}.
+	 * @return mixed    Either the email body on success or false on failure
 	 */
-	public static function body_parser( $imap, $i, $reply = true ) {
-		// get the email structure
-		$structure = imap_fetchstructure( $imap, $i );
+	public static function body_parser( $imap, $i, $structure = false ) {
+		// Get the email structure, if not passed.
+		if ( false === $structure ) {
+			$structure = imap_fetchstructure( $imap, $i );
+		}
 
 		// setup encoding variable
 		$encoding  = $structure->encoding;
@@ -455,5 +458,4 @@ class BP_Reply_By_Email_IMAP {
 
 		return $items;
 	}
-
 }
