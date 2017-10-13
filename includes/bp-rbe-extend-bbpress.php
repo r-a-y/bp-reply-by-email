@@ -96,6 +96,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		// Attachments.
 		add_action( 'bp_rbe_imap_misc_data',         array( $this, 'imap_attachments' ), 10, 5 );
+		add_action( 'bp_rbe_bbpress_after_new_post', array( $this, 'post_attachments' ), 10, 2 );
 	}
 
 	/**
@@ -1487,5 +1488,43 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		}
 
 		return $retval;
+	}
+
+	/**
+	 * Add attachments parsed from email message into a bbPress post.
+	 *
+	 * @since 1.0-RC6
+	 *
+	 * @param int   $post_id ID of new bbPress post
+	 * @param array $data    Data from email message.
+	 */
+	public function post_attachments( $post_id, $data ) {
+		// No attachments, so bail!
+		if ( empty( $data['misc']['bbp_attachments'] ) ) {
+			return;
+		}
+
+		// Require media functions.
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		foreach ( $data['misc']['bbp_attachments'] as $attachment ) {
+			// Do the validation and storage stuff.
+			$id = media_handle_sideload( $attachment, $post_id );
+
+			// If error storing permanently, unlink.
+			if ( is_wp_error( $id ) ) {
+				bp_rbe_log( 'Message #' . $data['i'] . ': Attachment error - could not add attachment "' . $attachment['name'] . '" to bbPress post.' );
+
+				@unlink( $attachment['tmp_name'] );
+				continue;
+			}
+
+			// Add GD bbPress attachment marker.
+			update_post_meta( $id, '_bbp_attachment', '1' );
+
+			bp_rbe_log( 'Message #' . $data['i'] . ': Attachment "' . $attachment['name'] . '" successfully added to bbPress post.' );
+		}
 	}
 }
