@@ -1511,7 +1511,9 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 		foreach ( $data['misc']['bbp_attachments'] as $attachment ) {
 			// Do the validation and storage stuff.
-			$id = media_handle_sideload( $attachment, $post_id );
+			$id = media_handle_sideload( $attachment, $post_id, null, array(
+				'post_author' => $data['user_id']
+			) );
 
 			// If error storing permanently, unlink.
 			if ( is_wp_error( $id ) ) {
