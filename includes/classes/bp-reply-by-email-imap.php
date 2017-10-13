@@ -134,6 +134,23 @@ class BP_Reply_By_Email_IMAP {
 						'querystring' => $qs
 					) );
 
+					/**
+					 * Filter to add miscellaneous data before passing to the email parser.
+					 *
+					 * @since 1.0-RC6
+					 *
+					 * @param  array    $retval     Data to add.
+					 * @param  array    $data       Current data to pass to the email parser
+					 * @param  resource $connection Current IMAP connection
+					 * @param  int      $i          Current IMAP message number
+					 * @param  array    $structure  Current IMAP structure for the message.
+					 * @return array
+					 */
+					$misc_data = apply_filters( 'bp_rbe_imap_misc_data', array(), $data, $this->connection, $i, $structure );
+					if ( ! empty( $misc_data ) ) {
+						$data['misc'] = $misc_data;
+					}
+
 					$parser = BP_Reply_By_Email_Parser::init( $data, $i );
 
 					if ( is_wp_error( $parser ) ) {
@@ -146,7 +163,7 @@ class BP_Reply_By_Email_IMAP {
 					do_action( 'bp_rbe_imap_loop', $this->connection, $i );
 
 					// unset some variables at the end of the loop
-					unset( $structure, $headers, $data, $qs, $user, $parser );
+					unset( $structure, $headers, $data, $misc_data, $qs, $user, $parser );
 				}
 
 				// do something after the loop
