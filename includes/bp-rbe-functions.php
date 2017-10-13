@@ -498,6 +498,34 @@ function bp_rbe_log( $message ) {
 	error_log( '[' . gmdate( 'd-M-Y H:i:s' ) . '] ' . $message . "\n", 3, BP_RBE_DEBUG_LOG_PATH );
 }
 
+/**
+ * Writes inline data to a local temporary file.
+ *
+ * Note: The calling function must unlink() the file.
+ *
+ * @since 1.0-RC6
+ *
+ * @param  string $filename Name of your file.
+ * @param  mixed  $data     Data for your file.
+ * @return string|WP_Error  String of path to temporary file on success, WP_Error on failure.
+ */
+function bp_rbe_inline_data_to_tmpfile( $filename = '', $data ) {
+	if ( ! function_exists( 'wp_tempnam' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+	}
+
+	$filename = wp_tempnam( $filename );
+	if ( ! $filename ) {
+		return new WP_Error( 'http_no_file', __( 'Could not create temporary file.', 'bp-rbe' ) );
+	}
+
+	if ( false === @file_put_contents( $filename, $data ) ) {
+		return new WP_Error( 'http_no_write', __( 'Could not write to temporary file.', 'bp-rbe' ) );
+	}
+
+	return $filename;
+}
+
 /** Hook-related ********************************************************/
 
 /**
