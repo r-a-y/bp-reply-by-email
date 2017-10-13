@@ -113,17 +113,26 @@ class BP_Reply_By_Email_IMAP {
 
 					self::$html = false;
 
-					$content = self::body_parser( $this->connection, $i );
-					$headers = $this->get_mail_headers( $this->connection, $i );
+					$structure = imap_fetchstructure( $this->connection, $i );
+					$headers   = $this->get_mail_headers( $this->connection, $i );
 
 					$data = array(
 						'headers'    => $headers,
 						'to_email'   => BP_Reply_By_Email_Parser::get_header( $headers, 'To' ),
 						'from_email' => BP_Reply_By_Email_Parser::get_header( $headers, 'From' ),
-						'content'    => $content,
+						'content'    => self::body_parser( $this->connection, $i, $structure ),
 						'is_html'    => self::$html,
 						'subject'    => imap_utf8( BP_Reply_By_Email_Parser::get_header( $headers, 'Subject' ) )
 					);
+
+					$qs   = BP_Reply_By_Email_Parser::get_querystring( $data['to_email'] );
+					$user = get_user_by( 'email', $data['from_email'] );
+
+					$data['params'] = BP_Reply_By_Email_Parser::get_parameters( array(
+						'is_new'      => BP_Reply_By_Email_Parser::is_new_item( $qs ),
+						'user_id'     => ! empty( $user->ID ) ? $user->ID : 0,
+						'querystring' => $qs
+					) );
 
 					$parser = BP_Reply_By_Email_Parser::init( $data, $i );
 
@@ -137,7 +146,7 @@ class BP_Reply_By_Email_IMAP {
 					do_action( 'bp_rbe_imap_loop', $this->connection, $i );
 
 					// unset some variables at the end of the loop
-					unset( $content, $headers, $data, $parser );
+					unset( $structure, $headers, $data, $qs, $user, $parser );
 				}
 
 				// do something after the loop
