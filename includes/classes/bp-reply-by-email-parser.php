@@ -364,28 +364,39 @@ class BP_Reply_By_Email_Parser {
 	}
 
 	/**
-	 * Decodes the encoded querystring from {@link BP_Reply_By_Email_Parser::get_querystring()}.
-	 * Then, extracts the params into an array.
+	 * Decodes the encoded querystring into an array of parameters.
 	 *
-	 * @uses bp_rbe_decode() To decode the encoded querystring
-	 * @uses wp_parse_str() WP's version of parse_str() to parse the querystring
-	 * @return mixed Either an array of params on success or false on failure
+	 * @since 1.0-RC6 Added $args as a function parameter.
+	 *
+	 * @param array $args {
+	 *     An array of arguments.
+	 *
+	 *     @type bool   $is_new      Whether the item is a new item or a reply.
+	 *     @type int    $user_id     The parsed user ID.
+	 *     @tyep string $querystring The encoded querystring.
+	 * }
+	 * @return array|bool Either an array of params on success or false on failure.
 	 */
-	protected static function get_parameters() {
+	public static function get_parameters( $args = array() ) {
+		$args = wp_parse_args( $args, array(
+			'is_new'      => false,
+			'user_id'     => 0,
+			'querystring' => '',
+		) );
 
 		// new items will always have "-new" appended to the querystring
 		// we need to strip "-new" to get the querystring
-		if ( self::is_new_item() ) {
+		if ( $args['is_new'] ) {
 			// check to see if user ID is set, if not, return false
-			if ( empty( self::$user->ID ) ) {
+			if ( empty( $args['user_id'] ) ) {
 				return false;
 			}
 
-			$new = strrpos( self::$querystring, '-new' );
+			$new = strrpos( $args['querystring'], '-new' );
 
 			if ( $new !== false ) {
 				// get rid of "-new" from the querystring
-				$qs = substr( self::$querystring, 0, $new );
+				$qs = substr( $args['querystring'], 0, $new );
 
 			} else {
 				/**
@@ -398,11 +409,11 @@ class BP_Reply_By_Email_Parser {
 				 *
 				 * @param string $qs Current string.
 				 */
-				$qs = (string) apply_filters( 'bp_rbe_new_item_querystring', self::$querystring );
+				$qs = (string) apply_filters( 'bp_rbe_new_item_querystring', $args['querystring'] );
 			}
 
 		} else {
-			$qs = self::$querystring;
+			$qs = $args['querystring'];
 		}
 
 		// only decode if querystring is a hexadecimal string
@@ -411,13 +422,13 @@ class BP_Reply_By_Email_Parser {
 			// New posted items will pass $user_id along with $qs for decoding
 			// This is done as an additional security measure because the "From" header
 			// can be spoofed and is similar to how Basecamp handles posting new items
-			if ( self::is_new_item() ) {
+			if ( $args['is_new'] ) {
 				// pass $user_id to bp_rbe_decode()
-				$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( array( 'string' => $qs, 'param' => self::$user->ID ) ), $qs, self::$user->ID );
+				$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( array( 'string' => $qs, 'param' => $args['user_id'] ) ), $qs, $args['user_id'] );
 
 			// Replied items will use the regular $qs for decoding
 			} else {
-				$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( array( 'string' => self::$querystring ) ), $qs, false );
+				$qs = apply_filters( 'bp_rbe_decode_qs', bp_rbe_decode( array( 'string' => $args['querystring'] ) ), $qs, false );
 			}
 		}
 
