@@ -554,18 +554,24 @@ class BP_Reply_By_Email_Parser {
 	 * eg. djlkjkdjfkd-new = true
 	 *     jkljd8fujkdjkdf = false
 	 *
+	 * @since 1.0-RC6 Added $qs as a function parameter.
+	 *
 	 * @return bool
 	 */
-	protected static function is_new_item() {
+	public static function is_new_item( $qs = '' ) {
+		if ( '' === $qs ) {
+			$qs = self::$querystring;
+		}
+
 		$new = '-new';
 
-		if ( substr( self::$querystring, -strlen( $new ) ) == $new ) {
+		if ( substr( $qs, -strlen( $new ) ) == $new ) {
 			$retval = true;
 		} else {
 			$retval = false;
 		}
 
-		return apply_filters( 'bp_rbe_is_new_item', $retval, self::$querystring );
+		return apply_filters( 'bp_rbe_is_new_item', $retval, $qs );
 	}
 
 	/**
