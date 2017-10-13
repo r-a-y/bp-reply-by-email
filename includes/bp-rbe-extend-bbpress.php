@@ -93,6 +93,9 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// New GES support.
 		add_filter( 'bp_ass_send_activity_notification_for_user', array( $this, 'ges_support' ), 9999, 2 );
 		add_action( 'bp_ges_after_bp_send_email', array( $this, 'ges_remove_listener' ) );
+
+		// Attachments.
+		add_action( 'bp_rbe_imap_misc_data',         array( $this, 'imap_attachments' ), 10, 5 );
 	}
 
 	/**
@@ -1368,6 +1371,121 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 				unset( $retval[$index] );
 			}
 		}
+		return $retval;
+	}
+
+	/**
+	 * Parse attachments from IMAP email and save temporarily.
+	 *
+	 * Requires GD bbPress Attachments.  We do not actually post the attachment
+	 * to WordPress at this time.  We do this later in the post_attachments() method.
+	 *
+	 * @since 1.0-RC6
+	 *
+	 * @param  array    $retval     Data to add.
+	 * @param  array    $data       Current data to pass to the email parser
+	 * @param  resource $connection Current IMAP connection
+	 * @param  int      $i          Current IMAP message number
+	 * @param  array    $structure  Current IMAP structure for the message.
+	 */
+	public function imap_attachments( $retval, $data, $connection, $i, $structure ) {
+		// No GD bbPress Attachments or no message parts? Stop now!
+		if ( empty( $GLOBALS['gdbbpress_attachments'] ) || empty( $structure->parts ) ) {
+			return $retval;
+		}
+
+		$topic_id = ! empty( $data['params']['bbpt'] ) ? $data['params']['bbpt'] : 0;
+		$forum_id = ! empty( $data['params']['bbpf'] ) ? $data['params']['bbpf'] : 0;
+
+		// Not a bbPress item, so stop!
+		if ( empty( $topic_id ) && empty( $forum_id ) ) {
+			return $retval;
+		}
+
+		// Get forum ID if still empty.
+		if ( empty( $forum_id ) && $topic_id ) {
+			$forum_id = bbp_get_topic_forum_id( $topic_id );
+		}
+
+		// Something went wrong.
+		if ( empty( $forum_id ) ) {
+			bp_rbe_log( 'Message #' . $i . ': Problem parsing forum ID for attachments.' );
+			return $retval;
+		}
+
+		// If attachments are not allowed for this forum, stop!
+		if ( ! $GLOBALS['gdbbpress_attachments']->enabled_for_forum( $forum_id ) ) {
+			return $retval;
+		}
+
+		// Parse email for attachments.
+		require_once BP_RBE_DIR . '/includes/classes/bp-reply-by-email-imap-message.php';
+		$attachments = BP_Reply_By_Email_IMAP_Message::getAttachments( $connection, $i, $structure->parts );
+
+		// No attachments, so stop!
+		if ( empty( $attachments ) ) {
+			return $retval;
+		}
+
+		bp_rbe_log( 'Message #' . $i . ': This bbPress item has attachments.' );
+
+		$attachment_data = array();
+
+		$max_files = $GLOBALS['gdbbpress_attachments']->get_max_files( false, $forum_id );
+
+		// Attempt to save attachments to temp directory.
+		foreach ( $attachments as $i => $attachment ) {
+			if ( $i > $max_files ) {
+				continue;
+			}
+
+			$filepath = bp_rbe_inline_data_to_tmpfile( $attachment['filename'], $attachment['data'] );
+			if ( is_wp_error( $filepath ) ) {
+				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not write to temporary file.' );
+				continue;
+			}
+
+			$file_array = array(
+				'tmp_name' => $filepath
+			);
+
+			// Filesize fits requirements, so upload!
+			if ( $GLOBALS['gdbbpress_attachments']->is_right_size( array( 'size' => filesize( $filepath ), $forum_id ) ) ) {
+				switch ( strtolower( $attachment['subtype'] ) ) {
+					case 'png' :
+					case 'jpeg' :
+					case 'jpe' :
+					case 'jpg' :
+					case 'gif' :
+						// Sanitize filename.
+						preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment['filename'], $matches );
+						$file_array['name'] = $matches[0];
+
+						break;
+
+
+					// Everything else.
+					default :
+						$file_array['name'] = $attachment['filename'];
+
+						break;
+				}
+
+				$attachment_data[] = $file_array;
+
+			// Size too big.
+			} else {
+				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not add attachment "' . $file_array['name'] . '" because it is too large.' );
+
+				@unlink( $filepath );
+			}
+		}
+
+		// Add our attachment metadata to the email data.
+		if ( ! empty( $attachment_data ) ) {
+			$retval['bbp_attachments'] = $attachment_data;
+		}
+
 		return $retval;
 	}
 }
