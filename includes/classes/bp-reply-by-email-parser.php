@@ -30,6 +30,14 @@ class BP_Reply_By_Email_Parser {
 	public static $querystring = '';
 
 	/**
+	 * The RBE parameters when successfully parsed.
+	 *
+	 * @since 1.0-RC6
+	 * @var   array|bool
+	 */
+	public static $params = null;
+
+	/**
 	 * The WP_User object when successfully parsed.
 	 *
 	 * @var object
@@ -124,14 +132,20 @@ class BP_Reply_By_Email_Parser {
 		// Parameters parser *******************************************
 
 		// Check if we're posting a new item or not
-		$params = self::get_parameters();
+		if ( null === self::$params ) {
+			self::$params = self::get_parameters( array(
+				'is_new'      => self::is_new_item(),
+				'user_id'     => ! empty( self::$user->ID ) ? self::$user->ID : 0,
+				'querystring' => self::$querystring
+			) );
+		}
 
-		if ( ! $params ) {
+		if ( false === self::$params ) {
 			//do_action( 'bp_rbe_imap_no_match', $this->connection, $i, $headers, 'no_params' );
 			return new WP_Error( 'no_params', '', $args );
 		}
 
-		bp_rbe_log( 'Message #' . $i . ': params = ' . print_r( $params, true ) );
+		bp_rbe_log( 'Message #' . $i . ': params = ' . print_r( self::$params, true ) );
 
 		// Email body parser *******************************************
 
@@ -160,7 +174,7 @@ class BP_Reply_By_Email_Parser {
 		);
 
 		// plugins should use the following hook to do their posting routine
-		$retval = apply_filters( 'bp_rbe_parse_completed', true, $data, $params );
+		$retval = apply_filters( 'bp_rbe_parse_completed', true, $data, self::$params );
 
 		// clean up after ourselves
 		self::clear_properties();
@@ -197,6 +211,11 @@ class BP_Reply_By_Email_Parser {
 		// get userdata from email address
 		if ( ! empty( $args['from_email'] ) ) {
 			self::$user = get_user_by( 'email', $args['from_email'] );
+		}
+
+		// set parameters if we've already parsed them ahead of time
+		if ( ! empty( $args['params'] ) ) {
+			self::$params = $args['params'];
 		}
 
 		// set email content
@@ -586,5 +605,6 @@ class BP_Reply_By_Email_Parser {
 		self::$content     = '';
 		self::$subject     = '';
 		self::$is_html     = false;
+		self::$params      = null;
 	}
 }
