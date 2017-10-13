@@ -66,6 +66,14 @@ class BP_Reply_By_Email_Parser {
 	public static $is_html = false;
 
 	/**
+	 * Miscellaneous data, usually passed by modules or plugins.
+	 *
+	 * @since 1.0-RC6
+	 * @var   array
+	 */
+	public static $misc = array();
+
+	/**
 	 * Static initializer.
 	 *
 	 * Returns an array of the parsed item on success. WP_Error object on failure.
@@ -173,6 +181,10 @@ class BP_Reply_By_Email_Parser {
 			'i'       => $i
 		);
 
+		if ( ! empty( self::$misc ) ) {
+			$data['misc'] = self::$misc;
+		}
+
 		// plugins should use the following hook to do their posting routine
 		$retval = apply_filters( 'bp_rbe_parse_completed', true, $data, self::$params );
 
@@ -232,6 +244,11 @@ class BP_Reply_By_Email_Parser {
 		// is the current email HTML-only?
 		if ( isset( $args['is_html'] ) ) {
 			self::$is_html = (bool) $args['is_html'];
+		}
+
+		// Misc data.
+		if ( isset( $args['misc'] ) ) {
+			self::$misc = $args['misc'];
 		}
 	}
 
@@ -606,5 +623,6 @@ class BP_Reply_By_Email_Parser {
 		self::$subject     = '';
 		self::$is_html     = false;
 		self::$params      = null;
+		self::$misc        = array();
 	}
 }
