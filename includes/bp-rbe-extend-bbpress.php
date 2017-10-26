@@ -1173,49 +1173,57 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	 * Show 'Post New Topics via Email' block on a bbP forum page.
 	 */
 	public function new_topic_via_email_block() {
+		$email = '';
+
 		// BuddyPress group
 		if ( bp_is_group() ) {
-			bp_rbe_new_topic_info();
+			$email  = bp_rbe_groups_get_encoded_email_address();
+			$name   = bp_get_current_group_name();
+			$header = esc_html__( 'Did you know you can post new topics to this group from your email client?', 'bp-rbe' );
 
-		// Everything else
-		} else {
-			// if not on a bbPress forum, stop now!
-			if ( ! bbp_is_single_forum() )
-				return;
+		// bbPress forum
+		} elseif ( bbp_is_single_forum() ) {
+			$email  = $this->get_forum_encoded_email_address();
+			$name   = bbp_get_forum_title();
+			$header = esc_html__( 'Did you know you can post new topics to this forum from your email client?', 'bp-rbe' );
+		}
 
-			global $bp;
+		if ( empty( $email ) ) {
+			return;
+		}
+
 		?>
 
-			<h4><?php _e( 'Post New Topics via Email', 'bp-rbe' ) ?></h4>
+		<div id="rbe-header" class="bbp-template-notice">
+			<ul>
+				<li><?php echo $header; ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></li>
+			</ul>
+		</div>
 
-			<p><?php _e( 'You can post new topics to this forum from the comfort of your email inbox.', 'bp-rbe' ) ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></p>
+		<div id="rbe-message" class="bbp-template-notice info">
+			<h5><?php printf( __( 'Send an email to <strong><a href="%1$s">%1$s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto:" . $email, $name ); ?></h5>
 
-			<div id="rbe-message">
-				<h5><?php printf( __( 'Send an email to <strong><a href="%s">%s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto: " . bbp_get_forum_title() . " <" . $this->get_forum_encoded_email_address(). ">", $this->get_forum_encoded_email_address(), bbp_get_forum_title() ); ?></h5>
+			<ul>
+				<li><?php printf( __( 'Compose a new email from the same email address you registered with &ndash; %s', 'bp-rbe' ), '<strong>' . esc_attr( $GLOBALS['bp']->loggedin_user->userdata->user_email ) . '</strong>' ) ?>.</li>
+				<li><?php _e( 'Put the address above in the "To:" field of the email.', 'bp-rbe' ) ?></li>
+				<li><?php _e( 'The email subject will become the topic title.', 'bp-rbe' ) ?></li>
+				<?php do_action( 'bp_rbe_new_topic_info_extra' ) ?>
+			</ul>
 
-				<ul>
-					<li><?php printf( __( 'Compose a new email from the same email address you registered with &ndash; %s', 'bp-rbe' ), '<strong>' . $bp->loggedin_user->userdata->user_email . '</strong>' ) ?>.</li>
-					<li><?php _e( 'Put the address above in the "To:" field of the email.', 'bp-rbe' ) ?></li>
-					<li><?php _e( 'The email subject will become the topic title.', 'bp-rbe' ) ?></li>
-					<?php do_action( 'bp_rbe_new_topic_info_extra' ) ?>
-				</ul>
+			<p><?php _e( '<strong>Note:</strong> The email address above is unique to you and this group. Do not share this email address with anyone else! (Each group member will have their own unique email address.)', 'bp-rbe' ) ?></p>
+		</div>
 
-				<p><?php _e( '<strong>Note:</strong> The email address above is unique to you and this forum. Do not share this email address with anyone else! (Each forum member will have their own unique email address.)', 'bp-rbe' ) ?></p>
-			</div>
-
-			<script type="text/javascript">
-			jQuery(function() {
-				jQuery('#rbe-toggle').show();
-				jQuery('#rbe-message').hide();
-				jQuery('#rbe-toggle').click(function() {
-					jQuery('#rbe-message').toggle(300);
-				});
+		<script type="text/javascript">
+		jQuery(function() {
+			jQuery('#rbe-toggle').show();
+			jQuery('#rbe-message').hide();
+			jQuery('#rbe-toggle').click(function() {
+				jQuery('#rbe-message').toggle(300);
 			});
-
-			</script>
+		});
+		</script>
 
 		<?php
-		}
 	}
 
 	/**

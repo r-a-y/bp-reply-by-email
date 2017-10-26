@@ -1309,7 +1309,8 @@ function bp_rbe_new_topic_info_css() {
 	<style type="text/css">
 		#rbe-toggle { display:none; }
 		#rbe-header, #new-post #rbe-message, #rbe-header h4 {margin-bottom: 1em;}
-		#rbe-message { background: #FFFFE0; border: 1px solid #E6DB55; border-radius:3px; padding:1em; }
+		#rbe-header a {text-decoration:underline;}
+		#rbe-message {padding:1em;}
 		#rbe-message h5 {margin:5px 0 0;}
 		#rbe-message ul { margin:1em 1.5em; }
 		#rbe-message li {list-style-type:disc;}
