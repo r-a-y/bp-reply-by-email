@@ -1195,13 +1195,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		?>
 
 		<div id="rbe-header" class="bbp-template-notice">
-			<ul>
-				<li><?php echo $header; ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></li>
-			</ul>
+			<p><?php echo $header; ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></p>
 		</div>
 
 		<div id="rbe-message" class="bbp-template-notice info">
-			<h5><?php printf( __( 'Send an email to <strong><a href="%1$s">%1$s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto:" . $email, $name ); ?></h5>
+			<h5><?php printf( __( 'Send an email to <strong><a href="%1$s">%1$s</strong></a> and a new forum topic will be posted in %2$s.', 'bp-rbe' ), "mailto:" . $email, $name ); ?></h5>
 
 			<ul>
 				<li><?php printf( __( 'Compose a new email from the same email address you registered with &ndash; %s', 'bp-rbe' ), '<strong>' . esc_attr( $GLOBALS['bp']->loggedin_user->userdata->user_email ) . '</strong>' ) ?>.</li>
