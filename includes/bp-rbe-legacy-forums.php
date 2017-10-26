@@ -326,3 +326,52 @@ function bp_rbe_groups_new_group_forum_topic( $args = '' ) {
 
 	return false;
 }
+
+/**
+ * Content block to show group members how to post new forum topics via email.
+ * Javascript-degradable.
+ *
+ * @uses bp_rbe_groups_get_encoded_email_address()
+ * @since 1.0-beta
+ */
+function bp_rbe_new_topic_info() {
+	global $bp;
+
+	$group = groups_get_current_group();
+
+	// if current user is not a member of the group, stop now!
+	if ( empty( $group->is_member ) )
+		return;
+?>
+	<div id="rbe-header">
+		<h4><?php _e( 'Post New Topics via Email', 'bp-rbe' ) ?></h4>
+
+		<p><?php _e( 'You can post new topics to this group from the comfort of your email inbox.', 'bp-rbe' ) ?> <a href="javascript:;" id="rbe-toggle"><?php _e( 'Find out how!', 'bp-rbe' ) ?></a></p>
+	</div>
+
+	<div id="rbe-message">
+		<h5><?php printf( __( 'Send an email to <strong><a href="%s">%s</strong></a> and a new forum topic will be posted in %s.', 'bp-rbe' ), "mailto:" . bp_rbe_groups_get_encoded_email_address(), bp_rbe_groups_get_encoded_email_address(), bp_get_current_group_name() ); ?></h5>
+
+		<ul>
+			<li><?php printf( __( 'Compose a new email from the same email address you registered with &ndash; %s', 'bp-rbe' ), '<strong>' . $bp->loggedin_user->userdata->user_email . '</strong>' ) ?>.</li>
+			<li><?php _e( 'Put the address above in the "To:" field of the email.', 'bp-rbe' ) ?></li>
+			<li><?php _e( 'The email subject will become the topic title.', 'bp-rbe' ) ?></li>
+			<?php do_action( 'bp_rbe_new_topic_info_extra' ) ?>
+		</ul>
+
+		<p><?php _e( '<strong>Note:</strong> The email address above is unique to you and this group. Do not share this email address with anyone else! (Each group member will have their own unique email address.)', 'bp-rbe' ) ?></p>
+	</div>
+
+	<script type="text/javascript">
+	jQuery(function() {
+		jQuery('#rbe-toggle').show();
+		jQuery('#rbe-message').hide();
+		jQuery('#rbe-toggle').click(function() {
+			jQuery('#rbe-message').toggle(300);
+		});
+	});
+
+	</script>
+<?php
+}
+add_action( 'bp_before_group_forum_post_new', 'bp_rbe_new_topic_info' );

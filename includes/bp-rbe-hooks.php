@@ -86,7 +86,6 @@ if ( bp_rbe_is_required_completed() ) :
 
 	// new topic info screen
 	add_action( 'wp_head',                          'bp_rbe_new_topic_info_css', 99 );
-	add_action( 'bp_before_group_forum_post_new',   'bp_rbe_new_topic_info' );
 
 endif;
 
