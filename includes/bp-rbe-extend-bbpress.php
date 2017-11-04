@@ -97,6 +97,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// Attachments.
 		add_action( 'bp_rbe_imap_misc_data',         array( $this, 'imap_attachments' ), 10, 5 );
 		add_action( 'bp_rbe_bbpress_after_new_post', array( $this, 'post_attachments' ), 10, 2 );
+		add_action( 'bp_rbe_bbpress_after_new_post', array( $this, 'post_attachments_errors' ), 10, 2 );
 	}
 
 	/**
@@ -1422,6 +1423,9 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 		// If attachments are not allowed for this forum, stop!
 		if ( ! $GLOBALS['gdbbpress_attachments']->enabled_for_forum( $forum_id ) ) {
+			$retval['bbp_attachments_errors'] = array(
+				'forum_disabled' => sprintf( __( 'Attachments have been disabled for the "%s" forum you are attempting to post to.', 'bp-rbe' ), get_the_title( $forum_id ) )
+			);
 			return $retval;
 		}
 
@@ -1436,19 +1440,30 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 		bp_rbe_log( 'Message #' . $i . ': This bbPress item has attachments.' );
 
-		$attachment_data = array();
+		$attachment_data = $attachment_errors = array();
 
 		$max_files = $GLOBALS['gdbbpress_attachments']->get_max_files( false, $forum_id );
 
 		// Attempt to save attachments to temp directory.
 		foreach ( $attachments as $i => $attachment ) {
 			if ( $i > $max_files ) {
+				if ( empty( $attachment_errors['max_files'] ) ) {
+					$attachment_errors['max_files'] = array();
+				}
+				$attachment_errors['max_files'] = array( $attachment['filename'] );
+
 				continue;
 			}
 
 			$filepath = bp_rbe_inline_data_to_tmpfile( $attachment['filename'], $attachment['data'] );
 			if ( is_wp_error( $filepath ) ) {
 				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not write to temporary file.' );
+
+				if ( empty( $attachment_errors['cannot_write'] ) ) {
+					$attachment_errors['cannot_write'] = array();
+				}
+				$attachment_errors['cannot_write'] = array( $attachment['filename'] );
+
 				continue;
 			}
 
@@ -1484,6 +1499,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			} else {
 				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not add attachment "' . $file_array['name'] . '" because it is too large.' );
 
+				if ( empty( $attachment_errors['too_big'] ) ) {
+					$attachment_errors['too_big'] = array();
+				}
+				$attachment_errors['too_big'] = array( $attachment['filename'] );
+
 				@unlink( $filepath );
 			}
 		}
@@ -1491,6 +1511,9 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		// Add our attachment metadata to the email data.
 		if ( ! empty( $attachment_data ) ) {
 			$retval['bbp_attachments'] = $attachment_data;
+		}
+		if ( ! empty( $attachment_errors ) ) {
+			$retval['bbp_attachments_errors'] = $attachment_errors;
 		}
 
 		return $retval;
@@ -1534,5 +1557,79 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 			bp_rbe_log( 'Message #' . $data['i'] . ': Attachment "' . $attachment['name'] . '" successfully added to bbPress post.' );
 		}
+	}
+
+	/**
+	 * Send feedback email to author if there are attachment errors.
+	 *
+	 * Only sent if the bbPress post created via RBE was successful.
+	 *
+	 * @since 1.0-RC6
+	 *
+	 * @param int   $post_id ID of new bbPress post
+	 * @param array $data    Data from email message.
+	 */
+	public function post_attachments_errors( $post_id, $data ) {
+		// No attachment errors, so bail!
+		if ( empty( $data['misc']['bbp_attachments_errors'] ) ) {
+			return;
+		}
+
+		$errors = array();
+		foreach ( $data['misc']['bbp_attachments_errors'] as $type => $error_data ) {
+			switch ( $type ) {
+				case 'too_big' :
+					$forum_id = bbp_get_reply_forum_id( $post_id );
+
+					$errors[] = sprintf( __( 'You tried to attach files that that are larger than the filesize limit of %1$s KB.  The following attachments were not added to the forum post: %2$s', 'bp-rbe' ), $GLOBALS['gdbbpress_attachments']->get_file_size( false, $forum_id ), implode( ', ', $error_data ) );
+
+					break;
+
+				case 'cannot_write' :
+					$errors[] = sprintf( __( 'We could not save the following attachments locally due to a server permissions error: %s', 'bp-rbe' ), implode( ', ', $error_data ) );
+
+					break;
+
+				case 'max_files' :
+					$errors[] = sprintf( __( 'You tried to attach too many files.  The following attachments were not added to the forum post: %s', 'bp-rbe' ), implode( ', ', $error_data ) );
+
+					break;
+
+				default :
+					$errors[] = $error_data;
+
+					break;
+			}
+		}
+
+		$error_content = '';
+		foreach ( $errors as $error ) {
+			$error_content .= "- {$error}\n";
+		}
+
+		$message = sprintf( __( 'Hi there,
+
+You attempted to post some attachments to the "%1$s" topic via email:
+%2$s
+
+Unfortunately, we were not able to include them into the forum post due to the following reasons:
+
+%3$s
+
+Please manually visit the forum thread to re-attach your files if possible.
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), get_the_title( bbp_get_reply_topic_id( $post_id ) ), bbp_get_reply_permalink( $post_id ), $error_content );
+
+		$sitename = wp_specialchars_decode( get_blog_option( bp_get_root_blog_id(), 'blogname' ), ENT_QUOTES );
+		$subject  = sprintf( __( '[%s] Your attachments could not be posted to the forum thread', 'bp-rbe' ), $sitename );
+
+		// temporarily remove RBE mail filter by wiping out email querystring
+		add_filter( 'bp_rbe_querystring', '__return_false' );
+
+		// send email
+		wp_mail( get_userdata( $data['user_id'] )->user_email, $subject, $message );
+
+		// add it back
+		remove_filter( 'bp_rbe_querystring', '__return_false' );
 	}
 }
