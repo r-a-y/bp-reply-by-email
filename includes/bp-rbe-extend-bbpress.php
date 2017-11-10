@@ -1616,7 +1616,7 @@ Unfortunately, we were not able to include them into the forum post due to the f
 
 %3$s
 
-Please manually visit the forum thread to re-attach your files if possible.
+Please visit the forum post via your web browser to attach your file(s).
 
 We apologize for any inconvenience this may have caused.', 'bp-rbe' ), get_the_title( bbp_get_reply_topic_id( $post_id ) ), bbp_get_reply_permalink( $post_id ), $error_content );
 
