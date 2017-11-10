@@ -1450,7 +1450,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 				if ( empty( $attachment_errors['max_files'] ) ) {
 					$attachment_errors['max_files'] = array();
 				}
-				$attachment_errors['max_files'] = array( $attachment['filename'] );
+				$attachment_errors['max_files'][] = $attachment['filename'];
 
 				continue;
 			}
@@ -1462,7 +1462,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 				if ( empty( $attachment_errors['cannot_write'] ) ) {
 					$attachment_errors['cannot_write'] = array();
 				}
-				$attachment_errors['cannot_write'] = array( $attachment['filename'] );
+				$attachment_errors['cannot_write'][] = $attachment['filename'];
 
 				continue;
 			}
@@ -1502,7 +1502,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 				if ( empty( $attachment_errors['too_big'] ) ) {
 					$attachment_errors['too_big'] = array();
 				}
-				$attachment_errors['too_big'] = array( $attachment['filename'] );
+				$attachment_errors['too_big'][] = $attachment['filename'];
 
 				@unlink( $filepath );
 			}
