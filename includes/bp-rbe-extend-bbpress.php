@@ -97,7 +97,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// Attachments.
 		add_action( 'bp_rbe_imap_misc_data',         array( $this, 'imap_attachments' ), 10, 5 );
 		add_action( 'bp_rbe_bbpress_after_new_post', array( $this, 'post_attachments' ), 10, 2 );
-		add_action( 'bp_rbe_bbpress_after_new_post', array( $this, 'post_attachments_errors' ), 10, 2 );
 	}
 
 	/**
@@ -1533,6 +1532,10 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			return;
 		}
 
+		if ( empty( $data['misc']['bbp_attachments_errors'] ) ) {
+			$data['misc']['bbp_attachments_errors'] = array();
+		}
+
 		// Require media functions.
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
@@ -1546,9 +1549,14 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 			// If error storing permanently, unlink.
 			if ( is_wp_error( $id ) ) {
-				bp_rbe_log( 'Message #' . $data['i'] . ': Attachment error - could not add attachment "' . $attachment['name'] . '" to bbPress post.' );
+				bp_rbe_log( 'Message #' . $data['i'] . ': Attachment error - could not add attachment "' . $attachment['name'] . '" to bbPress post. Reason is "' . $id->get_error_message() . '"' );
 
 				@unlink( $attachment['tmp_name'] );
+
+				if ( empty( $data['misc']['bbp_attachments_errors']['upload_error'] ) ) {
+					$data['misc']['bbp_attachments_errors']['upload_error'] = array();
+				}
+				$data['misc']['bbp_attachments_errors']['upload_error'][$attachment['name']] = $id->get_error_message();
 				continue;
 			}
 
@@ -1556,6 +1564,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			update_post_meta( $id, '_bbp_attachment', '1' );
 
 			bp_rbe_log( 'Message #' . $data['i'] . ': Attachment "' . $attachment['name'] . '" successfully added to bbPress post.' );
+		}
+
+		// Send feedback email to author if there are attachment errors.
+		if ( ! empty( $data['misc']['bbp_attachments_errors'] ) ) {
+			$this->attachment_error_email( $post_id, $data );
 		}
 	}
 
@@ -1569,12 +1582,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	 * @param int   $post_id ID of new bbPress post
 	 * @param array $data    Data from email message.
 	 */
-	public function post_attachments_errors( $post_id, $data ) {
-		// No attachment errors, so bail!
-		if ( empty( $data['misc']['bbp_attachments_errors'] ) ) {
-			return;
-		}
-
+	protected function attachment_error_email( $post_id, $data ) {
 		$errors = array();
 		foreach ( $data['misc']['bbp_attachments_errors'] as $type => $error_data ) {
 			switch ( $type ) {
@@ -1594,6 +1602,11 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 					$errors[] = sprintf( __( 'You tried to attach too many files.  The following attachments were not added to the forum post: %s', 'bp-rbe' ), implode( ', ', $error_data ) );
 
 					break;
+
+				case 'upload_error' :
+					foreach ( $error_data as $filename => $e ) {
+						$errors[] = "{$filename} - $e";
+					}
 
 				default :
 					$errors[] = $error_data;
