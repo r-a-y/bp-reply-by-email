@@ -1607,6 +1607,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 					foreach ( $error_data as $filename => $e ) {
 						$errors[] = "{$filename} - $e";
 					}
+					break;
 
 				default :
 					$errors[] = $error_data;
