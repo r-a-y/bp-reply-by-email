@@ -1,15 +1,13 @@
 {
-	"name" : "ray/bp-reply-by-email",
-	"description" : "BuddyPress Reply By Email is a plugin for BuddyPress that allows you to reply to various email notifications from the comfort of your email inbox.",
+	"name" : "r-a-y/bp-reply-by-email",
+	"description" : "BP Reply By Email is a plugin for BuddyPress that allows you to reply to various email notifications from the comfort of your email inbox.",
 	"type" : "wordpress-plugin",
 	"authors" : [{
 			"name" : "r-a-y"
 		}
 	],
 	"keywords" : [
-		"buddypress",
-		"wordpress",
-		"reply by email"
+		"buddypress"
 	],
 	"homepage" : "https://github.com/r-a-y/bp-reply-by-email",
 	"license" : [
