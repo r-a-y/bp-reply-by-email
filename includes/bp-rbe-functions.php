@@ -983,6 +983,18 @@ function bp_rbe_log_no_matches( $parser, $data, $i, $imap ) {
 
 			$sitename = wp_specialchars_decode( get_blog_option( bp_get_root_blog_id(), 'blogname' ), ENT_QUOTES );
 
+			// Add link to user's settings page if available.
+			if ( function_exists( 'bp_core_members_shortlink_redirector' ) && bp_is_active( 'settings' ) ) {
+				/** This filter is documented in /wp-content/plugins/buddypress/bp-core/bp-core-functions.php */
+				$me_slug = apply_filters( 'bp_core_members_shortlink_slug', 'me' );
+				$domain  = bp_core_enable_root_profiles() ? $me_slug : bp_get_members_root_slug() . '/' . $me_slug;
+				$domain  = trailingslashit( bp_get_root_domain() . '/' . $domain . '/' . bp_get_settings_slug() );
+
+			// Use admin profile URL if Settings component + redirector is not available.
+			} else {
+				$domain = network_admin_url( 'profile.php' );
+			}
+
 			$message  = sprintf( __( 'Hi there,
 
 You tried to use the email address - %s - to reply by email.  Unfortunately, we could not find this email address in our system.
@@ -993,7 +1005,10 @@ This can happen in a couple of different ways:
 
 Make sure that, when replying by email, your "From:" email address is the same as the address you\'ve registered at %s.
 
-If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_header( $data['headers'], 'From' ), $sitename );
+If you have changed your email address recently, please make sure to change your email address in your profile\'s Settings page:
+%s
+
+If you have any questions, please let us know.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_header( $data['headers'], 'From' ), $sitename, $domain );
 			break;
 
 		case 'user_is_spammer' :
