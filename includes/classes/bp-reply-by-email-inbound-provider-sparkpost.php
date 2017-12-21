@@ -65,11 +65,39 @@ class BP_Reply_By_Email_Inbound_Provider_Sparkpost extends BP_Reply_By_Email_Inb
 				'to_email'   => $item->msys->relay_message->rcpt_to,
 				'from_email' => $item->msys->relay_message->friendly_from,
 				'content'    => $item->msys->relay_message->content->text,
-				'subject'    => $item->msys->relay_message->content->subject
+				'subject'    => $item->msys->relay_message->content->subject,
+
+				// Add custom data.
+				'misc' => array(
+					'inbound' => 'sparkpost'
+				)
 			);
+
+			$qs   = BP_Reply_By_Email_Parser::get_querystring( $data['to_email'] );
+			$user = get_user_by( 'email', $data['from_email'] );
+
+			$data['params'] = BP_Reply_By_Email_Parser::get_parameters( array(
+				'is_new'      => BP_Reply_By_Email_Parser::is_new_item( $qs ),
+				'user_id'     => ! empty( $user->ID ) ? $user->ID : 0,
+				'querystring' => $qs
+			) );
+
+			/**
+			 * Pass the full RFC822 email for parsing, if necessary.
+			 *
+			 * For example, plugins can use the full email for attachment parsing.
+			 */
+			if ( bp_rbe_should_use_rfc822_email( $data['params'] ) ) {
+				if ( $item->msys->relay_message->content->email_rfc822_is_base64 ) {
+					$data['misc']['rfc822'] = base64_decode( $item->msys->relay_message->content->email_rfc822 );
+				} else {
+					$data['misc']['rfc822'] = $item->msys->relay_message->content->email_rfc822;
+				}
+			}
 
 			$parser = BP_Reply_By_Email_Parser::init( $data, $i );
 
+			// Error when parsing.
 			if ( is_wp_error( $parser ) ) {
 				do_action( 'bp_rbe_no_match', $parser, $data, $i, false );
 			}
