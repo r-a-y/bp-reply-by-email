@@ -182,7 +182,16 @@ class BP_Reply_By_Email_Parser {
 		);
 
 		if ( ! empty( self::$misc ) ) {
-			$data['misc'] = self::$misc;
+			/**
+			 * Filter to modify misc data before parsing.
+			 *
+			 * @since 1.0-RC6
+			 *
+			 * @param  array $data  Current misc data.
+			 * @param  int   $i     Message number.
+			 * @return array
+			 */
+			$data['misc'] = apply_filters( 'bp_rbe_parser_misc_data', self::$misc, $i );
 		}
 
 		// plugins should use the following hook to do their posting routine
