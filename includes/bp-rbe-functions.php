@@ -526,6 +526,36 @@ function bp_rbe_inline_data_to_tmpfile( $filename = '', $data ) {
 	return $filename;
 }
 
+/**
+ * Check if we should pass the full RFC822 email during parsing.
+ *
+ * By RFC822 email, we are referring to the raw, MIME content for an email.
+ *
+ * For example, SparkPost requires the raw email for attachment parsing.
+ * By default, we pass the full email for bbPress posts.
+ *
+ * @since 1.0-RC6
+ *
+ * @param  array $params Email parameters. {@see BP_Reply_By_Email_Parser::get_parameters()}.
+ * @return bool
+ */
+function bp_rbe_should_use_rfc822_email( $params = array() ) {
+	// We currently only allow bbPress posts for attachments.
+	$allowed = array_flip( array( 'bbpf', 'bbpr', 'bbpt' ) );
+	$check   = (bool) array_intersect_key( $params, $allowed );
+
+	/**
+	 * Filter to override the full RFC822 email parse check.
+	 *
+	 * @since 1.0-RC6
+	 *
+	 * @param  bool  $check  Current retval.
+	 * @param  array $params Email parameters. {@see BP_Reply_By_Email_Parser::get_parameters()}.
+	 * @return bool
+	 */
+	return apply_filters( 'bp_rbe_should_use_rfc822_email', $check, $params );
+}
+
 /** Hook-related ********************************************************/
 
 /**
