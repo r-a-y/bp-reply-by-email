@@ -1382,6 +1382,92 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	}
 
 	/**
+	 * Helper method to save an attachment from an email to a temporary directory.
+	 *
+	 * If passing a file path to a temporary uploaded file with $tmp_file, will do
+	 * some validation against GD bbPress Attachments' routine.
+	 *
+	 * @since 1.0-RC6
+	 *
+	 * @param array $r Attachment data {
+	 *     @type string $name     Required. Filename for attachment.
+	 *     @type string $tmp_name Absolute file path to temporary uploaded file if available. Use if your
+	 *                            attachment is already uploaded locally.
+	 *     @type string $data     Inline data for the attachment to be saved to a file. Use this if $tmp_name
+	 *                            isn't available.
+	 *     @type int    $i        Message number
+	 *     @type int    $forum_id Optional. If you have a forum ID to pass, do it here.
+	 *     @type array  $params   Email parameters.
+	 * }
+	 * @return array If successful, 'data' key with
+	 */
+	public static function save_attachment( $r = array() ) {
+		$retval = array();
+
+		$r = wp_parse_args( $r, array(
+			'name'     => '',
+			'tmp_name' => '',
+			'data'     => '',
+			'i'        => 0,
+			'forum_id' => 0,
+			'params'   => array()
+		) );
+
+		// Calculate forum ID if email parameters are passed.
+		if ( 0 === $r['forum_id'] && ! empty( $r['params'] ) ) {
+			if ( ! empty( $r['params']['bbpf'] ) ) {
+				$forum_id = $r['params']['bbpf'];
+			}
+
+			if ( 0 === $r['forum_id'] && ! empty( $r['params']['bbpt'] ) ) {
+				$r['forum_id'] = bbp_get_topic_forum_id( $r['params']['bbpt'] );
+			}
+
+			// Something went wrong.
+			if ( empty( $r['forum_id'] ) ) {
+				bp_rbe_log( 'Message #' . $r['i'] . ': Problem parsing forum ID for attachments.' );
+				return $retval;
+			}
+		}
+
+		if ( ! empty( $r['data'] ) ) {
+			$r['tmp_name'] = bp_rbe_inline_data_to_tmpfile( $r['name'], $r['data'] );
+			if ( is_wp_error( $r['tmp_name'] ) ) {
+				bp_rbe_log( 'Message #' . $r['i'] . ': Attachment error - could not write to temporary file.' );
+
+				$retval['errors']['cannot_write'] = $filename;
+				return $retval;
+			}
+		}
+
+		$file_array = array(
+			'tmp_name' => $r['tmp_name'],
+			'name'     => $r['name']
+		);
+
+		// We have a forum ID, check against GD bbPress Attachments routine.
+		if ( 0 !== $r['forum_id'] && ! empty( $GLOBALS['gdbbpress_attachments'] ) ) {
+			// Filesize fits requirements, so allow file.
+			if ( $GLOBALS['gdbbpress_attachments']->is_right_size( array( 'size' => filesize( $r['tmp_name'] ), $r['forum_id'] ) ) ) {
+				$retval['data'] = $file_array;
+
+			// Size too big.
+			} else {
+				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not add attachment "' . $r['name'] . '" because it is too large.' );
+				$retval['errors']['too_big'] = $filename;
+
+				@unlink( $r['tmp_name'] );
+			}
+
+		// Bypass GD bbPress Attachments validation check.
+		} else {
+			$retval['data'] = $file_array;
+		}
+
+		return $retval;
+	}
+
+	/**
 	 * Parse attachments from IMAP email and save temporarily.
 	 *
 	 * Requires GD bbPress Attachments.  We do not actually post the attachment
