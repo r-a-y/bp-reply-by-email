@@ -1540,56 +1540,19 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 				continue;
 			}
 
-			$filepath = bp_rbe_inline_data_to_tmpfile( $attachment['filename'], $attachment['data'] );
-			if ( is_wp_error( $filepath ) ) {
-				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not write to temporary file.' );
+			$save = self::save_attachment( array(
+				'name' => $attachment['filename'],
+				'data' => $attachment['data'],
+				'i'        => $i,
+				'forum_id' => $forum_id,
+				'subtype'  => $attachment['subtype']
+			) );
 
-				if ( empty( $attachment_errors['cannot_write'] ) ) {
-					$attachment_errors['cannot_write'] = array();
-				}
-				$attachment_errors['cannot_write'][] = $attachment['filename'];
-
-				continue;
+			if ( ! empty( $save['data'] ) ) {
+				$attachment_data[] = $save['data'];
 			}
-
-			$file_array = array(
-				'tmp_name' => $filepath
-			);
-
-			// Filesize fits requirements, so upload!
-			if ( $GLOBALS['gdbbpress_attachments']->is_right_size( array( 'size' => filesize( $filepath ), $forum_id ) ) ) {
-				switch ( strtolower( $attachment['subtype'] ) ) {
-					case 'png' :
-					case 'jpeg' :
-					case 'jpe' :
-					case 'jpg' :
-					case 'gif' :
-						// Sanitize filename.
-						preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $attachment['filename'], $matches );
-						$file_array['name'] = $matches[0];
-
-						break;
-
-
-					// Everything else.
-					default :
-						$file_array['name'] = $attachment['filename'];
-
-						break;
-				}
-
-				$attachment_data[] = $file_array;
-
-			// Size too big.
-			} else {
-				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not add attachment "' . $file_array['name'] . '" because it is too large.' );
-
-				if ( empty( $attachment_errors['too_big'] ) ) {
-					$attachment_errors['too_big'] = array();
-				}
-				$attachment_errors['too_big'][] = $attachment['filename'];
-
-				@unlink( $filepath );
+			if ( ! empty( $save['errors'] ) ) {
+				$attachment_errors = array_merge_recursive( $attachment_errors, $save['errors'] );
 			}
 		}
 
