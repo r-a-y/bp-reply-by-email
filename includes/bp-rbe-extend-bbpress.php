@@ -1416,7 +1416,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		// Calculate forum ID if email parameters are passed.
 		if ( 0 === $r['forum_id'] && ! empty( $r['params'] ) ) {
 			if ( ! empty( $r['params']['bbpf'] ) ) {
-				$forum_id = $r['params']['bbpf'];
+				$r['forum_id'] = $r['params']['bbpf'];
 			}
 
 			if ( 0 === $r['forum_id'] && ! empty( $r['params']['bbpt'] ) ) {
