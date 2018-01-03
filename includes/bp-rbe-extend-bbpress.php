@@ -1576,13 +1576,13 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	 * @param array $data    Data from email message.
 	 */
 	public function post_attachments( $post_id, $data ) {
-		// No attachments, so bail!
-		if ( empty( $data['misc']['bbp_attachments'] ) ) {
-			return;
-		}
-
 		if ( empty( $data['misc']['bbp_attachments_errors'] ) ) {
 			$data['misc']['bbp_attachments_errors'] = array();
+
+		// We have errors and we no attachments. Send error email and bail.
+		} elseif ( empty( $data['misc']['bbp_attachments'] ) ) {
+			$this->attachment_error_email( $post_id, $data );
+			return;
 		}
 
 		// Require media functions.
