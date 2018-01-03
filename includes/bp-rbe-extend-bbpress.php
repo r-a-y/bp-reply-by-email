@@ -1435,7 +1435,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			if ( is_wp_error( $r['tmp_name'] ) ) {
 				bp_rbe_log( 'Message #' . $r['i'] . ': Attachment error - could not write to temporary file.' );
 
-				$retval['errors']['cannot_write'] = $filename;
+				$retval['errors']['cannot_write'] = array( $r['name'] );
 				return $retval;
 			}
 		}
@@ -1453,8 +1453,8 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 
 			// Size too big.
 			} else {
-				bp_rbe_log( 'Message #' . $i . ': Attachment error - could not add attachment "' . $r['name'] . '" because it is too large.' );
-				$retval['errors']['too_big'] = $filename;
+				bp_rbe_log( 'Message #' . $r['i'] . ': Attachment error - could not add attachment "' . $r['name'] . '" because it is too large.' );
+				$retval['errors']['too_big'] = array( $r['name'] );
 
 				@unlink( $r['tmp_name'] );
 			}
