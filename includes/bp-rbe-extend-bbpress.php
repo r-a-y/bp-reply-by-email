@@ -1632,9 +1632,6 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	 * @param array $data    Data from email message.
 	 */
 	protected function attachment_error_email( $post_id, $data ) {
-		// Hotfix for https://github.com/r-a-y/bp-reply-by-email/issues/111
-		bbp_update_reply_topic_id( $post_id );
-
 		$errors = array();
 		foreach ( $data['misc']['bbp_attachments_errors'] as $type => $error_data ) {
 			switch ( $type ) {
