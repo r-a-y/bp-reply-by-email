@@ -473,6 +473,11 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// add RBE's special activity hook
 		add_action( 'bp_activity_after_save',                array( $this, 'activity_rbe_hook' ) );
 
+		// bbPress Reply Hooks ////////////////////////////////////////////
+
+		do_action( 'bbp_new_reply',                          $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author, false, $reply_to );
+		do_action( 'bbp_new_reply_post_extras',              $reply_id );
+
 		/**
 		 * Custom hook to do something with the new bbPress post ID and RBE data.
 		 *
@@ -482,11 +487,6 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		 * @param array $data     Email data.
 		 */
 		do_action( 'bp_rbe_bbpress_after_new_post', $reply_id, $data );
-
-		// bbPress Reply Hooks ////////////////////////////////////////////
-
-		do_action( 'bbp_new_reply',                          $reply_id, $topic_id, $forum_id, $anonymous_data, $reply_author, false, $reply_to );
-		do_action( 'bbp_new_reply_post_extras',              $reply_id );
 
 		// Remove some filters after reply hook for groups.
 		if ( ! empty( $params[$this->item_id_param] ) ) {
@@ -778,13 +778,13 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// add RBE's special activity hook
 		add_action( 'bp_activity_after_save',                array( $this, 'activity_rbe_hook' ) );
 
-		/** This hook is documented in /includes/bp-rbe-extend-bbpress.php */
-		do_action( 'bp_rbe_bbpress_after_new_post', $topic_id, $data );
-
 		// bbPress Topic Hooks ////////////////////////////////////////////
 
 		do_action( 'bbp_new_topic',             $topic_id, $forum_id, $anonymous_data, $topic_author );
 		do_action( 'bbp_new_topic_post_extras', $topic_id );
+
+		/** This hook is documented in /includes/bp-rbe-extend-bbpress.php */
+		do_action( 'bp_rbe_bbpress_after_new_post', $topic_id, $data );
 
 		// Remove some filters after topic hook for groups.
 		if ( ! empty( $params[$this->item_id_param] ) ) {
