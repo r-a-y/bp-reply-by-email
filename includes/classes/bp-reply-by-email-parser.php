@@ -194,6 +194,13 @@ class BP_Reply_By_Email_Parser {
 			$data['misc'] = apply_filters( 'bp_rbe_parser_misc_data', self::$misc, $i );
 		}
 
+		// Switch blogs if we have passed a blog ID as an email parameter.
+		if ( is_multisite() && ! empty( self::$params['b'] ) ) {
+			if ( (int) self::$params['b'] !== bp_get_root_blog_id() ) {
+				switch_to_blog( (int) self::$params['b'] );
+			}
+		}
+
 		// plugins should use the following hook to do their posting routine
 		$retval = apply_filters( 'bp_rbe_parse_completed', true, $data, self::$params );
 
@@ -483,7 +490,8 @@ class BP_Reply_By_Email_Parser {
 			'p' => false, // direct parent activity id
 			't' => false, // topic id
 			'm' => false, // message thread id
-			'g' => false  // group id
+			'g' => false, // group id
+			'b' => false, // blog id
 		);
 
 		// Let 3rd-party plugins whitelist additional params
@@ -625,6 +633,13 @@ class BP_Reply_By_Email_Parser {
 	 * This is to prevent any lingering properties when used in a loop.
 	 */
 	protected static function clear_properties() {
+		// Ensure we reset the current blog ID, if we have switched blogs.
+		if ( is_multisite() && ! empty( self::$params['b'] ) ) {
+			if ( (int) self::$params['b'] !== bp_get_root_blog_id() ) {
+				restore_current_blog();
+			}
+		}
+
 		self::$headers     = array();
 		self::$querystring = '';
 		self::$user        = false;

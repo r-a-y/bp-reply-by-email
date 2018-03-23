@@ -979,6 +979,12 @@ class BP_Reply_By_Email {
 			break;
 		}
 
+		// Set blog ID.
+		if ( get_current_blog_id() !== bp_get_root_blog_id() ) {
+			$querystring = ! empty( $querystring ) ? $querystring . '&' : $querystring;
+			$querystring .= 'b=' . get_current_blog_id();
+		}
+
 		// last chance to disable the querystring with this filter!
 		$querystring = apply_filters( 'bp_rbe_querystring', $querystring, $this->listener, $headers );
 
