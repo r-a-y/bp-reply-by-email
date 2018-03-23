@@ -1670,6 +1670,16 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			$error_content .= "- {$error}\n";
 		}
 
+		// Set data based on the bbPress post type.
+		$post = get_post( $post_id );
+		if ( 'topic' === $post->post_type ) {
+			$topic_id  = $post_id;
+			$permalink = bbp_get_topic_permalink( $post_id );
+		} else {
+			$topic_id  = bbp_get_reply_topic_id( $post_id );
+			$permalink = bbp_get_reply_permalink( $post_id );
+		}
+
 		$message = sprintf( __( 'Hi there,
 
 You attempted to post some attachments to the "%1$s" topic via email:
@@ -1681,7 +1691,7 @@ Unfortunately, we were not able to include them into the forum post due to the f
 
 Please visit the forum post via your web browser to attach your file(s).
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), get_the_title( bbp_get_reply_topic_id( $post_id ) ), bbp_get_reply_permalink( $post_id ), $error_content );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), get_the_title( $topic_id ), $permalink, $error_content );
 
 		$sitename = wp_specialchars_decode( get_blog_option( bp_get_root_blog_id(), 'blogname' ), ENT_QUOTES );
 		$subject  = sprintf( __( '[%s] Your attachments could not be posted to the forum thread', 'bp-rbe' ), $sitename );
