@@ -371,8 +371,14 @@ class BP_Reply_By_Email {
 			return $retval;
 		}
 
-		// remove the marker temporarily
-		$html = substr_replace( $retval, '', $pos, strlen( $notice ) + 13 );
+		// Remove the marker temporarily.
+		if ( false !== strpos( $retval, $notice . '</p>' ) ) {
+			// Account for BP 3.0 change to wpautop().
+			$html = substr_replace( $retval, '', $pos - 17, strlen( $notice ) + 21 );
+		} else {
+			// Older BP's.
+			$html = substr_replace( $retval, '', $pos, strlen( $notice ) + 13 );
+		}
 
 		// add some CSS styling
 		// 3rd party devs can filter this
@@ -869,8 +875,14 @@ class BP_Reply_By_Email {
 			return $html;
 		}
 
-		// remove the marker temporarily
-		$html = substr_replace( $html, '', $pos, strlen( $reply_line ) + 13 );
+		// Remove the marker temporarily.
+		if ( false !== strpos( $html, $reply_line . '</p>' ) ) {
+			// Account for BP 3.0 change to wpautop().
+			$html = substr_replace( $html, '', $pos - 17, strlen( $reply_line ) + 21 );
+		} else {
+			// Older BP's.
+			$html = substr_replace( $html, '', $pos, strlen( $reply_line ) + 13 );
+		}
 
 		// add some CSS styling
 		// 3rd party devs can filter this
