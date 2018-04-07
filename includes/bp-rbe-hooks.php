@@ -55,9 +55,6 @@ if ( bp_rbe_is_required_completed() ) :
 		// outright delete the emails that are marked for deletion once we're done.
 		add_action( 'bp_rbe_imap_after_loop',       'imap_expunge' );
 
-		// failsafe
-		add_action( 'bp_rbe_log_already_connected', 'bp_rbe_failsafe' );
-
 	// inbound mode
 	} else {
 		add_action( 'wp_loaded',                'bp_rbe_inbound_catch_callback', 0 );

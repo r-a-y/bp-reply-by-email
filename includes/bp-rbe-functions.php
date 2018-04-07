@@ -1249,48 +1249,6 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 }
 
 /**
- * Failsafe for RBE.
- *
- * RBE occasionally hangs during the inbox loop.  This function tries
- * to snap RBE out of it by checking the last few lines of the RBE
- * debug log.
- *
- * If all lines match our failed cronjob message, then reset RBE so
- * RBE can run fresh on the next scheduled run.
- *
- * @uses bp_rbe_tail() Grabs the last N lines from the RBE debug log
- * @uses bp_rbe_cleanup() Cleans up the DB entries that RBE uses
- * @since 1.0-RC1
- */
-function bp_rbe_failsafe() {
-	// get the last N lines from the RBE debug log
-	$last_entries = bp_rbe_tail( constant( 'BP_RBE_DEBUG_LOG_PATH' ), constant( 'BP_RBE_TAIL_LINES' ) );
-
-	if ( empty( $last_entries ) )
-		return;
-
-	// count the number of tines our 'cronjob wants to connect' message occurs
-	$counter = 0;
-
-	// see if each line contains our cronjob fail string
-	foreach ( $last_entries as $entry ) {
-		if ( strpos( $entry, '--- Cronjob wants to connect - however according to our DB indicator, we already have an active IMAP connection! ---' ) !== false )
-			++$counter;
-	}
-
-	// if all lines match the cronjob fail string, reset RBE!
-	if ( $counter == constant( 'BP_RBE_TAIL_LINES' ) ) {
-		bp_rbe_log( '--- Uh-oh! Looks like RBE is stuck! - FORCE RBE cleanup ---' );
-
-		// cleanup RBE!
-		bp_rbe_cleanup();
-
-		// use this hook to perhaps send an email to the admin?
-		do_action( 'bp_rbe_failsafe_complete' );
-	}
-}
-
-/**
  * When RBE posts a new group forum post, record the post meta in bundled bbPress
  * so we can reference it later in the topic post loop.
  *
