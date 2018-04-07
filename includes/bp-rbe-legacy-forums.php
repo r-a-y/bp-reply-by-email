@@ -375,3 +375,39 @@ function bp_rbe_new_topic_info() {
 <?php
 }
 add_action( 'bp_before_group_forum_post_new', 'bp_rbe_new_topic_info' );
+
+/**
+ * When RBE posts a new group forum post, record the post meta in bundled bbPress
+ * so we can reference it later in the topic post loop.
+ *
+ * @uses bb_update_postmeta() To add post meta in bundled bbPress.
+ * @since 1.0-RC1
+ */
+function bp_rbe_group_forum_record_meta( $id ) {
+	// since we post items outside of BP's screen functions, it should be safe
+	// to just check if BP's current component and actions are false
+	if ( ! bp_current_component() && ! bp_current_action() )
+		bb_update_postmeta( $id, 'bp_rbe', 1 );
+}
+add_action( 'bp_forums_new_post', 'bp_rbe_group_forum_record_meta' );
+
+/**
+ * Modify the topic post timestamp to append our custom RBE string.
+ *
+ * Checks to see if the current topic post was posted by RBE, if so, alter the
+ * timestamp string.
+ *
+ * @since 1.0-RC1
+ */
+function bp_rbe_alter_forum_post_timestamp( $timestamp ) {
+	global $topic_template;
+
+	// if the forum post was made via email, alter the post timestamp to add our custom string ;)
+	// hackalicious!
+	if ( ! empty( $topic_template->post->bp_rbe ) )
+		// piggyback off of GES' email icon with the 'gemail_icon' class!
+		return $timestamp . ' <span class="bp-forum-post-rbe gemail_icon">' . __( 'via email', 'bp-rbe' ) . '</span>';
+
+	return $timestamp;
+}
+add_filter( 'bp_get_the_topic_post_time_since', 'bp_rbe_alter_forum_post_timestamp' );

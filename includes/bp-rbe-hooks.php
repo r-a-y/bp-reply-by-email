@@ -76,10 +76,6 @@ if ( bp_rbe_is_required_completed() ) :
 
 	// add meta to RBE'd activities and forum posts
 	add_action( 'bp_rbe_new_activity',              'bp_rbe_activity_record_meta' );
-	add_action( 'bp_forums_new_post',               'bp_rbe_group_forum_record_meta' );
-
-	// alter forum post timestamp
-	add_filter( 'bp_get_the_topic_post_time_since', 'bp_rbe_alter_forum_post_timestamp' );
 
 	// new topic info screen
 	add_action( 'wp_head',                          'bp_rbe_new_topic_info_css', 99 );
