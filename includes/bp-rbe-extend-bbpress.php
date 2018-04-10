@@ -1245,8 +1245,14 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 			$string = $this->forum_id_param . '=' . bbp_get_forum_id();
 
 			// if on a BP group, add an extra param
-			if ( bp_is_group() )
+			if ( bp_is_group() ) {
 				$string .= "&{$this->item_id_param}=" . bp_get_current_group_id();
+			}
+
+			// For multisite.
+			if ( ! bp_is_root_blog() ) {
+				$string .= '&b=' . get_current_blog_id();
+			}
 
 			$querystring = bp_rbe_encode( array(
 				'string' => $string,
