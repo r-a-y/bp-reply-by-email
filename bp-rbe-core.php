@@ -91,8 +91,7 @@ class BP_Reply_By_Email {
 			define( 'BP_RBE_DEBUG', true );
 
 		if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) ) {
-			$dir = wp_upload_dir();
-			define( 'BP_RBE_DEBUG_LOG_PATH', trailingslashit( $dir['basedir'] ) . 'bp-rbe-debug.log' );
+			define( 'BP_RBE_DEBUG_LOG_PATH', bp_core_avatar_upload_path() . '/bp-rbe-debug.log' );
 		}
 	}
 
