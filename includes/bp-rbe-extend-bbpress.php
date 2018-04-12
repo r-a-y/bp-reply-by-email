@@ -241,6 +241,11 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// get reply post ID
 		$reply_to = ! empty( $params[$this->reply_id_param] ) ? $params[$this->reply_id_param] : 0;
 
+		// Not a bbPress item, so bail.
+		if ( ! ( $topic_id || ! empty( $params[$this->item_id_param] ) ) ) {
+			return $retval;
+		}
+
 		/*
 		 * Multisite sanity check for bbPress.
 		 *
