@@ -1641,6 +1641,10 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	 */
 	public function post_attachments( $post_id, $data ) {
 		if ( empty( $data['misc']['bbp_attachments_errors'] ) ) {
+			if ( empty( $data['misc']['bbp_attachments'] ) ) {
+				return;
+			}
+
 			$data['misc']['bbp_attachments_errors'] = array();
 
 		// We have errors and no attachments. Send error email and bail.
