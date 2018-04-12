@@ -947,7 +947,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			case 'bbpress_not_active' :
 				// Sanity check!
 				if ( ! is_multisite() ) {
-					return;
+					return $message;
 				}
 
 				$content = sprintf( __( 'Subject: %s', 'bp-rbe' ), $data['subject'] );
