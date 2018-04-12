@@ -241,6 +241,36 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// get reply post ID
 		$reply_to = ! empty( $params[$this->reply_id_param] ) ? $params[$this->reply_id_param] : 0;
 
+		/*
+		 * Multisite sanity check for bbPress.
+		 *
+		 * It's possible that the sub-site might no longer have bbPress active.  If
+		 * that's the case, we need to bail out of posting forum items.
+		 */
+		if ( ! empty( $params['b'] ) ) {
+			// Ugh, object cache doesn't work properly when used in IMAP mode.
+			if ( ! bp_rbe_is_inbound() ) {
+				wp_cache_delete( 'alloptions', 'options' );
+				wp_cache_delete( 'active_plugins', 'options' );
+			}
+
+			/*
+			 * Replacement for is_plugin_active().
+			 *
+			 * We're not using that b/c you need to include the
+			 * /wp-admin/includes/plugin.php file in order to use that function.
+			 */
+			$bb_file         = 'bbpress/bbpress.php';
+			$sub_site_check  = in_array( $bb_file, (array) get_option( 'active_plugins', array() ) );
+			$network_check   = get_site_option( 'active_sitewide_plugins' );
+			$network_check   = isset( $network_check[ $bb_file ] );
+
+			$bb_check = $sub_site_check || $network_check;
+			if ( ! $bb_check ) {
+				return new WP_Error( 'bbpress_not_active', '', $data );
+			}
+		}
+
 		// current email is not a bbPress group reply
 		if ( empty( $topic_id ) ) {
 			// if current email is a bbPress new group topic, parse it
@@ -815,6 +845,11 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 */
 	public function internal_rbe_log( $log, $type, $data, $i, $connection ) {
 		switch( $type ) {
+			case 'bbpress_not_active' :
+				$log = sprintf( __( "error - bbPress post failed. bbPress is not active on sub-site ID %s.", 'bp-rbe' ), $data['params']['b'] );
+
+				break;
+
 			/** REPLIES *****************************************************/
 
 			case 'bbp_reply_permissions' :
@@ -909,6 +944,29 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 */
 	public function failure_message_to_sender( $message, $type, $data, $i, $imap ) {
 		switch( $type ) {
+			case 'bbpress_not_active' :
+				// Sanity check!
+				if ( ! is_multisite() ) {
+					return;
+				}
+
+				$content = sprintf( __( 'Subject: %s', 'bp-rbe' ), $data['subject'] );
+				$content .= "\n\n";
+				$content .= sprintf( __( 'Content: %s', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+
+				$message = sprintf( __( 'Hi there,
+
+Unfortunately, your forum reply could not be posted because it appears that the forums have been disabled on the site, "%s":
+%s
+
+Here is a copy of your email:
+
+"%s"
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), get_blog_option( $data['params']['b'], 'blogname' ), get_blog_option( $data['params']['b'], 'siteurl' ), $content );
+
+				break;
+
 			/** REPLIES *****************************************************/
 
 			case 'bbp_reply_permissions' :
