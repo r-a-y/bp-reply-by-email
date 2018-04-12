@@ -91,6 +91,14 @@ class BP_Reply_By_Email {
 			define( 'BP_RBE_DEBUG', true );
 
 		if ( ! defined( 'BP_RBE_DEBUG_LOG_PATH' ) ) {
+			/*
+			 * Needed to avoid notices when using bp_core_avatar_upload_path() before
+			 * 'bp_setup_globals' is called.
+			 */
+			if ( ! isset( buddypress()->avatar ) ) {
+				buddypress()->avatar = new stdClass;
+			}
+
 			define( 'BP_RBE_DEBUG_LOG_PATH', bp_core_avatar_upload_path() . '/bp-rbe-debug.log' );
 		}
 	}
