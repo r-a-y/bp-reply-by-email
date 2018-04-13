@@ -287,7 +287,7 @@ function bp_rbe_inject_qs_in_email( $qs ) {
  * @return string
  */
 function bp_rbe_get_marker() {
-+	/**
+	/**
 	 * Filters the marker used in reply-to emails.
 	 *
 	 * @since 1.0-RC5
@@ -307,7 +307,7 @@ function bp_rbe_get_marker() {
  * @return string
  */
 function bp_rbe_get_nonrbe_notice() {
-+	/**
+	/**
 	 * Filters the non-RBE notice.
 	 *
 	 * @since 1.0-RC5
