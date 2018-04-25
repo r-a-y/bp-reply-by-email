@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 4.8.x, BuddyPress 2.9.x
+Tested up to: WordPress 4.9.x, BuddyPress 3.0.x
 Stable tag: trunk
  
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -66,6 +66,12 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC6 =
+* Feature: For IMAP mode, attachments can now be added when replying to group forum emails.  Those using SparkPost as an Inbound Provider can use a [companion plugin](https://github.com/r-a-y/bp-rbe-inbound-forum-attachments). (Requires [GD bbPress Attachments](https://wordpress.org/plugins/gd-bbpress-attachments/))
+* Feature: Add support for BP Groupblog. (Requires BP Groupblog 1.9.0 and BP Group Email Subscription 3.6.0.  RBE must be network-activated.)
+* Feature: Better multisite support for bbPress.
+* Feature: Add support for Composer (primarily for developers)
 
 = 1.0-RC5 =
 * Enhancement: Better IMAP auto-connect mode.  When "Automatically reconnect" is enabled on the admin page, if not connected to the IMAP inbox, a "Connect" button will appear.  Clicking on this button will connect and try to keep a persistent connection to the inbox.  For more info, check out [this page](https://github.com/r-a-y/bp-reply-by-email/wiki/IMAP-Autoconnect-Mode).
