@@ -103,6 +103,7 @@ add_action( 'deactivate_' . basename( BP_RBE_DIR ) . '/loader.php', 'bp_rbe_deac
  * More to come in the future?
  *
  * @since 1.0-RC1
+ * @since 1.0-RC6 Added BP Groupblog support.
  */
 function bp_rbe_default_extensions() {
 	// if RBE requirements aren't fulfilled, stop now!
@@ -123,6 +124,14 @@ function bp_rbe_default_extensions() {
 
 		// initialize the bbPress RBE extension!
 		new BBP_RBE_Extension;
+	}
+
+	// BP Groupblog
+	if ( function_exists( 'bp_groupblog_format_activity_action_new_groupblog_comment' ) ) {
+		require BP_RBE_DIR . '/includes/bp-rbe-extend-bpgroupblog.php';
+
+		// initialize the BP Groupblog RBE extension!
+		new BP_Groupblog_Comment_RBE_Extension;
 	}
 }
 add_action( 'bp_include', 'bp_rbe_default_extensions', 20 );
