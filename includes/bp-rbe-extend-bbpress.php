@@ -91,7 +91,7 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 		add_action( 'bbp_new_reply_post_extras',         array( $this, 'clear_global_cache' ) );
 
 		// New GES support.
-		add_filter( 'bp_ass_send_activity_notification_for_user', array( $this, 'ges_support' ), 9999, 2 );
+		add_filter( 'ass_send_email_args',        array( $this, 'ges_support' ), 9999, 2 );
 		add_action( 'bp_ges_after_bp_send_email', array( $this, 'ges_remove_listener' ) );
 
 		// Attachments.
@@ -1344,12 +1344,13 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 	 * This is the new way to add support for GES 3.6+.
 	 *
 	 * @since 1.0-RC4
+	 * @since 1.0-RC7 Switched hook to use 'ass_send_email_args'.
 	 *
-	 * @param bool                 $retval   Whether GES should send the current email.
-	 * @param BP_Activity_Activity $activity Activity object GES is using.
+	 * @param array  $retval     GES email args.
+	 * @param string $email_type GES email type.
 	 */
-	public function ges_support( $retval, $activity ) {
-		if ( false === $retval ) {
+	public function ges_support( $retval, $email_type ) {
+		if ( 'bp-ges-single' !== $email_type ) {
 			return $retval;
 		}
 
@@ -1357,7 +1358,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		 * Temporarily save activity object so we can reference it in the
 		 * ges_extend_listener() method.
 		 */
-		$this->temp_activity = $activity;
+		$this->temp_activity = $retval['activity'];
 
 		// Extend RBE's listener to add RBE support.
 		add_action( 'bp_rbe_extend_listener', array( $this, 'ges_extend_listener' ) );
