@@ -1563,6 +1563,23 @@ Otherwise, new replies by email will not be posted to the site.', 'bp-rbe' ), bp
 	}
 }
 
+/**
+ * Schedules RBE's hourly event.
+ *
+ * By default, this runs on every page load at 'init'. Unhook if you need to.
+ *
+ * @since 1.0-RC7
+ */
+function bp_rbe_schedule_hourly_event() {
+	if ( wp_installing() ) {
+		return;
+	}
+
+	if ( ! wp_next_scheduled ( 'bp_rbe_schedule' ) ) {
+		wp_schedule_event( time() + 60 * 60, 'hourly', 'bp_rbe_schedule' );
+	}
+}
+
 /** Modified BP functions ***********************************************/
 
 /**
