@@ -381,10 +381,26 @@ class BP_Reply_By_Email {
 		// Remove the marker temporarily.
 		if ( false !== strpos( $retval, $notice . '</p>' ) ) {
 			// Account for BP 3.0 change to wpautop().
-			$html = substr_replace( $retval, '', $pos - 17, strlen( $notice ) + 21 );
+			$html = substr_replace( $retval, '', $pos - 3, strlen( $notice ) + 7 );
+
+			/*
+			 * Remove trailing <br> after <hr>. Remove in BP 3.3.0+.
+			 *
+			 * See https://buddypress.trac.wordpress.org/ticket/7989
+			 */
+			$hrpos = strpos( $html, '<hr ' );
+			$hrlen = strpos( $html, "<br>\n", $hrpos ) - $hrpos;
+			// Sanity check.
+			if ( $hrlen < 50 ) {
+				$html = substr_replace( $html, '', $hrpos + $hrlen, 4 );
+			}
+
+		// BuddyPress < 3.0.
 		} else {
-			// Older BP's.
-			$html = substr_replace( $retval, '', $pos, strlen( $notice ) + 13 );
+			$html = substr_replace( $retval, '', $pos, strlen( $notice ) );
+
+			// Remove double <br /> caused by nl2br() via prepend_nonrbe_notice_to_content()
+			$html = preg_replace( '/<hr (.*)><br>((\W*)<br \/>){2}/m', '<hr $1><br>', $html );
 		}
 
 		// add some CSS styling
@@ -885,10 +901,26 @@ class BP_Reply_By_Email {
 		// Remove the marker temporarily.
 		if ( false !== strpos( $html, $reply_line . '</p>' ) ) {
 			// Account for BP 3.0 change to wpautop().
-			$html = substr_replace( $html, '', $pos - 17, strlen( $reply_line ) + 21 );
+			$html = substr_replace( $html, '', $pos - 3, strlen( $reply_line ) + 7 );
+
+			/*
+			 * Remove trailing <br> after <hr>. Remove in BP 3.3.0+.
+			 *
+			 * See https://buddypress.trac.wordpress.org/ticket/7989
+			 */
+			$hrpos = strpos( $html, '<hr ' );
+			$hrlen = strpos( $html, "<br>\n", $hrpos ) - $hrpos;
+			// Sanity check.
+			if ( $hrlen < 50 ) {
+				$html = substr_replace( $html, '', $hrpos + $hrlen, 4 );
+			}
+
+		// BuddyPress < 3.0.
 		} else {
-			// Older BP's.
-			$html = substr_replace( $html, '', $pos, strlen( $reply_line ) + 13 );
+			$html = substr_replace( $html, '', $pos, strlen( $reply_line ) );
+
+			// Remove double <br /> caused by nl2br() via prepend_rbe_marker_to_content()
+			$html = preg_replace( '/<hr (.*)><br>((\W*)<br \/>){2}/m', '<hr $1><br>', $html );
 		}
 
 		// add some CSS styling
