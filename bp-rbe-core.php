@@ -867,7 +867,7 @@ class BP_Reply_By_Email {
 	 */
 	public function move_rbe_marker( $html ) {
 		// if non-RBE email, stop now!
-		if ( strpos( $html, __( '--- Replying to this email will not send a message directly to the recipient or group ---', 'bp-rbe' ) ) !== false ) {
+		if ( strpos( $html, bp_rbe_get_nonrbe_notice() ) !== false ) {
 			return $html;
 		}
 
