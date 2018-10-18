@@ -542,7 +542,7 @@ function bp_rbe_inline_data_to_tmpfile( $filename = '', $data ) {
 function bp_rbe_should_use_rfc822_email( $params = array() ) {
 	// We currently only allow bbPress posts for attachments.
 	$allowed = array_flip( array( 'bbpf', 'bbpr', 'bbpt' ) );
-	$check   = (bool) array_intersect_key( $params, $allowed );
+	$check   = (bool) array_intersect_key( (array) $params, $allowed );
 
 	/**
 	 * Filter to override the full RFC822 email parse check.
