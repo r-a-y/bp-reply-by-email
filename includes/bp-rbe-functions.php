@@ -1103,17 +1103,40 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		/** GROUP FORUMS *************************************************/
 
 		case 'user_not_group_member' :
-			$log     = __( 'error - user is not a member of the group. forum reply not posted.', 'bp-rbe' );
+			$log   = __( 'error - user is not a member of the group. forum reply not posted.', 'bp-rbe' );
+			$group = groups_get_group( $data['params']['bbpg'] );
 
-			$message = sprintf( __( 'Hi there,
+			if ( ! isset( $data['is_html'] ) ) {
+				$data['is_html'] = false;
+			}
+
+			// Topic.
+			if ( ! empty( $data['params']['bbpf'] ) ) {
+				$message = sprintf( __( 'Hi there,
+
+Your forum topic with the subject "%1$s":
+
+"%2$s"
+
+Could not be posted because you are no longer a member of the group, "%3$s".  To post a new topic via email to this group, please rejoin the group here:
+%4$s
+
+
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), $data['subject'], BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ), bp_get_group_name( $group ), bp_get_group_permalink( $group ) );
+
+			// Reply.
+			} else {
+				$message = sprintf( __( 'Hi there,
 
 Your forum reply:
 
-"%s"
+"%1$s"
 
-Could not be posted because you are no longer a member of this group.  To comment on the forum thread, please rejoin the group.
+Could not be posted because you are no longer a member of the group, "%2$s".  To comment on the forum thread, please rejoin the group:
+%3$s
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ), bp_get_group_name( $group ), bp_get_group_permalink( $group ) );
+			}
 
 			break;
 
