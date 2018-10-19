@@ -948,6 +948,10 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 	 * @return string|bool Could be a string or boolean false.
 	 */
 	public function failure_message_to_sender( $message, $type, $data, $i, $imap ) {
+		if ( ! isset( $data['is_html'] ) ) {
+			$data['is_html'] = false;
+		}
+
 		switch( $type ) {
 			case 'bbpress_not_active' :
 				// Sanity check!
@@ -975,139 +979,168 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), get_blog_
 			/** REPLIES *****************************************************/
 
 			case 'bbp_reply_permissions' :
+				$topic = bbp_get_topic_title( $data['params']['bbpt'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your reply to the forum topic could not be posted because it appears that you do not have the ability to post replies.
+Unfortunately, your reply to the forum topic "%1$s" could not be posted because it appears that you do not have the ability to post replies.
 
-We are sorry for the inconvenience, but you will need to repost the following message:
+To view the forum topic, click here: %2$s
 
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+We apologize for any inconvenience this may have caused. Here is a copy of your reply:
+
+"%3$s"', 'bp-rbe' ), $topic, bbp_get_topic_permalink( $data['params']['bbpt'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
 			case 'bbp_reply_duplicate' :
+				$topic = bbp_get_topic_title( $data['params']['bbpt'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your reply to the forum topic could not be posted because it appears you have already made the same reply.
+Unfortunately, your reply to the forum topic "%1$s" could not be posted because it appears you have already made the same reply.
 
-Here is a copy of your reply:
+To view the forum topic, click here: %2$s
 
-"%s"
+We apologize for any inconvenience this may have caused. Here is a copy of your reply:
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+"%3$s"', 'bp-rbe' ), $topic, bbp_get_topic_permalink( $data['params']['bbpt'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
 			case 'bbp_reply_blacklist' :
+				$topic = bbp_get_topic_title( $data['params']['bbpt'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your reply to the forum topic could not be posted because the content of your message was automatically marked as spam.
+Unfortunately, your reply to the forum topic "%1$s" could not be posted because the content of your message was automatically marked as spam.
 
-Here is a copy of your reply that was marked as spam:
+To view the forum topic, click here: %2$s
 
-"%s"
+We apologize for any inconvenience this may have caused. Here is a copy of your reply:
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+"%3$s"', 'bp-rbe' ), $topic, bbp_get_topic_permalink( $data['params']['bbpt'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
 			case 'bbp_reply_error' :
+				$topic = bbp_get_topic_title( $data['params']['bbpt'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your reply to the forum topic could not be posted due to an error.
+Unfortunately, your reply to the forum topic "%1$s" could not be posted due to an error.
 
-Here is a copy of your attempted reply:
+To view the forum topic, click here: %2$s
 
-"%s"
+We apologize for any inconvenience this may have caused. Here is a copy of your reply:
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
+"%3$s"', 'bp-rbe' ), $topic, bbp_get_topic_permalink( $data['params']['bbpt'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ) );
 
 				break;
 
 			/** TOPICS *****************************************************/
 
 			case 'bbp_topic_permissions' :
+				$forum = bbp_get_forum_title( $data['params']['bbpf'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your new forum topic could not be posted because it appears that you do have the ability to post topics.
+Unfortunately, your new topic "%1$s" in the forum "%2$s" could not be posted because it appears that you do have the ability to post topics.
 
-We are sorry for the inconvenience, but you will need to repost the following message:
+To visit the forum, click here: %3$s
 
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+We apologize for any inconvenience this may have caused. Here is a copy of your topic:
+
+"%4$s"', 'bp-rbe' ), $data['subject'], $forum, bbp_get_forum_permalink( $data['params']['bbpf'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_edit_topic_forum_category' :
+				$forum = bbp_get_forum_title( $data['params']['bbpf'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your new forum topic could not be posted because the forum you are attempting to post in is a forum category.  Forum categories cannot contain topics.
+Unfortunately, your new topic "%1$s" in the forum "%2$s" could not be posted because the forum you are attempting to post in is a forum category.  Forum categories cannot contain topics.
 
-We are sorry for the inconvenience, but you will need to repost the following message:
+We apologize for any inconvenience this may have caused. Here is a copy of your topic:
 
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%4$s"', 'bp-rbe' ), $data['subject'], $forum, BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_edit_topic_forum_closed' :
+				$forum = bbp_get_forum_title( $data['params']['bbpf'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your new forum topic could not be posted because the forum you are trying to post in is closed and no new topics can be created there.
+Unfortunately, your new topic "%1$s" in the forum "%2$s" could not be posted because the forum is closed and no new topics can be created there.
 
-We are sorry for the inconvenience, but you will need to repost the following message:
+To visit the forum, click here: %3$s
 
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+We apologize for any inconvenience this may have caused. Here is a copy of your topic:
+
+"%4$s"', 'bp-rbe' ), $data['subject'], $forum, bbp_get_forum_permalink( $data['params']['bbpf'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_edit_topic_forum_private' :
 			case 'bbp_edit_topic_forum_hidden' :
+				$forum = bbp_get_forum_title( $data['params']['bbpf'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your new forum topic could not be posted because it appears that you do not have access to that forum.
+Unfortunately, your new topic "%1$s" in the forum "%2$s" could not be posted because it appears that you do not have access to that forum.
 
-We are sorry for the inconvenience, but you will need to repost the following message:
+We apologize for any inconvenience this may have caused. Here is a copy of your topic:
 
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%3$s"', 'bp-rbe' ), $data['subject'], $forum, BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_topic_duplicate' :
+				$forum = bbp_get_forum_title( $data['params']['bbpf'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your new forum topic could not be posted because it appears you already created this topic before.
+Unfortunately, your new topic "%1$s" in the forum "%2$s" could not be posted because it appears you have already created this topic before.
 
-Here is a copy of your attempted topic:
+To visit the forum, click here: %3$s
 
-"%s"', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+We apologize for any inconvenience this may have caused. Here is a copy of your topic:
+
+"%4$s"', 'bp-rbe' ), $data['subject'], $forum, bbp_get_forum_permalink( $data['params']['bbpf'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_topic_blacklist' :
+				$forum = bbp_get_forum_title( $data['params']['bbpf'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your new forum topic could not be posted because the content of your message was automatically marked as spam.
+Unfortunately, your new topic "%1$s" in the forum "%2$s" could not be posted because the content of your message was automatically marked as spam.
 
-Here is a copy of your topic that was marked as spam:
+To visit the forum, click here: %3$s
 
-"%s"
+We apologize for any inconvenience this may have caused. Here is a copy of your topic:
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%4$s"', 'bp-rbe' ), $data['subject'], $forum, bbp_get_forum_permalink( $data['params']['bbpf'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
 
 			case 'bbp_topic_error' :
+				$forum = bbp_get_forum_title( $data['params']['bbpf'] );
+
 				$message = sprintf( __( 'Hi there,
 
-Unfortunately, your new forum topic could not be posted due to an error.
+Unfortunately, your new topic "%1$s" in the forum "%2$s" could not be posted due to an error.
 
-Here is a copy of your attempted topic:
+To visit the forum, click here: %3$s
 
-"%s"
+We apologize for any inconvenience this may have caused. Here is a copy of your attempted topic:
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
+"%4$s"', 'bp-rbe' ), $data['subject'], $forum, bbp_get_forum_permalink( $data['params']['bbpf'] ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ) );
 
 				break;
-
 		}
 
 		return $message;
