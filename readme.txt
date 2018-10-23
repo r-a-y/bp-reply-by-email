@@ -5,7 +5,7 @@ Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
 Tested up to: WordPress 4.9.x, BuddyPress 3.0.x
 Stable tag: trunk
- 
+
 Reply to BuddyPress items from the comfort of your email inbox.
 
 == Description ==
@@ -66,6 +66,11 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC7 =
+* Enhancement: Compatibility with BuddyPress 3.0.0.
+* Enhancement: Compatibility with BP Group Email Subscription 3.9.0.
+* Enhancement: Improved back-to-sender error emails when replying to bbPress forum content.
 
 = 1.0-RC6 =
 * Feature: For IMAP mode, attachments can now be added when replying to group forum emails.  Those using SparkPost as an Inbound Provider can use a [companion plugin](https://github.com/r-a-y/bp-rbe-inbound-forum-attachments). (Requires [GD bbPress Attachments](https://wordpress.org/plugins/gd-bbpress-attachments/))
