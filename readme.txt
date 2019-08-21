@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 4.9.x, BuddyPress 3.0.x
+Tested up to: WordPress 5.2.x, BuddyPress 5.0.x
 Stable tag: trunk
 
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -66,6 +66,10 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC8 =
+* Enhancement: Support groupblog's comment moderation setting when replying by email.
+* Fix: Minor PHP notices.
 
 = 1.0-RC7 =
 * Enhancement: Compatibility with BuddyPress 3.0.0.
