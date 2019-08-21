@@ -275,6 +275,9 @@ class BP_Groupblog_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 		// get the userdata
 		$userdata = get_userdata( $user_id );
 
+		// Check to see if the blog has set comment moderation on.
+		$should_moderate = 1 == get_option( 'comment_moderation' );
+
 		// we're using wp_insert_comment() instead of wp_new_comment()
 		// why? because wp_insert_comment() bypasses all the WP comment hooks, which is good for us!
 		$new_comment_id = wp_insert_comment( array(
@@ -288,40 +291,54 @@ class BP_Groupblog_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 			'comment_author_IP'    => '', // how to get via RBE?
 			'comment_agent'        => '', // set agent as RBE? 'BP_Reply_By_Email/1.0
 		        'comment_type'         => '', // not used
+		        'comment_approved'     => true === $should_moderate ? '0' : 1
 		) );
 
 		// comment successfully posted!
 		if ( ! empty( $new_comment_id ) ) {
-			// more internal logging
-			bp_rbe_log( 'Message #' . $i . ': BP Groupblog comment reply successfully posted!' );
+			if ( $should_moderate ) {
+				bp_rbe_log( 'Message #' . $i . ': BP Groupblog comment reply was posted, but is pending moderation' );
 
-			/* now let's record the activity item for this comment */
+				// Notify the site admin if necessary.
+				if ( function_exists( 'wp_new_comment_notify_moderator' ) && ! has_action( 'wp_insert_comment', 'wp_new_comment_notify_moderator' ) ) {
+					wp_new_comment_notify_moderator( $new_comment_id );
+				}
 
-			// Add hooks.
-			add_action( 'bp_activity_before_save', array( $this, 'comment_activity_action' ) );
-			add_filter( 'bp_disable_blogforum_comments', '__return_true' );
-			add_filter( 'ass_send_email_args', array( $this, 'ges_email_args' ), 10, 2 );
+				return array( 'bp_groupblog_unapproved_comment_id' => $new_comment_id );
 
-			$activity_id = bp_activity_post_type_comment( $new_comment_id, true, bp_activity_get_post_type_tracking_args( 'post' ) );
+			} else {
+				// more internal logging
+				bp_rbe_log( 'Message #' . $i . ': BP Groupblog comment reply successfully posted!' );
 
-			// special hook for RBE activity items
-			// if you're adding an activity entry in this method, remember to add this hook after posting
-			// your activity item in this method!
-			do_action( 'bp_rbe_new_activity', array(
-				'activity_id'       => $activity_id,
-				'type'              => $this->activity_type,
-				'user_id'           => $user_id,
-				'item_id'           => $group_id,
-				'secondary_item_id' => $comment_id,
-				'content'           => $data['content']
-			) );
+				/* now let's record the activity item for this comment */
 
-			// Remove hooks.
-			remove_filter( 'ass_send_email_args', array( $this, 'ges_email_args' ), 10, 2 );
-			remove_filter( 'bp_disable_blogforum_comments', '__return_true' );
-			remove_action( 'bp_activity_before_save', array( $this, 'comment_activity_action' ) );
+				// Add hooks.
+				add_action( 'bp_activity_before_save', array( $this, 'comment_activity_action' ) );
+				add_filter( 'bp_disable_blogforum_comments', '__return_true' );
+				add_filter( 'ass_send_email_args', array( $this, 'ges_email_args' ), 10, 2 );
 
-			return array( 'bp_groupblog_comment_id' => $new_comment_id );
+				// second arg = is_approved.
+				$activity_id = bp_activity_post_type_comment( $new_comment_id, true, bp_activity_get_post_type_tracking_args( 'post' ) );
+
+				// special hook for RBE activity items
+				// if you're adding an activity entry in this method, remember to add this hook after posting
+				// your activity item in this method!
+				do_action( 'bp_rbe_new_activity', array(
+					'activity_id'       => $activity_id,
+					'type'              => $this->activity_type,
+					'user_id'           => $user_id,
+					'item_id'           => $group_id,
+					'secondary_item_id' => $comment_id,
+					'content'           => $data['content']
+				) );
+
+				// Remove hooks.
+				remove_filter( 'ass_send_email_args', array( $this, 'ges_email_args' ), 10, 2 );
+				remove_filter( 'bp_disable_blogforum_comments', '__return_true' );
+				remove_action( 'bp_activity_before_save', array( $this, 'comment_activity_action' ) );
+
+				return array( 'bp_groupblog_comment_id' => $new_comment_id );
+			}
 
 		} else {
 			return new WP_Error( 'bp_groupblog_new_comment_fail', '', $data );
