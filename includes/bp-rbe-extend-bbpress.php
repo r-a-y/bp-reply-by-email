@@ -1422,6 +1422,10 @@ We apologize for any inconvenience this may have caused. Here is a copy of your 
 			return;
 		}
 
+		if ( ! isset( $rbe->listener ) ) {
+			$rbe->listener = new stdClass;
+		}
+
 		$rbe->listener->component         = $this->id;
 		$rbe->listener->item_id           = $this->temp_activity->item_id;
 		$rbe->listener->secondary_item_id = $this->temp_activity->secondary_item_id;

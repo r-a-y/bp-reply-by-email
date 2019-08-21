@@ -101,6 +101,10 @@ class BP_Groupblog_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 			return;
 		}
 
+		if ( ! isset( $rbe->listener ) ) {
+			$rbe->listener = new stdClass;
+		}
+
 		$rbe->listener->component = $this->id;
 		$rbe->listener->item_id   = $this->temp_activity->item_id;
 
