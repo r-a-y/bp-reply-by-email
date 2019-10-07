@@ -269,10 +269,8 @@ class BP_Reply_By_Email_Admin {
 		$success_msg = __( '<strong>Reply By Email</strong> is currently <span>CONNECTED</span> and checking your inbox continuously. To disconnect, deactivate the plugin.', 'bp-rbe' );
 
 		if ( bp_rbe_is_connected() ) {
-			// Schedule hourly check.
-			if ( ! wp_next_scheduled ( 'bp_rbe_schedule' ) ) {
-				wp_schedule_event( time() + 60 * 60, 'hourly', 'bp_rbe_schedule' );
-			}
+			// Schedule health check.
+			bp_rbe_schedule_hourly_event();
 
 			wp_send_json_success( array(
 				'msg' => $success_msg
@@ -289,10 +287,8 @@ class BP_Reply_By_Email_Admin {
 
 				// Success!
 				if ( bp_rbe_is_connected( array( 'clearcache' => true ) ) ) {
-					// Schedule hourly check.
-					if ( ! wp_next_scheduled ( 'bp_rbe_schedule' ) ) {
-						wp_schedule_event( time() + 60 * 60, 'hourly', 'bp_rbe_schedule' );
-					}
+					// Schedule health check.
+					bp_rbe_schedule_hourly_event();
 
 					wp_send_json_success( array(
 						'msg' => $success_msg

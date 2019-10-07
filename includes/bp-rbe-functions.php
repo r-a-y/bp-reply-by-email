@@ -1587,11 +1587,12 @@ Otherwise, new replies by email will not be posted to the site.', 'bp-rbe' ), bp
 }
 
 /**
- * Schedules RBE's hourly event.
+ * Schedules RBE's cron event.
  *
  * By default, this runs on every page load at 'init'. Unhook if you need to.
  *
  * @since 1.0-RC7
+ * @since 1.0-RC9 Changed to twice-hourly interval.
  */
 function bp_rbe_schedule_hourly_event() {
 	if ( wp_installing() ) {
@@ -1599,7 +1600,7 @@ function bp_rbe_schedule_hourly_event() {
 	}
 
 	if ( ! wp_next_scheduled ( 'bp_rbe_schedule' ) ) {
-		wp_schedule_event( time() + 60 * 60, 'hourly', 'bp_rbe_schedule' );
+		wp_schedule_event( time() + 60 * 30, 'twicehourly', 'bp_rbe_schedule' );
 	}
 }
 

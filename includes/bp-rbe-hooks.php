@@ -27,6 +27,14 @@ if ( bp_rbe_is_required_completed() ) :
 		if ( bp_is_root_blog() && bp_rbe_get_setting( 'keepaliveauto' ) ) {
 			add_action( 'init',            'bp_rbe_schedule_hourly_event' );
 			add_action( 'bp_rbe_schedule', 'bp_rbe_imap_down_email_notice' );
+
+			add_filter( 'cron_schedules', function( $retval ) {
+				$retval['twicehourly'] = array(
+					'interval' => HOUR_IN_SECONDS / 2,
+					'display'  => __( 'Twice Hourly', 'bp-rbe' )
+				);
+				return $retval;
+			} );
 		}
 
 		// email inbox parsing
