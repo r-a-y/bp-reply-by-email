@@ -957,6 +957,11 @@ class BP_Reply_By_Email {
 
 		// don't do this in the admin area
 		if ( is_admin() ) {
+			// ...except when BPGES is doing its AJAX sending routine.
+			if ( did_action( 'wp_ajax_wp_bpges_send_queue' ) ) {
+				return true;
+			}
+
 			return false;
 		}
 
