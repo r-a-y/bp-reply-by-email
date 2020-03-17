@@ -1271,6 +1271,10 @@ We apologize for any inconvenience this may have caused. Here is a copy of your 
 	public function new_topic_via_email_block() {
 		$email = '';
 
+		if ( ! is_user_logged_in() ) {
+			return;
+		}
+
 		// BuddyPress group
 		if ( bp_is_group() ) {
 			$email  = bp_rbe_groups_get_encoded_email_address();
