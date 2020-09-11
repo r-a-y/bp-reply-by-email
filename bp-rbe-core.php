@@ -310,18 +310,9 @@ class BP_Reply_By_Email {
 			$email->set_from( "noreply@{$host}", bp_core_get_user_displayname( $this->listener->user_id ) );
 		}
 
-		/**
-		 * Set our custom 'Reply-To' email header.
-		 *
-		 * Have to workaround a mailbox character limit PHPMailer bug by wiping out
-		 * the Reply-To header and then setting it as a custom header.
-		 *
-		 * @link https://github.com/PHPMailer/PHPMailer/issues/706
-		 */
-		$email->set_reply_to( '' );
-		$email->set_headers( array(
-			'Reply-To' => $reply_to
-		) );
+		// Set our custom 'Reply-To' email header.
+		$email->set_reply_to( $reply_to );
+		$this->phpmailer_set_reply_to_header( $reply_to );
 
 		// Fix issues with PHPmailer date when IMAP auto-connect is in effect.
 		if ( ! bp_rbe_is_inbound() && 1 === (int) bp_rbe_get_setting( 'keepaliveauto' ) ) {
@@ -498,8 +489,7 @@ class BP_Reply_By_Email {
 				}
 
 				// PHPMailer 'Reply-To' email header override.
-				$this->temp_args = $args;
-				add_action( 'phpmailer_init', array( $this, 'phpmailer_set_reply_to_header' ) );
+				$this->phpmailer_set_reply_to_header( $reply_to );
 			}
 
 			// Filter the headers; 3rd-party components could potentially hook into this
@@ -511,33 +501,35 @@ class BP_Reply_By_Email {
 	}
 
 	/**
-	 * Set 'Reply-To' email address for PHPMailer if mailbox is > 64 characters.
+	 * Set 'Reply-To' email address for PHPMailer.
 	 *
 	 * Have to workaround a PHPMailer mailbox character limit issue by setting the
-	 * 'Reply-To' email address again after PHPMailer has done its checks.
-	 *
-	 * This is done for installs still using wp_mail().
+	 * 'Reply-To' email address again without their default validator checks.
 	 *
 	 * @since 1.0-RC4.
 	 * @link  https://github.com/PHPMailer/PHPMailer/issues/706
 	 *
-	 * @param PHPMailer $phpmailer
+	 * @param string $reply_to The reply-to email address to use.
 	 */
-	public function phpmailer_set_reply_to_header( $phpmailer ) {
-		/*
-		 * Do a check to see if the reply-to email address is > 64 characters.
-		 *
-		 * If so, set the 'Reply-To' email address again since PHPMailer silently
-		 * drops our first attempt at doing this.
-		 */
-		$reply_to = $this->get_reply_to_address( $this->temp_args );
-		if ( strpos( $reply_to, '@' ) > 64 ) {
-			$phpmailer->addCustomHeader( 'Reply-To', $reply_to );
-		}
+	public function phpmailer_set_reply_to_header( $reply_to ) {
+		add_action( 'phpmailer_init', function( $p ) use ( $reply_to ) {
+			// Clear existing 'Reply-To' email addresses.
+			$p->clearReplyTos();
 
-		// Unset some temporary items.
-		unset( $this->temp_args );
-		remove_action( 'phpmailer_init', array( $this, 'phpmailer_set_reply_to_header' ) );
+			// Backup existing validator.
+			$validator = $p::$validator;
+
+			/*
+			 * Set validator to HTML5 and add back 'Reply-To' header.
+			 *
+			 * 'html5' is more lenient than the 'php' or 'pcre' validator types.
+			 */
+			$p::$validator = 'html5';
+			$p->addReplyTo( $reply_to );
+
+			// Reinstate validator.
+			$p::$validator = $validator;
+		}, 999 );
 	}
 
 	/**
