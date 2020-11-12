@@ -202,6 +202,7 @@ class BP_Reply_By_Email_IMAP {
 				$reopen = BP_Reply_By_Email_Connect::init( array( 'reconnect' => true ), $this->connection );
 
 				if ( $reopen ) {
+					bp_rbe_remove_imap_lock();
 					bp_rbe_log( '-- Reconnection successful! --' );
 				} else {
 					bp_rbe_log( '-- Reconnection failed! :( --' );
