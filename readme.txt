@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 5.2.x, BuddyPress 5.0.x
+Tested up to: WordPress 5.5.x, BuddyPress 7.0.x
 Stable tag: trunk
 
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -20,12 +20,6 @@ You can reply to the following items from your inbox:
 * Group forum topics / posts (requires [BP Group Email Subscription Plugin](http://wordpress.org/extend/plugins/buddypress-group-email-subscription/))
 
 You can also create new group forum topics from your email inbox as well.
-
-**Minimum Requirements**
-* WordPress 3.4.1, BuddyPress 1.5.6
-* [IMAP module enabled in PHP](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server)
-* An email address that supports IMAP and [address tags](https://en.wikipedia.org/wiki/Email_address#Address_tags)
-* A VPS or dedicated server (recommended) ([see notes about shared hosts here](https://github.com/r-a-y/bp-reply-by-email/wiki/Quick-Setup-with-GMail#wiki-server))
 
 **Wiki**
 Check out the [BP Reply By Email wiki](https://github.com/r-a-y/bp-reply-by-email/wiki) for more information!
@@ -66,6 +60,12 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC9 =
+* Fix: Compatibility with WordPress 5.5.0.
+* Fix: For those using IMAP auto-connect mode, prevents disconnection shortly after a successful reconnection in certain instances.
+* Fix: For bbPress, do not show new topic address block for non-logged-in users.
+* Fix: For BP Group Email Subscription 3.9, show non-RBE notice for certain emails like welcome emails.
 
 = 1.0-RC8 =
 * Enhancement: Support groupblog's comment moderation setting when replying by email.
