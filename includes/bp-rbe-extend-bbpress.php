@@ -463,7 +463,12 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			if ( bbp_is_topic_trash( $topic_id ) ) {
 
 				// Get pre_trashed_replies for topic
-				$pre_trashed_replies = get_post_meta( $topic_id, '_bbp_pre_trashed_replies', true );
+				$pre_trashed_meta = get_post_meta( $topic_id, '_bbp_pre_trashed_replies', true );
+
+				// Format the meta value
+				$pre_trashed_replies = is_array( $pre_trashed_meta )
+					? array_filter( $pre_trashed_meta )
+					: array();
 
 				// Add this reply to the end of the existing replies
 				$pre_trashed_replies[] = $reply_id;
@@ -482,7 +487,12 @@ class BBP_RBE_Extension extends BP_Reply_By_Email_Extension {
 			if ( bbp_is_topic_spam( $topic_id ) ) {
 
 				// Get pre_spammed_replies for topic
-				$pre_spammed_replies = get_post_meta( $topic_id, '_bbp_pre_spammed_replies', true );
+				$pre_trashed_meta = get_post_meta( $topic_id, '_bbp_pre_spammed_replies', true );
+
+				// Format the meta value
+				$pre_spammed_replies = is_array( $pre_trashed_meta )
+					? array_filter( $pre_trashed_meta )
+					: array();
 
 				// Add this reply to the end of the existing replies
 				$pre_spammed_replies[] = $reply_id;
