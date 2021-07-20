@@ -3,7 +3,7 @@ Contributors: r-a-y, cuny-academic-commons
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V9AUZCMECZEQJ
 Tags: buddypress, email, basecamp
 Requires at least: WordPress 3.4.x, BuddyPress 1.5.6
-Tested up to: WordPress 5.5.x, BuddyPress 7.0.x
+Tested up to: WordPress 5.7.x, BuddyPress 9.0.x
 Stable tag: trunk
 
 Reply to BuddyPress items from the comfort of your email inbox.
@@ -60,6 +60,9 @@ Italian - [htrex](https://github.com/htrex)
 
 
 == Changelog ==
+
+= 1.0-RC10 =
+* Fix: For bbPress, fix a fatal error when attempting to reply to a spammed or trashed forum topic by email.
 
 = 1.0-RC9 =
 * Fix: Compatibility with WordPress 5.5.0.
