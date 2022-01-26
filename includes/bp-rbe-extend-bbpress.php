@@ -1228,7 +1228,7 @@ We apologize for any inconvenience this may have caused. Here is a copy of your 
 			case 'publish_topics'      :
 			case 'read_hidden_forums'  :
 			case 'read_private_forums' :
-				$caps = array( 'participate' );
+				$caps = array( 'exist' );
 				break;
 		}
 
