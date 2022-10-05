@@ -445,11 +445,11 @@ class BP_Reply_By_Email_Parser {
 			}
 
 			$new = strrpos( $args['querystring'], '-new' );
+			$has_new = substr( $args['querystring'], -4 ) === '-new';
 
-			if ( $new !== false ) {
+			if ( $has_new === true ) {
 				// get rid of "-new" from the querystring
-				$qs = substr( $args['querystring'], 0, $new );
-
+				$qs = substr( $args['querystring'], 0, -4 );
 			} else {
 				/**
 				 * If new item querystring isn't default, let plugins render querystring.
