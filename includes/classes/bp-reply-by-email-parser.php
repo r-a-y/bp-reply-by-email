@@ -444,7 +444,6 @@ class BP_Reply_By_Email_Parser {
 				return false;
 			}
 
-			$new = strrpos( $args['querystring'], '-new' );
 			$has_new = substr( $args['querystring'], -4 ) === '-new';
 
 			if ( $has_new === true ) {
