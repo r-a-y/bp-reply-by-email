@@ -117,7 +117,21 @@ class BP_Groupblog_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 		} else {
 			$rbe->listener->secondary_item_id = $this->temp_activity->secondary_item_id;
 
+			$switch = bp_is_root_blog() ? true : false;
+
+			// Due to GES async, need to grab groupblog comment and set site ID.
+			if ( $switch ) {
+				$rbe->listener->blog_id = get_groupblog_blog_id( $rbe->listener->item_id );
+
+				switch_to_blog( $rbe->listener->blog_id );
+			}
+
 			$comment = get_comment( $this->temp_activity->secondary_item_id );
+
+			if ( $switch ) {
+				restore_current_blog();
+			}
+
 			$rbe->listener->post_id = $comment->comment_post_ID;
 		}
 	}
@@ -182,6 +196,11 @@ class BP_Groupblog_Comment_RBE_Extension extends BP_Reply_By_Email_Extension {
 
 		if ( ! empty( $listener->post_id ) ) {
 			$querystring .= "&{$this->post_id_param}={$listener->post_id}";
+		}
+
+		// Add groupblog site ID if necessary.
+		if ( ! empty( $listener->blog_id ) ) {
+			$querystring .= "&b={$listener->blog_id}";
 		}
 
 		return $querystring;
