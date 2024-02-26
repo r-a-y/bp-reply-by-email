@@ -1017,8 +1017,9 @@ function bp_rbe_log_no_matches( $parser, $data, $i, $imap ) {
 			if ( function_exists( 'bp_core_members_shortlink_redirector' ) && bp_is_active( 'settings' ) ) {
 				/** This filter is documented in /wp-content/plugins/buddypress/bp-core/bp-core-functions.php */
 				$me_slug = apply_filters( 'bp_core_members_shortlink_slug', 'me' );
+				$root    = function_exists( 'bp_get_root_url' ) ? bp_get_root_url() : bp_get_root_domain();
 				$domain  = bp_core_enable_root_profiles() ? $me_slug : bp_get_members_root_slug() . '/' . $me_slug;
-				$domain  = trailingslashit( bp_get_root_domain() . '/' . $domain . '/' . bp_get_settings_slug() );
+				$domain  = trailingslashit( $root . '/' . $domain . '/' . bp_get_settings_slug() );
 
 			// Use admin profile URL if Settings component + redirector is not available.
 			} else {
@@ -1105,6 +1106,7 @@ We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_
 		case 'user_not_group_member' :
 			$log   = __( 'error - user is not a member of the group. forum reply not posted.', 'bp-rbe' );
 			$group = groups_get_group( $data['params']['bbpg'] );
+			$url   = function_exists( 'bp_get_group_url' ) ? bp_get_group_url( $group ) : bp_get_group_permalink( $group );
 
 			if ( ! isset( $data['is_html'] ) ) {
 				$data['is_html'] = false;
@@ -1122,7 +1124,7 @@ Could not be posted because you are no longer a member of the group, "%3$s".  To
 %4$s
 
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), $data['subject'], BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ), bp_get_group_name( $group ), bp_get_group_permalink( $group ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), $data['subject'], BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], false, $i ), bp_get_group_name( $group ), $url );
 
 			// Reply.
 			} else {
@@ -1135,7 +1137,7 @@ Your forum reply:
 Could not be posted because you are no longer a member of the group, "%2$s".  To comment on the forum thread, please rejoin the group:
 %3$s
 
-We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ), bp_get_group_name( $group ), bp_get_group_permalink( $group ) );
+We apologize for any inconvenience this may have caused.', 'bp-rbe' ), BP_Reply_By_Email_Parser::get_body( $data['content'], $data['is_html'], true, $i ), bp_get_group_name( $group ), $url );
 			}
 
 			break;
