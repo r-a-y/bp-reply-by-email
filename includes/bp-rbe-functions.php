@@ -850,8 +850,15 @@ function bp_rbe_remove_email_client_signature( $content ) {
 	// eg. "--\r\n
 	//      John Doe"
 	//
-	if ( strpos( $content, chr( 10 ) . '--' . chr( 13 ) . chr( 10 ) ) !== false ) {
-		$content = substr( $content, 0, strpos( $content, chr( 10 ) . '--' . chr( 13 ) . chr( 10 ) ) );
+	if ( false !== strrpos( $content, chr( 10 ) . '--' . chr( 13 ) . chr( 10 ) ) ) {
+		$content = substr( $content, 0, strrpos( $content, chr( 10 ) . '--' . chr( 13 ) . chr( 10 ) ) );
+	}
+
+	// eg. "--\n
+	//      John Doe"
+	//
+	elseif ( false !== strrpos( $content, chr( 10 ) . '--' . chr( 10 ) ) ) {
+		$content = substr( $content, 0, strrpos( $content, chr( 10 ) . '--' . chr( 10 ) ) );
 	}
 
 	// (2) Common mobile email client sigs:
