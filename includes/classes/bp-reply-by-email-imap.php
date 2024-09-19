@@ -426,18 +426,20 @@ class BP_Reply_By_Email_IMAP {
 	}
 
 	/**
-	 * Multipart plain-text parser.
+	 * Multipart parser.
 	 *
-	 * Used during {@link BP_Reply_By_Email_IMAP::body_parser()} if email is a multipart email.
+	 * Used during {@link BP_Reply_By_Email_IMAP::body_parser()} if email is a
+	 * multipart email.
 	 *
-	 * This method parses a multipart email to return the plain-text body as well as the encoding
-	 * type and other parameters on success.
+	 * This method parses a multipart email to return the plain-text body as well
+	 * as the encoding type and other parameters on success. Will also parse the
+	 * HTML body if a plain-text one cannot be found in the multipart email.
 	 *
 	 * @param obj $parts The multiple parts of an email. See imap_fetchstructure() for more details.
 	 * @param resource $imap The current IMAP connection
 	 * @param int $i The current email message number
 	 * @param bool $subpart If we're parsing a subpart or not. Defaults to false.
-	 * @return array A populated array containing the body, encoding type and other parameters on success. Empty array on failure.
+	 * @return array Array with body, encoding type and other parameters on success.
 	 */
 	public static function multipart_plain_text_parser( $parts, $imap, $i, $subpart = false ) {
 		$items = $params = array();
@@ -447,8 +449,12 @@ class BP_Reply_By_Email_IMAP {
 			// get subtype
 			$subtype = strtolower( $parts[$j]->subtype );
 
-			// get the plain-text message only
-			if ( $subtype == 'plain' ) {
+			// Parse plain-text or HTML.
+			if ( 'plain' === $subtype || 'html' === $subtype ) {
+				if ( 'html' === $subtype ) {
+					self::$html = true;
+				}
+
 				// setup the part number
 				// if $subpart is true, we must use a decimal number
 				$partno            = ! $subpart ? $j+1 : $j+1 . '.' . ($j+1);
@@ -458,23 +464,23 @@ class BP_Reply_By_Email_IMAP {
 
 				// add all additional parameters if available
 				if ( ! empty( $parts[$j]->parameters ) ) {
-					foreach ( $parts[$j]->parameters as $x )
+					foreach ( $parts[$j]->parameters as $x ) {
 						$params[ strtolower( $x->attribute ) ] = $x->value;
+					}
 				}
 
 				// add all additional dparameters if available
 				if ( ! empty( $parts[$j]->dparameters ) ) {
-					foreach ( $parts[$j]->dparameters as $x )
+					foreach ( $parts[$j]->dparameters as $x ) {
 						$params[ strtolower( $x->attribute ) ] = $x->value;
+					}
 				}
 
-				continue;
-			}
+				break;
 
 			// if subtype is 'alternative', we must recursively use this method again
-			elseif ( $subtype == 'alternative' ) {
+			} elseif ( 'alternative' === $subtype ) {
 				$items = self::multipart_plain_text_parser( $parts[$j]->parts, $imap, $i, true );
-
 				continue;
 			}
 		}
