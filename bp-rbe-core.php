@@ -303,11 +303,8 @@ class BP_Reply_By_Email {
 			// Fetch current 'From' email address.
 			$from = $email->get_from()->get_address();
 
-			// Grab the host.
-			$host = substr( $from, strpos( $from, '@' ) + 1 );
-
-			// Set the custom From email address and name.
-			$email->set_from( "noreply@{$host}", bp_core_get_user_displayname( $this->listener->user_id ) );
+			// Set the custom From name.
+			$email->set_from( $from, bp_core_get_user_displayname( $this->listener->user_id ) );
 		}
 
 		// Set our custom 'Reply-To' email header.
