@@ -509,7 +509,7 @@ function bp_rbe_log( $message ) {
  * @param  mixed  $data     Data for your file.
  * @return string|WP_Error  String of path to temporary file on success, WP_Error on failure.
  */
-function bp_rbe_inline_data_to_tmpfile( $filename = '', $data ) {
+function bp_rbe_inline_data_to_tmpfile( $filename, $data ) {
 	if ( ! function_exists( 'wp_tempnam' ) ) {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 	}
