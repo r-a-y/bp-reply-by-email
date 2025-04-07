@@ -58,7 +58,10 @@ class BP_Reply_By_Email_Inbound_Provider_Postmark extends BP_Reply_By_Email_Inbo
 			'to_email'   => $response->OriginalRecipient,
 			'from_email' => $response->From,
 			'content'    => $response->TextBody,
-			'subject'    => $response->Subject
+			'subject'    => $response->Subject,
+			'misc'       => [
+				'inbound' => 'postmark'
+			]
 		);
 
 		$parser = BP_Reply_By_Email_Parser::init( $data, 1 );

@@ -95,7 +95,10 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 					'to_email'   => $item->msg->email,
 					'from_email' => $item->msg->from_email,
 					'content'    => $item->msg->text,
-					'subject'    => $item->msg->subject
+					'subject'    => $item->msg->subject,
+					'misc'       => [
+						'inbound' => 'mandrill'
+					]
 				);
 
 				$parser = BP_Reply_By_Email_Parser::init( $data, $i );

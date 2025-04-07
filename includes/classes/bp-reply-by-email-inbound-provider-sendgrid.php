@@ -55,7 +55,10 @@ class BP_Reply_By_Email_Inbound_Provider_SendGrid extends BP_Reply_By_Email_Inbo
 			'to_email'   => BP_Reply_By_Email_Parser::get_header( $headers, 'To' ),
 			'from_email' => BP_Reply_By_Email_Parser::get_header( $headers, 'From' ),
 			'content'    => $_POST['text'],
-			'subject'    => $_POST['subject']
+			'subject'    => $_POST['subject'],
+			'misc'       => [
+				'inbound' => 'sendgrid'
+			]
 		);
 
 		$parser = BP_Reply_By_Email_Parser::init( $data, 1 );
