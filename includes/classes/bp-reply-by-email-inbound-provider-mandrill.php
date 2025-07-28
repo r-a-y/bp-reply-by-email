@@ -97,7 +97,8 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 					'content'    => $item->msg->text,
 					'subject'    => $item->msg->subject,
 					'misc'       => [
-						'inbound' => 'mandrill'
+						'inbound'              => 'mandrill',
+						'mandrill_attachments' => $item->msg->attachments
 					]
 				);
 
