@@ -22,6 +22,16 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 class BP_Reply_By_Email_Connect {
 	/**
+	 * @var array Connection arguments.
+	 */
+	public $args;
+
+	/**
+	 * @var resource IMAP connection.
+	 */
+	public $connection;
+
+	/**
 	 * Static initializer.
 	 *
 	 * Returns IMAP resource on success using the connect() method.

@@ -125,6 +125,7 @@ define('CRYPT_RIJNDAEL_MODE_OFB', CRYPT_MODE_OFB);
  * @author  Jim Wigginton <terrafrost@php.net>
  * @access  public
  */
+#[AllowDynamicProperties]
 class Crypt_Rijndael extends Crypt_Base
 {
     /**

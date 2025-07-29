@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @package BP_Reply_By_Email
  * @subpackage Classes
  */
+#[AllowDynamicProperties]
 class BP_Reply_By_Email {
 
 	/**
