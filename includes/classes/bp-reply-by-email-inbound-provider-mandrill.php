@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * @since 1.0-RC3
  *
- * @see http://help.mandrill.com/entries/22092308-What-is-the-format-of-inbound-email-webhooks-
+ * @see https://mailchimp.com/developer/transactional/guides/set-up-inbound-email-processing/
  */
 class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbound_Provider {
 	/**
@@ -94,13 +94,22 @@ class BP_Reply_By_Email_Inbound_Provider_Mandrill extends BP_Reply_By_Email_Inbo
 					'headers'    => $item->msg->headers,
 					'to_email'   => $item->msg->email,
 					'from_email' => $item->msg->from_email,
-					'content'    => $item->msg->text,
 					'subject'    => $item->msg->subject,
 					'misc'       => [
 						'inbound'              => 'mandrill',
 						'mandrill_attachments' => $item->msg->attachments
 					]
 				);
+
+				// Use plain-text first.
+				if ( ! empty( $item->msg->text ) ) {
+					$data['content'] = $item->msg->text;
+
+				// Use HTML if no plain-text.
+				} elseif ( ! empty( $item->msg->html ) ) {
+					$data['content'] = $item->msg->html;
+					$data['is_html'] = true;
+				}
 
 				$parser = BP_Reply_By_Email_Parser::init( $data, $i );
 

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * @since 1.0-RC4
  *
- * @see http://developer.postmarkapp.com/developer-process-parse.html
+ * @see https://postmarkapp.com/developer/user-guide/inbound/parse-an-email
  */
 class BP_Reply_By_Email_Inbound_Provider_Postmark extends BP_Reply_By_Email_Inbound_Provider {
 	/**
@@ -57,12 +57,21 @@ class BP_Reply_By_Email_Inbound_Provider_Postmark extends BP_Reply_By_Email_Inbo
 			'headers'    => $headers,
 			'to_email'   => $response->OriginalRecipient,
 			'from_email' => $response->From,
-			'content'    => $response->TextBody,
 			'subject'    => $response->Subject,
 			'misc'       => [
 				'inbound' => 'postmark'
 			]
 		);
+
+		// Use plain-text first.
+		if ( ! empty( $response->TextBody ) ) {
+			$data['content'] = $response->TextBody;
+
+		// Use HTML if no plain-text.
+		} elseif ( ! empty( $response->HtmlBody ) ) {
+			$data['content'] = $response->HtmlBody;
+			$data['is_html'] = true;
+		}
 
 		$parser = BP_Reply_By_Email_Parser::init( $data, 1 );
 

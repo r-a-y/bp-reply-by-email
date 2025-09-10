@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * @since 1.0-RC4
  *
- * @see https://sendgrid.com/docs/API_Reference/Webhooks/parse.html
+ * @see https://www.twilio.com/docs/sendgrid/for-developers/parsing-email/setting-up-the-inbound-parse-webhook
  */
 class BP_Reply_By_Email_Inbound_Provider_SendGrid extends BP_Reply_By_Email_Inbound_Provider {
 	/**
@@ -54,12 +54,21 @@ class BP_Reply_By_Email_Inbound_Provider_SendGrid extends BP_Reply_By_Email_Inbo
 			'headers'    => $headers,
 			'to_email'   => BP_Reply_By_Email_Parser::get_header( $headers, 'To' ),
 			'from_email' => BP_Reply_By_Email_Parser::get_header( $headers, 'From' ),
-			'content'    => $_POST['text'],
 			'subject'    => $_POST['subject'],
 			'misc'       => [
 				'inbound' => 'sendgrid'
 			]
 		);
+
+		// Use plain-text first.
+		if ( ! empty( $_POST['text'] ) ) {
+			$data['content'] = $_POST['text'];
+
+		// Use HTML if no plain-text.
+		} elseif ( ! empty( $_POST['html'] ) ) {
+			$data['content'] = $_POST['html'];
+			$data['is_html'] = true;
+		}
 
 		$parser = BP_Reply_By_Email_Parser::init( $data, 1 );
 

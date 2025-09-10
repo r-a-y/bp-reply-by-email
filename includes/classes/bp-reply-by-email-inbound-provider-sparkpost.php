@@ -64,7 +64,6 @@ class BP_Reply_By_Email_Inbound_Provider_Sparkpost extends BP_Reply_By_Email_Inb
 				'headers'    => $headers,
 				'to_email'   => $item->msys->relay_message->rcpt_to,
 				'from_email' => $item->msys->relay_message->friendly_from,
-				'content'    => $item->msys->relay_message->content->text,
 				'subject'    => $item->msys->relay_message->content->subject,
 
 				// Add custom data.
@@ -72,6 +71,16 @@ class BP_Reply_By_Email_Inbound_Provider_Sparkpost extends BP_Reply_By_Email_Inb
 					'inbound' => 'sparkpost'
 				)
 			);
+
+			// Use plain-text first.
+			if ( ! empty( $item->msys->relay_message->content->text ) ) {
+				$data['content'] = $item->msys->relay_message->content->text;
+
+			// Use HTML if no plain-text.
+			} elseif ( ! empty( $item->msys->relay_message->content->html ) ) {
+				$data['content'] = $item->msys->relay_message->content->html;
+				$data['is_html'] = true;
+			}
 
 			$qs   = BP_Reply_By_Email_Parser::get_querystring( $data['to_email'] );
 			$user = get_user_by( 'email', $data['from_email'] );
