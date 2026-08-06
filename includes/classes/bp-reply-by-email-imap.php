@@ -406,8 +406,9 @@ class BP_Reply_By_Email_IMAP {
 			// there are differing opinions as to whether iconv() is better than
 			// mb_convert_encoding()
 			// mb_convert_encoding() appears to have less problems than iconv()
-			// so this is used first
-			if ( function_exists( 'mb_convert_encoding' ) ) {
+			// so this is used first (assuming it supports the body's charset)
+			if ( function_exists( 'mb_convert_encoding' ) && 
+			  in_array(strtolower($params['charset']), array_map('strtolower', mb_list_encodings())) ) {
 				$body = mb_convert_encoding( $body, 'utf-8', $params['charset'] );
 
 			// fallback to iconv() if mb_convert_encoding()_doesn't exist
